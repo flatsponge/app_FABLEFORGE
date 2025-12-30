@@ -235,9 +235,6 @@ const CrystalModal = ({
           <View className="p-6 gap-6 bg-white">
             <AnimatedGradientBorder>
               <View className="bg-slate-900 p-6 relative overflow-hidden">
-                <View className="absolute top-0 right-0 w-40 h-40 bg-purple-500/20 rounded-full blur-xl" />
-                <View className="absolute bottom-0 left-0 w-32 h-32 bg-amber-500/10 rounded-full blur-xl" />
-
                 <View className="flex-row justify-between items-start mb-4">
                   <View>
                     <View className="flex-row items-center gap-2 mb-1">

@@ -275,6 +275,109 @@ const MiniProgressRing = ({
   );
 };
 
+// Helper to convert polar to cartesian coordinates
+const polarToCartesian = (
+  centerX: number,
+  centerY: number,
+  radius: number,
+  angleInDegrees: number
+) => {
+  const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180.0;
+  return {
+    x: centerX + radius * Math.cos(angleInRadians),
+    y: centerY + radius * Math.sin(angleInRadians),
+  };
+};
+
+// Helper to create an arc path
+const describeArc = (
+  x: number,
+  y: number,
+  radius: number,
+  startAngle: number,
+  endAngle: number
+) => {
+  const start = polarToCartesian(x, y, radius, endAngle);
+  const end = polarToCartesian(x, y, radius, startAngle);
+  const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1';
+
+  return [
+    'M',
+    start.x,
+    start.y,
+    'A',
+    radius,
+    radius,
+    0,
+    largeArcFlag,
+    0,
+    end.x,
+    end.y,
+  ].join(' ');
+};
+
+const SegmentedMasteryRing = ({
+  subSkills,
+  color,
+  size = 200,
+  strokeWidth = 14,
+}: {
+  subSkills: SubSkill[];
+  color: string;
+  size?: number;
+  strokeWidth?: number;
+}) => {
+  const center = size / 2;
+  const radius = (size - strokeWidth) / 2 - 20;
+
+  // Gap between segments in degrees
+  const gapAngle = 8;
+  const totalGaps = gapAngle * 3;
+  const segmentAngle = (360 - totalGaps) / 3; // ~114.67° per segment
+
+  // Generate arc paths for each segment
+  const segments = subSkills.slice(0, 3).map((sub, i) => {
+    const startAngle = i * (segmentAngle + gapAngle);
+    const endAngle = startAngle + segmentAngle;
+    const filledEndAngle = startAngle + (sub.value / 100) * segmentAngle;
+
+    return {
+      backgroundPath: describeArc(center, center, radius, startAngle, endAngle),
+      filledPath: sub.value > 0 ? describeArc(center, center, radius, startAngle, filledEndAngle) : null,
+      value: sub.value,
+    };
+  });
+
+  return (
+    <Svg width={size} height={size}>
+      {/* Background arcs (gray) */}
+      {segments.map((seg, i) => (
+        <Path
+          key={`bg-${i}`}
+          d={seg.backgroundPath}
+          fill="none"
+          stroke="#E2E8F0"
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+        />
+      ))}
+      {/* Filled arcs (colored) */}
+      {segments.map((seg, i) =>
+        seg.filledPath ? (
+          <Path
+            key={`fill-${i}`}
+            d={seg.filledPath}
+            fill="none"
+            stroke={color}
+            strokeWidth={strokeWidth}
+            strokeLinecap="round"
+          />
+        ) : null
+      )}
+    </Svg>
+  );
+};
+
 const ReadingStreakWidget = () => {
   const currentWeek = [
     { day: 'M', status: 'done', date: 14 },
@@ -306,26 +409,24 @@ const ReadingStreakWidget = () => {
           <View key={i} className="items-center gap-3">
             <Text className="text-[10px] font-bold text-slate-300">{d.day}</Text>
             <View
-              className={`w-9 h-9 rounded-full items-center justify-center ${
-                d.status === 'done'
-                  ? 'bg-slate-800'
-                  : d.status === 'today'
-                    ? 'bg-white border-4 border-indigo-50 shadow-sm'
-                    : d.status === 'missed'
-                      ? 'bg-slate-50'
-                      : ''
-              }`}
+              className={`w-9 h-9 rounded-full items-center justify-center ${d.status === 'done'
+                ? 'bg-slate-800'
+                : d.status === 'today'
+                  ? 'bg-white border-4 border-indigo-50 shadow-sm'
+                  : d.status === 'missed'
+                    ? 'bg-slate-50'
+                    : ''
+                }`}
             >
               <Text
-                className={`text-xs font-bold ${
-                  d.status === 'done'
-                    ? 'text-white'
-                    : d.status === 'today'
-                      ? 'text-indigo-700'
-                      : d.status === 'missed'
-                        ? 'text-slate-300'
-                        : 'text-slate-200'
-                }`}
+                className={`text-xs font-bold ${d.status === 'done'
+                  ? 'text-white'
+                  : d.status === 'today'
+                    ? 'text-indigo-700'
+                    : d.status === 'missed'
+                      ? 'text-slate-300'
+                      : 'text-slate-200'
+                  }`}
               >
                 {d.date}
               </Text>
@@ -380,13 +481,7 @@ const SkillRow = ({ skill, onPress }: { skill: Skill; onPress: () => void }) => 
 const DetailView = ({ skill, onBack }: { skill: Skill; onBack: () => void }) => {
   const IconComponent = skill.icon;
   const size = 200;
-  const center = size / 2;
-  const radius = 80;
   const strokeWidth = 14;
-
-  const ringRadius = (size - strokeWidth) / 2 - 20;
-  const circumference = 2 * Math.PI * ringRadius;
-  const offset = circumference - (skill.progress / 100) * circumference;
 
   const maxVal = Math.max(...skill.weeklyData, 100);
   const chartWidth = 300;
@@ -428,27 +523,12 @@ const DetailView = ({ skill, onBack }: { skill: Skill; onBack: () => void }) => 
       <View className="px-6 pt-6 gap-6">
         <View className="bg-white p-6 rounded-[40px] shadow-sm items-center">
           <View className="relative mb-8" style={{ width: size, height: size }}>
-            <Svg width={size} height={size} style={{ transform: [{ rotate: '-90deg' }] }}>
-              <Circle
-                cx={center}
-                cy={center}
-                r={ringRadius}
-                fill="none"
-                stroke="#F1F5F9"
-                strokeWidth={strokeWidth}
-              />
-              <Circle
-                cx={center}
-                cy={center}
-                r={ringRadius}
-                fill="none"
-                stroke={skill.color}
-                strokeWidth={strokeWidth}
-                strokeDasharray={`${circumference} ${circumference}`}
-                strokeDashoffset={offset}
-                strokeLinecap="round"
-              />
-            </Svg>
+            <SegmentedMasteryRing
+              subSkills={skill.subSkills}
+              color={skill.color}
+              size={size}
+              strokeWidth={strokeWidth}
+            />
 
             <View className="absolute inset-0 items-center justify-center">
               <IconComponent size={20} color={skill.textColor} />
