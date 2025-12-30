@@ -27,6 +27,7 @@ export default function HomeScreen() {
     <ScrollView 
       className="flex-1 bg-background"
       showsVerticalScrollIndicator={false}
+      contentContainerStyle={{ paddingBottom: 100 }}
     >
       <Header />
       <FeaturedCard onRead={handleRead} />

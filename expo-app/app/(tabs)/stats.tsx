@@ -506,7 +506,7 @@ const DetailView = ({ skill, onBack }: { skill: Skill; onBack: () => void }) => 
   }
 
   return (
-    <ScrollView className="flex-1 bg-background">
+    <ScrollView className="flex-1 bg-background" contentContainerStyle={{ paddingBottom: 100 }}>
       <View className="px-6 pt-14 pb-4 flex-row items-center justify-between">
         <Pressable
           onPress={onBack}
@@ -679,7 +679,7 @@ export default function StatsScreen() {
   }
 
   return (
-    <ScrollView className="flex-1 bg-background">
+    <ScrollView className="flex-1 bg-background" contentContainerStyle={{ paddingBottom: 100 }}>
       <View className="px-6 pt-14 pb-8 flex-row justify-between items-center">
         <View>
           <Text className="text-2xl font-bold text-slate-900 leading-tight">Leo's Growth</Text>

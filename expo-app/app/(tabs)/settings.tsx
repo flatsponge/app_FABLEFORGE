@@ -70,7 +70,7 @@ export default function SettingsScreen() {
   const [darkMode, setDarkMode] = useState(false);
 
   return (
-    <ScrollView className="flex-1 bg-background">
+    <ScrollView className="flex-1 bg-background" contentContainerStyle={{ paddingBottom: 100 }}>
       <View className="px-6 pt-14 pb-6">
         <Text className="text-3xl font-extrabold text-slate-800 tracking-tight">Settings</Text>
       </View>
