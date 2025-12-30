@@ -266,7 +266,7 @@ export default function ChildHubScreen() {
       </View>
 
       {activeRoom === 'wardrobe' && !isLocked && (
-        <View className="flex-1 relative z-10">
+        <View className="flex-1 relative z-10 pb-24">
           <View className="flex-1 items-center justify-center pt-8">
             <View className="bg-white/30 p-8 rounded-full border-4 border-white/50">
               <Avatar config={avatarConfig} scale={1.2} />
@@ -371,7 +371,7 @@ export default function ChildHubScreen() {
       )}
 
       {activeRoom === 'read' && !isLocked && (
-        <ScrollView className="flex-1 relative z-10 px-4 pt-4">
+        <ScrollView className="flex-1 relative z-10 px-4 pt-4" contentContainerStyle={{ paddingBottom: 100 }}>
           <View className="bg-white px-6 py-4 rounded-3xl border-b-8 border-slate-200 mb-6 items-center transform -rotate-1">
             <Text className="text-2xl font-black text-slate-700 tracking-tight">
               My Stories 📚
@@ -414,7 +414,7 @@ export default function ChildHubScreen() {
       )}
 
       {activeRoom === 'well' && !isLocked && (
-        <View className="flex-1 items-center justify-between relative z-10 pt-8 pb-4 px-4">
+        <View className="flex-1 items-center justify-between relative z-10 pt-8 pb-24 px-4">
           {wishState !== 'typing' && (
             <View className="bg-white px-8 py-4 rounded-3xl border-b-8 border-slate-200 mb-4 transform -rotate-1">
               <Text className="text-2xl font-black text-slate-700 text-center tracking-tight">

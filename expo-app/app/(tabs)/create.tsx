@@ -468,7 +468,7 @@ export default function CreateScreen() {
 
   if (step === 'outline-review') {
     return (
-      <ScrollView className="flex-1 bg-background">
+      <ScrollView className="flex-1 bg-background" contentContainerStyle={{ paddingBottom: 100 }}>
         <View className="px-6 pt-14 flex-row items-center justify-between mb-8">
           <Pressable
             onPress={() => setStep('input')}
@@ -543,7 +543,7 @@ export default function CreateScreen() {
 
   if (step === 'preview') {
     return (
-      <ScrollView className="flex-1 bg-background">
+      <ScrollView className="flex-1 bg-background" contentContainerStyle={{ paddingBottom: 100 }}>
         <View className="px-6 pt-14 flex-row items-center justify-between mb-6">
           <Pressable
             onPress={() => setStep('outline-review')}
@@ -624,7 +624,7 @@ export default function CreateScreen() {
         onClose={() => setShowManageAssets(false)}
       />
 
-      <ScrollView className="flex-1 bg-background">
+      <ScrollView className="flex-1 bg-background" contentContainerStyle={{ paddingBottom: 100 }}>
         <View className="px-6 pt-14 pb-6 flex-row items-center justify-between">
           <View>
             <Text className="text-3xl font-extrabold text-slate-800 tracking-tight">Create Story</Text>
