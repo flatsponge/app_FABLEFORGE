@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
+import { UnifiedHeader } from '@/components/UnifiedHeader';
 import {
   Heart,
   Shield,
@@ -679,41 +680,45 @@ export default function StatsScreen() {
   }
 
   return (
-    <ScrollView className="flex-1 bg-background" contentContainerStyle={{ paddingBottom: 100 }}>
-      <View className="px-6 pt-14 pb-8 flex-row justify-between items-center">
-        <View>
-          <Text className="text-2xl font-bold text-slate-900 leading-tight">Leo's Growth</Text>
-          <Text className="text-sm font-medium text-slate-500 mt-1">
+    <View className="flex-1 bg-background">
+      <UnifiedHeader
+        title="Leo's Growth"
+        rightAction={
+          <View className="w-8 h-8 rounded-full bg-white border border-slate-200 items-center justify-center shadow-sm">
+            <Text className="font-black text-[10px] text-slate-700 tracking-wider">LEO</Text>
+          </View>
+        }
+      />
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 100 }}>
+        <View className="px-6 py-4">
+          <Text className="text-sm font-medium text-slate-500 text-center">
             Impact from 12 books read
           </Text>
         </View>
-        <View className="w-12 h-12 rounded-full bg-white border-2 border-slate-100 items-center justify-center shadow-sm">
-          <Text className="font-black text-xs text-slate-700 tracking-wider">LEO</Text>
-        </View>
-      </View>
 
-      <View className="px-6">
-        <ReadingStreakWidget />
+        <View className="px-6">
+          <ReadingStreakWidget />
 
-        <View className="mb-8">
-          <View className="flex-row items-center gap-2 mb-5 px-1">
-            <BookOpen size={16} color="#94a3b8" />
-            <Text className="font-bold text-slate-700 text-sm uppercase tracking-wider">
-              Core Values & Skills
-            </Text>
-          </View>
+          <View className="mb-8">
+            <View className="flex-row items-center gap-2 mb-5 px-1">
+              <BookOpen size={16} color="#94a3b8" />
+              <Text className="font-bold text-slate-700 text-sm uppercase tracking-wider">
+                Core Values & Skills
+              </Text>
+            </View>
 
-          <View>
-            {SKILLS_DATA.map(skill => (
-              <SkillRow
-                key={skill.id}
-                skill={skill}
-                onPress={() => setSelectedSkillId(skill.id)}
-              />
-            ))}
+            <View>
+              {SKILLS_DATA.map(skill => (
+                <SkillRow
+                  key={skill.id}
+                  skill={skill}
+                  onPress={() => setSelectedSkillId(skill.id)}
+                />
+              ))}
+            </View>
           </View>
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable, Image } from 'react-native';
+import { UnifiedHeader } from '@/components/UnifiedHeader';
 import {
   Bell,
   Volume2,
@@ -70,13 +71,11 @@ export default function SettingsScreen() {
   const [darkMode, setDarkMode] = useState(false);
 
   return (
-    <ScrollView className="flex-1 bg-background" contentContainerStyle={{ paddingBottom: 100 }}>
-      <View className="px-6 pt-14 pb-6">
-        <Text className="text-3xl font-extrabold text-slate-800 tracking-tight">Settings</Text>
-      </View>
-
-      <View className="px-6 gap-8">
-        <View className="flex-row items-center gap-4 p-4 bg-white rounded-3xl border border-slate-100 shadow-sm">
+    <View className="flex-1 bg-background">
+      <UnifiedHeader title="Settings" />
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 100 }}>
+        <View className="px-6 py-6 gap-8">
+          <View className="flex-row items-center gap-4 p-4 bg-white rounded-3xl border border-slate-100 shadow-sm">
           <View className="w-16 h-16 rounded-2xl bg-slate-100 items-center justify-center border-2 border-white shadow-sm overflow-hidden">
             <User size={32} color="#94a3b8" />
           </View>

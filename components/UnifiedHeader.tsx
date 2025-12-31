@@ -47,7 +47,7 @@ export function UnifiedHeader({
     >
       <View className="flex-row items-center justify-between h-12">
         {/* Left: Back Button or Spacer */}
-        <View className="w-10">
+        <View className="min-w-[40px] flex-row justify-start items-center">
           {showBackButton && (
             <TouchableOpacity
               onPress={handleBack}
@@ -61,14 +61,14 @@ export function UnifiedHeader({
         </View>
 
         {/* Center: Title */}
-        <View className="flex-1 items-center">
+        <View className="flex-1 items-center justify-center mx-2">
           <Text className={titleClass} numberOfLines={1}>
             {title}
           </Text>
         </View>
 
         {/* Right: Action or Spacer */}
-        <View className="w-10 flex-row justify-end">
+        <View className="min-w-[40px] flex-row justify-end items-center">
           {rightAction}
         </View>
       </View>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, Pressable, TextInput, Modal } from 'react-native';
+import { UnifiedHeader } from '@/components/UnifiedHeader';
 import { router } from 'expo-router';
 import Animated, {
   useSharedValue,
@@ -622,39 +623,42 @@ export default function CreateScreen() {
 
 
 
-      <ScrollView className="flex-1 bg-background" contentContainerStyle={{ paddingBottom: 100 }}>
-        <View className="px-6 pt-14 pb-6 flex-row items-center justify-between">
-          <View>
-            <Text className="text-3xl font-extrabold text-slate-800 tracking-tight">Create Story</Text>
-            <Text className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-wider">
+      <View className="flex-1 bg-background">
+        <UnifiedHeader
+          title="Create Story"
+          rightAction={
+            <View className="flex-row items-center gap-2">
+              <Pressable
+                onPress={openManageAssets}
+                className="bg-white p-2 rounded-full border border-slate-100 shadow-sm"
+              >
+                <Pencil size={16} color="#64748b" />
+              </Pressable>
+              <Pressable className="bg-white p-2 rounded-full border border-slate-100 shadow-sm active:scale-95">
+                <Dices size={16} color="#64748b" />
+              </Pressable>
+              <Pressable
+                onPress={() => setShowCrystalModal(true)}
+                className="flex-row items-center gap-1.5 bg-white px-2 py-1.5 rounded-full shadow-sm border border-slate-100 active:scale-95"
+              >
+                <Diamond size={14} color="#06b6d4" fill="#06b6d4" />
+                <Text className="font-bold text-slate-800 text-xs">
+                  {crystalBalance}
+                </Text>
+              </Pressable>
+            </View>
+          }
+        />
+        <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 100 }}>
+          <View className="px-6 py-4">
+            <Text className="text-xs font-bold text-slate-400 text-center uppercase tracking-wider">
               Turn memories into magic
             </Text>
           </View>
-          <View className="flex-row items-center gap-2">
-            <Pressable
-              onPress={openManageAssets}
-              className="bg-white p-2 rounded-full border border-slate-100 shadow-sm"
-            >
-              <Pencil size={20} color="#64748b" />
-            </Pressable>
-            <Pressable className="bg-white p-2 rounded-full border border-slate-100 shadow-sm active:scale-95">
-              <Dices size={20} color="#64748b" />
-            </Pressable>
-            <Pressable
-              onPress={() => setShowCrystalModal(true)}
-              className="flex-row items-center gap-2 bg-white px-3 py-2 rounded-full shadow-sm border border-slate-100 active:scale-95"
-            >
-              <Diamond size={16} color="#06b6d4" fill="#06b6d4" />
-              <Text className="font-bold text-slate-800 text-sm">
-                {crystalBalance}<Text className="text-slate-300 text-xs">/{MAX_CRYSTALS}</Text>
-              </Text>
-            </Pressable>
-          </View>
-        </View>
 
-        <View className="px-6">
-          <View className="mb-8">
-            <View className="flex-row items-center justify-between mb-4">
+          <View className="px-6">
+            <View className="mb-8">
+              <View className="flex-row items-center justify-between mb-4">
               <Text className="text-lg font-bold text-slate-800">Scene & Cast</Text>
               <View className="bg-white px-2 py-1 rounded-lg border border-slate-100">
                 <Text className="text-xs font-bold text-slate-400">Step 1</Text>
