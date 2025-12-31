@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, ScrollView, Pressable, TextInput, Image, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, Pressable, TextInput, Image, StyleSheet, ImageBackground } from 'react-native';
+import ChildBackground from '@/childbackground/childbackground1.png';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -597,17 +598,11 @@ export default function ChildHubScreen() {
   ];
 
   return (
-    <View className="flex-1 bg-[#4FC3F7]">
-      <View className="absolute bottom-0 left-0 right-0 h-1/2 bg-[#81C784]" />
-
-      <View className="absolute top-10 left-10 opacity-80">
-        <View className="w-20 h-10 bg-white rounded-full" />
-        <View className="w-14 h-14 bg-white rounded-full -mt-8 ml-4" />
-      </View>
-      <View className="absolute top-20 right-20 opacity-80">
-        <View className="w-24 h-12 bg-white rounded-full" />
-        <View className="w-16 h-16 bg-white rounded-full -mt-10 ml-6" />
-      </View>
+    <ImageBackground
+      source={ChildBackground}
+      style={{ flex: 1 }}
+      resizeMode="cover"
+    >
 
       <View className="relative z-50 px-4 pt-14 flex-row justify-between items-start">
         {!isLocked && (
@@ -1062,7 +1057,7 @@ export default function ChildHubScreen() {
           </Text>
         </View>
       )}
-    </View>
+    </ImageBackground>
   );
 }
 
