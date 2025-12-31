@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, Pressable, TextInput, Modal } from 'react-native';
+import { router } from 'expo-router';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -51,8 +52,6 @@ import {
 } from 'lucide-react-native';
 import { LucideIcon } from 'lucide-react-native';
 import { PRESET_LOCATIONS, FRIENDS, VOICE_PRESETS } from '@/constants/data';
-import { AssetStudio } from '@/components/AssetStudio';
-import { ManageAssetsView } from '@/components/ManageAssetsView';
 
 const MAX_CRYSTALS = 160;
 const REGEN_TIME_SECONDS = 1800;
@@ -186,159 +185,159 @@ const CrystalModal = ({
   return (
     <Modal visible={visible} transparent animationType="slide">
       <View className="flex-1 bg-black/60 justify-end">
-        <ScrollView className="bg-white rounded-t-[40px] max-h-[90%]">
-          <Pressable
-            onPress={onClose}
-            className="absolute top-5 right-5 z-20 w-8 h-8 rounded-full bg-black/5 items-center justify-center"
-          >
-            <X size={20} color="#64748b" />
-          </Pressable>
+          <ScrollView className="bg-white rounded-t-[40px] max-h-[90%]">
+            <Pressable
+              onPress={onClose}
+              className="absolute top-5 right-5 z-20 w-8 h-8 rounded-full bg-black/5 items-center justify-center"
+            >
+              <X size={20} color="#64748b" />
+            </Pressable>
 
-          <View className="bg-background p-8 pb-10 border-b border-slate-100 relative overflow-hidden">
-            <View className="absolute top-0 right-0 w-64 h-64 bg-cyan-100/30 rounded-full -mr-16 -mt-16" />
+            <View className="bg-background p-8 pb-10 border-b border-slate-100 relative overflow-hidden">
+              <View className="absolute top-0 right-0 w-64 h-64 bg-cyan-100/30 rounded-full -mr-16 -mt-16" />
 
-            <View className="items-center">
-              <Text className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
-                Current Balance
-              </Text>
-              <View className="flex-row items-center gap-2 mb-4">
-                <Diamond size={32} color="#06b6d4" fill="#06b6d4" />
-                <Text className="text-5xl font-black text-slate-800">{balance}</Text>
-                <Text className="text-2xl font-bold text-slate-300">/{max}</Text>
+              <View className="items-center">
+                <Text className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
+                  Current Balance
+                </Text>
+                <View className="flex-row items-center gap-2 mb-4">
+                  <Diamond size={32} color="#06b6d4" fill="#06b6d4" />
+                  <Text className="text-5xl font-black text-slate-800">{balance}</Text>
+                  <Text className="text-2xl font-bold text-slate-300">/{max}</Text>
+                </View>
+
+                {balance < max ? (
+                  <View className="flex-row items-center gap-3 bg-white px-4 py-2 rounded-full border border-slate-200">
+                    <View className="flex-row items-center gap-1.5">
+                      <Clock size={14} color="#06b6d4" />
+                      <Text className="text-xs font-bold text-slate-600">
+                        +1 in <Text className="font-mono text-cyan-600">{formatTime(timeToNext)}</Text>
+                      </Text>
+                    </View>
+                    <View className="w-px h-3 bg-slate-200" />
+                    <View className="flex-row items-center gap-1.5">
+                      <BatteryCharging size={14} color="#a855f7" />
+                      <Text className="text-xs font-bold text-slate-600">
+                        Full in <Text className="font-mono text-purple-600">{formatFullTimer(fullInSeconds)}</Text>
+                      </Text>
+                    </View>
+                  </View>
+                ) : (
+                  <View className="bg-emerald-50 px-4 py-2 rounded-full flex-row items-center gap-2">
+                    <Check size={16} color="#059669" />
+                    <Text className="text-xs font-bold text-emerald-600">Fully Charged</Text>
+                  </View>
+                )}
               </View>
-
-              {balance < max ? (
-                <View className="flex-row items-center gap-3 bg-white px-4 py-2 rounded-full border border-slate-200">
-                  <View className="flex-row items-center gap-1.5">
-                    <Clock size={14} color="#06b6d4" />
-                    <Text className="text-xs font-bold text-slate-600">
-                      +1 in <Text className="font-mono text-cyan-600">{formatTime(timeToNext)}</Text>
-                    </Text>
-                  </View>
-                  <View className="w-px h-3 bg-slate-200" />
-                  <View className="flex-row items-center gap-1.5">
-                    <BatteryCharging size={14} color="#a855f7" />
-                    <Text className="text-xs font-bold text-slate-600">
-                      Full in <Text className="font-mono text-purple-600">{formatFullTimer(fullInSeconds)}</Text>
-                    </Text>
-                  </View>
-                </View>
-              ) : (
-                <View className="bg-emerald-50 px-4 py-2 rounded-full flex-row items-center gap-2">
-                  <Check size={16} color="#059669" />
-                  <Text className="text-xs font-bold text-emerald-600">Fully Charged</Text>
-                </View>
-              )}
             </View>
-          </View>
 
-          <View className="p-6 gap-6 bg-white">
-            <AnimatedGradientBorder>
-              <View className="bg-slate-900 p-6 relative overflow-hidden">
-                <View className="flex-row justify-between items-start mb-4">
-                  <View>
-                    <View className="flex-row items-center gap-2 mb-1">
-                      <View className="bg-amber-400 px-2 py-0.5 rounded-md">
-                        <Text className="text-[10px] font-black text-slate-900 uppercase">Best Value</Text>
+            <View className="p-6 gap-6 bg-white">
+              <AnimatedGradientBorder>
+                <View className="bg-slate-900 p-6 relative overflow-hidden">
+                  <View className="flex-row justify-between items-start mb-4">
+                    <View>
+                      <View className="flex-row items-center gap-2 mb-1">
+                        <View className="bg-amber-400 px-2 py-0.5 rounded-md">
+                          <Text className="text-[10px] font-black text-slate-900 uppercase">Best Value</Text>
+                        </View>
+                      </View>
+                      <Text className="text-2xl font-black text-white italic tracking-wide">
+                        STORY<Text className="text-amber-400">MAX</Text>
+                      </Text>
+                    </View>
+                    <Crown size={40} color="#fbbf24" />
+                  </View>
+
+                  <View className="gap-3 mb-6">
+                    <View className="flex-row items-center gap-3">
+                      <View className="w-8 h-8 rounded-full bg-white/10 items-center justify-center">
+                        <Zap size={16} color="#fbbf24" />
+                      </View>
+                      <View>
+                        <Text className="font-bold text-sm text-white">2x Faster Generation</Text>
+                        <Text className="text-[10px] text-slate-400">Crystals refill every 15m</Text>
                       </View>
                     </View>
-                    <Text className="text-2xl font-black text-white italic tracking-wide">
-                      STORY<Text className="text-amber-400">MAX</Text>
-                    </Text>
+                    <View className="flex-row items-center gap-3">
+                      <View className="w-8 h-8 rounded-full bg-white/10 items-center justify-center">
+                        <Infinity size={16} color="#c084fc" />
+                      </View>
+                      <View>
+                        <Text className="font-bold text-sm text-white">2x Cap Increase</Text>
+                        <Text className="text-[10px] text-slate-400">Hold up to 320 Crystals</Text>
+                      </View>
+                    </View>
+                    <View className="flex-row items-center gap-3">
+                      <View className="w-8 h-8 rounded-full bg-white/10 items-center justify-center">
+                        <Diamond size={16} color="#22d3ee" />
+                      </View>
+                      <View>
+                        <Text className="font-bold text-sm text-white">+1000 Instant Boost</Text>
+                        <Text className="text-[10px] text-slate-400">One-time bonus</Text>
+                      </View>
+                    </View>
                   </View>
-                  <Crown size={40} color="#fbbf24" />
-                </View>
 
-                <View className="gap-3 mb-6">
-                  <View className="flex-row items-center gap-3">
-                    <View className="w-8 h-8 rounded-full bg-white/10 items-center justify-center">
-                      <Zap size={16} color="#fbbf24" />
+                  <Pressable
+                    onPress={() => onRefill(1000)}
+                    className="w-full py-4 rounded-xl bg-amber-400 items-center flex-row justify-center gap-2 active:scale-95"
+                  >
+                    <Text className="text-slate-900 font-black text-sm">Upgrade to MAX</Text>
+                    <View className="bg-black/10 px-1.5 py-0.5 rounded">
+                      <Text className="text-xs text-slate-900/70">$9.99/mo</Text>
                     </View>
-                    <View>
-                      <Text className="font-bold text-sm text-white">2x Faster Generation</Text>
-                      <Text className="text-[10px] text-slate-400">Crystals refill every 15m</Text>
-                    </View>
-                  </View>
-                  <View className="flex-row items-center gap-3">
-                    <View className="w-8 h-8 rounded-full bg-white/10 items-center justify-center">
-                      <Infinity size={16} color="#c084fc" />
-                    </View>
-                    <View>
-                      <Text className="font-bold text-sm text-white">2x Cap Increase</Text>
-                      <Text className="text-[10px] text-slate-400">Hold up to 320 Crystals</Text>
-                    </View>
-                  </View>
-                  <View className="flex-row items-center gap-3">
-                    <View className="w-8 h-8 rounded-full bg-white/10 items-center justify-center">
-                      <Diamond size={16} color="#22d3ee" />
-                    </View>
-                    <View>
-                      <Text className="font-bold text-sm text-white">+1000 Instant Boost</Text>
-                      <Text className="text-[10px] text-slate-400">One-time bonus</Text>
-                    </View>
-                  </View>
+                  </Pressable>
                 </View>
+              </AnimatedGradientBorder>
+
+              <View className="flex-row items-center gap-4">
+                <View className="h-px bg-slate-100 flex-1" />
+                <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Or Top Up</Text>
+                <View className="h-px bg-slate-100 flex-1" />
+              </View>
+
+              <View className="flex-row gap-4">
+                <Pressable
+                  onPress={() => onRefill(100)}
+                  className="flex-1 bg-slate-50 p-4 rounded-3xl border border-slate-200 items-center gap-3 active:scale-95"
+                >
+                  <View className="w-12 h-12 bg-white rounded-full items-center justify-center">
+                    <Diamond size={24} color="#22d3ee" fill="#22d3ee" />
+                  </View>
+                  <View className="items-center">
+                    <Text className="font-bold text-slate-800 text-lg">100</Text>
+                    <Text className="text-xs font-bold text-slate-400">Crystals</Text>
+                  </View>
+                  <View className="bg-slate-900 px-4 py-2 rounded-full w-full items-center">
+                    <Text className="text-white text-xs font-bold">$1.99</Text>
+                  </View>
+                </Pressable>
 
                 <Pressable
-                  onPress={() => onRefill(1000)}
-                  className="w-full py-4 rounded-xl bg-amber-400 items-center flex-row justify-center gap-2 active:scale-95"
+                  onPress={() => onRefill(500)}
+                  className="flex-1 bg-slate-50 p-4 rounded-3xl border border-slate-200 items-center gap-3 active:scale-95 relative overflow-hidden"
                 >
-                  <Text className="text-slate-900 font-black text-sm">Upgrade to MAX</Text>
-                  <View className="bg-black/10 px-1.5 py-0.5 rounded">
-                    <Text className="text-xs text-slate-900/70">$9.99/mo</Text>
+                  <View className="absolute top-0 right-0 bg-rose-500 px-2 py-1 rounded-bl-xl">
+                    <Text className="text-white text-[9px] font-bold">POPULAR</Text>
+                  </View>
+                  <View className="w-12 h-12 bg-white rounded-full items-center justify-center">
+                    <Diamond size={24} color="#06b6d4" fill="#06b6d4" />
+                  </View>
+                  <View className="items-center">
+                    <Text className="font-bold text-slate-800 text-lg">500</Text>
+                    <Text className="text-xs font-bold text-slate-400">Crystals</Text>
+                  </View>
+                  <View className="bg-slate-900 px-4 py-2 rounded-full w-full items-center">
+                    <Text className="text-white text-xs font-bold">$4.99</Text>
                   </View>
                 </Pressable>
               </View>
-            </AnimatedGradientBorder>
 
-            <View className="flex-row items-center gap-4">
-              <View className="h-px bg-slate-100 flex-1" />
-              <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Or Top Up</Text>
-              <View className="h-px bg-slate-100 flex-1" />
+              <Text className="text-center text-[10px] text-slate-400 font-medium pb-8">
+                Purchase is restored automatically. Cancel anytime.
+              </Text>
             </View>
-
-            <View className="flex-row gap-4">
-              <Pressable
-                onPress={() => onRefill(100)}
-                className="flex-1 bg-slate-50 p-4 rounded-3xl border border-slate-200 items-center gap-3 active:scale-95"
-              >
-                <View className="w-12 h-12 bg-white rounded-full items-center justify-center">
-                  <Diamond size={24} color="#22d3ee" fill="#22d3ee" />
-                </View>
-                <View className="items-center">
-                  <Text className="font-bold text-slate-800 text-lg">100</Text>
-                  <Text className="text-xs font-bold text-slate-400">Crystals</Text>
-                </View>
-                <View className="bg-slate-900 px-4 py-2 rounded-full w-full items-center">
-                  <Text className="text-white text-xs font-bold">$1.99</Text>
-                </View>
-              </Pressable>
-
-              <Pressable
-                onPress={() => onRefill(500)}
-                className="flex-1 bg-slate-50 p-4 rounded-3xl border border-slate-200 items-center gap-3 active:scale-95 relative overflow-hidden"
-              >
-                <View className="absolute top-0 right-0 bg-rose-500 px-2 py-1 rounded-bl-xl">
-                  <Text className="text-white text-[9px] font-bold">POPULAR</Text>
-                </View>
-                <View className="w-12 h-12 bg-white rounded-full items-center justify-center">
-                  <Diamond size={24} color="#06b6d4" fill="#06b6d4" />
-                </View>
-                <View className="items-center">
-                  <Text className="font-bold text-slate-800 text-lg">500</Text>
-                  <Text className="text-xs font-bold text-slate-400">Crystals</Text>
-                </View>
-                <View className="bg-slate-900 px-4 py-2 rounded-full w-full items-center">
-                  <Text className="text-white text-xs font-bold">$4.99</Text>
-                </View>
-              </Pressable>
-            </View>
-
-            <Text className="text-center text-[10px] text-slate-400 font-medium pb-8">
-              Purchase is restored automatically. Cancel anytime.
-            </Text>
-          </View>
-        </ScrollView>
+          </ScrollView>
       </View>
     </Modal>
   );
@@ -355,8 +354,22 @@ export default function CreateScreen() {
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(PRESET_LOCATIONS[0].id);
   const [selectedCharacterIds, setSelectedCharacterIds] = useState<string[]>(['me']);
   const [selectedVoiceId, setSelectedVoiceId] = useState<string>(VOICE_PRESETS[0].id);
-  const [assetStudioTab, setAssetStudioTab] = useState<'places' | 'faces' | 'voices' | null>(null);
-  const [showManageAssets, setShowManageAssets] = useState(false);
+
+  const openAssetStudio = (tab: 'places' | 'faces' | 'voices') => {
+    router.push({
+      pathname: '/asset-studio',
+      params: {
+        tab,
+        selectedLocationId: selectedLocationId || '',
+        selectedCharacterIds: selectedCharacterIds.join(','),
+        selectedVoiceId,
+      },
+    });
+  };
+
+  const openManageAssets = () => {
+    router.push('/manage-assets');
+  };
 
   useEffect(() => {
     if (crystalBalance >= MAX_CRYSTALS) return;
@@ -607,22 +620,7 @@ export default function CreateScreen() {
         onRefill={handleRefill}
       />
 
-      <AssetStudio
-        visible={assetStudioTab !== null}
-        onClose={() => setAssetStudioTab(null)}
-        initialTab={assetStudioTab || 'places'}
-        selectedLocationId={selectedLocationId}
-        onSelectLocation={setSelectedLocationId}
-        selectedCharacterIds={selectedCharacterIds}
-        onToggleCharacter={handleToggleCharacter}
-        selectedVoiceId={selectedVoiceId}
-        onSelectVoice={setSelectedVoiceId}
-      />
 
-      <ManageAssetsView
-        visible={showManageAssets}
-        onClose={() => setShowManageAssets(false)}
-      />
 
       <ScrollView className="flex-1 bg-background" contentContainerStyle={{ paddingBottom: 100 }}>
         <View className="px-6 pt-14 pb-6 flex-row items-center justify-between">
@@ -633,9 +631,9 @@ export default function CreateScreen() {
             </Text>
           </View>
           <View className="flex-row items-center gap-2">
-            <Pressable 
-              onPress={() => setShowManageAssets(true)}
-              className="bg-white p-2 rounded-full border border-slate-100 shadow-sm active:scale-95"
+            <Pressable
+              onPress={openManageAssets}
+              className="bg-white p-2 rounded-full border border-slate-100 shadow-sm"
             >
               <Pencil size={20} color="#64748b" />
             </Pressable>
@@ -664,9 +662,9 @@ export default function CreateScreen() {
             </View>
 
             <View className="flex-row gap-3">
-              <Pressable 
-                onPress={() => setAssetStudioTab('places')}
-                className="flex-1 h-28 rounded-3xl bg-white border border-slate-200 shadow-sm items-center justify-center p-2 active:scale-95"
+              <Pressable
+                onPress={() => openAssetStudio('places')}
+                className="flex-1 h-28 rounded-3xl bg-white border border-slate-200 shadow-sm items-center justify-center p-2"
               >
                 <View className="w-10 h-10 rounded-full bg-indigo-50 items-center justify-center mb-2">
                   <MapPin size={20} color="#6366f1" />
@@ -677,9 +675,9 @@ export default function CreateScreen() {
                 </Text>
               </Pressable>
 
-              <Pressable 
-                onPress={() => setAssetStudioTab('faces')}
-                className="flex-1 h-28 rounded-3xl bg-white border border-slate-200 shadow-sm items-center justify-center p-2 active:scale-95"
+              <Pressable
+                onPress={() => openAssetStudio('faces')}
+                className="flex-1 h-28 rounded-3xl bg-white border border-slate-200 shadow-sm items-center justify-center p-2"
               >
                 <View className="w-10 h-10 rounded-full bg-orange-50 items-center justify-center mb-2">
                   <User size={20} color="#f97316" />
@@ -690,9 +688,9 @@ export default function CreateScreen() {
                 </Text>
               </Pressable>
 
-              <Pressable 
-                onPress={() => setAssetStudioTab('voices')}
-                className="flex-1 h-28 rounded-3xl bg-white border border-slate-200 shadow-sm items-center justify-center p-2 active:scale-95"
+              <Pressable
+                onPress={() => openAssetStudio('voices')}
+                className="flex-1 h-28 rounded-3xl bg-white border border-slate-200 shadow-sm items-center justify-center p-2"
               >
                 <View className="w-10 h-10 rounded-full bg-rose-50 items-center justify-center mb-2">
                   <Mic size={20} color="#f43f5e" />

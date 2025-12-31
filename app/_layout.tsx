@@ -29,7 +29,9 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (loaded) {
-      SplashScreen.hideAsync();
+      SplashScreen.hideAsync().catch(() => {
+        // Silently ignore if splash screen was already hidden or not registered
+      });
     }
   }, [loaded]);
 
@@ -55,19 +57,34 @@ function RootLayoutNav() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : customLightTheme}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen 
-          name="book/[id]" 
-          options={{ 
+        <Stack.Screen
+          name="book/[id]"
+          options={{
             headerShown: false,
             presentation: 'modal',
-          }} 
+          }}
         />
-        <Stack.Screen 
-          name="reading/[id]" 
-          options={{ 
+        <Stack.Screen
+          name="reading/[id]"
+          options={{
             headerShown: false,
             presentation: 'fullScreenModal',
-          }} 
+          }}
+        />
+        <Stack.Screen
+          name="manage-assets"
+          options={{
+            headerShown: false,
+            presentation: 'modal',
+          }}
+        />
+        <Stack.Screen
+          name="asset-studio"
+          options={{
+            headerShown: false,
+            presentation: 'transparentModal',
+            animation: 'slide_from_bottom',
+          }}
         />
       </Stack>
     </ThemeProvider>
