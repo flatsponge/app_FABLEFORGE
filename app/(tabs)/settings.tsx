@@ -192,6 +192,7 @@ export default function SettingsScreen() {
             </Text>
           </View>
         </View>
+      </View>
       </ScrollView>
     </View>
   );
