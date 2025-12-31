@@ -1,10 +1,10 @@
 # Plan: Unify Headers
 
 ## Phase 1: Component Design & Implementation
-- [~] Task: Create test file `components/__tests__/UnifiedHeader-test.tsx` and write initial failing tests for rendering and variants.
-- [~] Task: Implement `UnifiedHeader` component in `components/UnifiedHeader.tsx` with `default` and `child` variants using NativeWind.
-- [ ] Task: Refactor `UnifiedHeader` to handle Safe Area Insets and Back Button logic.
-- [ ] Task: Verify tests pass and component renders correctly in isolation.
+- [x] Task: Create test file `components/__tests__/UnifiedHeader-test.tsx` and write initial failing tests for rendering and variants. 903841b
+- [x] Task: Implement `UnifiedHeader` component in `components/UnifiedHeader.tsx` with `default` and `child` variants using NativeWind. 903841b
+- [x] Task: Refactor `UnifiedHeader` to handle Safe Area Insets and Back Button logic. 903841b
+- [x] Task: Verify tests pass and component renders correctly in isolation. 903841b
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Component Design & Implementation' (Protocol in workflow.md)
 
 ## Phase 2: Integration - Parent Views (Growth & Settings)
