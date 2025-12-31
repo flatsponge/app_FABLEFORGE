@@ -21,6 +21,6 @@
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Integration - Child Views (StoryTime & Hub)' (Protocol in workflow.md)
 
 ## Phase 4: Cleanup & Polish
-- [ ] Task: Remove any specific legacy header components or styles that are no longer used.
-- [ ] Task: Verify accessibility labels and hit slop for buttons.
+- [x] Task: Remove any specific legacy header components or styles that are no longer used.
+- [x] Task: Verify accessibility labels and hit slop for buttons.
 - [ ] Task: Conductor - User Manual Verification 'Phase 4: Cleanup & Polish' (Protocol in workflow.md)
