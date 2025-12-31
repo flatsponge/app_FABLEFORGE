@@ -31,11 +31,11 @@ export function UnifiedHeader({
   // Styles based on variant
   const containerClass = variant === 'child'
     ? 'bg-yellow-400 border-b-4 border-yellow-500'
-    : 'bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800';
+    : 'bg-background dark:bg-slate-900 shadow-sm';
 
   const titleClass = variant === 'child'
     ? 'text-2xl font-bold text-yellow-900'
-    : 'text-lg font-semibold text-slate-900 dark:text-white';
+    : 'text-xl font-bold text-slate-900 dark:text-white';
 
   const iconColor = variant === 'child' ? '#713f12' : '#0f172a'; // yellow-900 or slate-900
 
