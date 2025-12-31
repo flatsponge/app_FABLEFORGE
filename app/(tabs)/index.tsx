@@ -25,7 +25,7 @@ export default function HomeScreen() {
 
   return (
     <View className="flex-1 bg-background">
-      <UnifiedHeader variant="child" title="StoryTime" />
+      <UnifiedHeader variant="default" title="StoryTime" />
       <ScrollView 
         className="flex-1"
         showsVerticalScrollIndicator={false}
