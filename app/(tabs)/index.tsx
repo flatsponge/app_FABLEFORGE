@@ -1,8 +1,8 @@
 import React from 'react';
-import { ScrollView } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
-import { Header } from '@/components/Header';
+import { UnifiedHeader } from '@/components/UnifiedHeader';
 import { FeaturedCard } from '@/components/FeaturedCard';
 import { FulfillmentTracker } from '@/components/FulfillmentTracker';
 import { LibraryView } from '@/components/LibraryView';
@@ -24,15 +24,17 @@ export default function HomeScreen() {
   };
 
   return (
-    <ScrollView 
-      className="flex-1 bg-background"
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={{ paddingBottom: 100 }}
-    >
-      <Header />
-      <FeaturedCard onRead={handleRead} />
-      <FulfillmentTracker onPress={handleFulfillmentPress} />
-      <LibraryView onBookClick={handleBookClick} isHome={true} />
-    </ScrollView>
+    <View className="flex-1 bg-background">
+      <UnifiedHeader variant="child" title="StoryTime" />
+      <ScrollView 
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
+      >
+        <FeaturedCard onRead={handleRead} />
+        <FulfillmentTracker onPress={handleFulfillmentPress} />
+        <LibraryView onBookClick={handleBookClick} isHome={true} />
+      </ScrollView>
+    </View>
   );
 }

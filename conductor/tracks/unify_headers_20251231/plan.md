@@ -15,9 +15,9 @@
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Integration - Parent Views (Growth & Settings)' (Protocol in workflow.md)
 
 ## Phase 3: Integration - Child Views (StoryTime & Hub)
-- [ ] Task: Write tests ensuring `app/(tabs)/index.tsx` (StoryTime) renders with the new header.
-- [ ] Task: Replace header in `app/(tabs)/index.tsx` with `<UnifiedHeader variant="child" />`.
-- [ ] Task: Replace header in `app/(tabs)/child-hub.tsx` with `<UnifiedHeader variant="child" />`.
+- [x] Task: Write tests ensuring `app/(tabs)/index.tsx` (StoryTime) renders with the new header.
+- [x] Task: Replace header in `app/(tabs)/index.tsx` with `<UnifiedHeader variant="child" />`.
+- [x] Task: Replace header in `app/(tabs)/child-hub.tsx` with `<UnifiedHeader variant="child" />`.
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Integration - Child Views (StoryTime & Hub)' (Protocol in workflow.md)
 
 ## Phase 4: Cleanup & Polish

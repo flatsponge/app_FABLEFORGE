@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, ScrollView, Pressable, TextInput, Image, StyleSheet, ImageBackground } from 'react-native';
+import { UnifiedHeader } from '@/components/UnifiedHeader';
 import ChildBackground from '@/childbackground/childbackground1.png';
 import Animated, {
   useSharedValue,
@@ -598,15 +599,49 @@ export default function ChildHubScreen() {
   ];
 
   return (
-    <ImageBackground
-      source={ChildBackground}
-      style={{ flex: 1 }}
-      resizeMode="cover"
-    >
-
-      <View className="relative z-50 px-4 pt-14 flex-row justify-between items-start">
+    <View className="flex-1 bg-background">
+      <UnifiedHeader
+        variant="child"
+        title="My Room"
+        rightAction={
+          <View className="items-end">
+            <LockButton
+              isLocked={isLocked}
+              onPressIn={handleLockPressStart}
+              onPressOut={handleLockPressEnd}
+            />
+            {showUnlockHint && isLocked && (
+              <View
+                style={{
+                  position: 'absolute',
+                  top: 60,
+                  right: 0,
+                  backgroundColor: '#ef4444',
+                  paddingHorizontal: 10,
+                  paddingVertical: 6,
+                  borderRadius: 10,
+                  borderWidth: 3,
+                  borderColor: '#b91c1c',
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 3,
+                  zIndex: 100,
+                }}
+              >
+                <Text style={{ fontSize: 11, fontWeight: '900', color: 'white' }}>HOLD!</Text>
+              </View>
+            )}
+          </View>
+        }
+      />
+      <ImageBackground
+        source={ChildBackground}
+        style={{ flex: 1 }}
+        resizeMode="cover"
+      >
         {!isLocked && (
-          <View className="flex-row gap-2">
+          <View className="px-4 pt-4 flex-row gap-2 z-50">
             <RoomButton
               active={activeRoom === 'wardrobe'}
               onPress={() => setActiveRoom('wardrobe')}
@@ -633,34 +668,6 @@ export default function ChildHubScreen() {
             />
           </View>
         )}
-
-        <View className="items-end ml-auto">
-          <LockButton
-            isLocked={isLocked}
-            onPressIn={handleLockPressStart}
-            onPressOut={handleLockPressEnd}
-          />
-          {showUnlockHint && isLocked && (
-            <View
-              style={{
-                marginTop: 8,
-                backgroundColor: '#ef4444',
-                paddingHorizontal: 10,
-                paddingVertical: 6,
-                borderRadius: 10,
-                borderWidth: 3,
-                borderColor: '#b91c1c',
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.2,
-                shadowRadius: 3,
-              }}
-            >
-              <Text style={{ fontSize: 11, fontWeight: '900', color: 'white' }}>HOLD!</Text>
-            </View>
-          )}
-        </View>
-      </View>
 
       {activeRoom === 'wardrobe' && !isLocked && (
         <View className="flex-1 relative z-10 pb-24">
@@ -1058,6 +1065,7 @@ export default function ChildHubScreen() {
         </View>
       )}
     </ImageBackground>
+    </View>
   );
 }
 
