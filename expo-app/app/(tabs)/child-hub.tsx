@@ -1,5 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, ScrollView, Pressable, TextInput, Image, Animated } from 'react-native';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { View, Text, ScrollView, Pressable, TextInput, Image, StyleSheet } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  interpolate,
+} from 'react-native-reanimated';
 import {
   Lock,
   Unlock,
@@ -31,6 +38,168 @@ const DEFAULT_AVATAR: AvatarConfig = {
   toyId: 'none',
 };
 
+// Chunky 3D button component with proper depth and tactile feel
+const ChunkyButton = ({
+  onPress,
+  onPressIn,
+  onPressOut,
+  children,
+  bgColor = 'bg-white',
+  borderColor = 'border-slate-300',
+  bottomBorderColor,
+  size = 'medium',
+  rounded = 'rounded-2xl',
+  disabled = false,
+  style,
+}: {
+  onPress?: () => void;
+  onPressIn?: () => void;
+  onPressOut?: () => void;
+  children: React.ReactNode;
+  bgColor?: string;
+  borderColor?: string;
+  bottomBorderColor?: string;
+  size?: 'small' | 'medium' | 'large' | 'xl';
+  rounded?: string;
+  disabled?: boolean;
+  style?: any;
+}) => {
+  const pressed = useSharedValue(0);
+
+  const sizeStyles = {
+    small: { borderBottom: 4, borderSide: 2, borderTop: 2 },
+    medium: { borderBottom: 6, borderSide: 3, borderTop: 3 },
+    large: { borderBottom: 10, borderSide: 4, borderTop: 4 },
+    xl: { borderBottom: 14, borderSide: 5, borderTop: 4 },
+  };
+
+  const s = sizeStyles[size];
+  const actualBottomBorder = bottomBorderColor || borderColor;
+
+  const animatedStyle = useAnimatedStyle(() => {
+    const translateY = interpolate(pressed.value, [0, 1], [0, s.borderBottom - 3]);
+    return {
+      transform: [{ translateY }],
+    };
+  });
+
+  const animatedBorderStyle = useAnimatedStyle(() => {
+    const borderBottomWidth = interpolate(pressed.value, [0, 1], [s.borderBottom, 3]);
+    return {
+      borderBottomWidth,
+    };
+  });
+
+  return (
+    <Pressable
+      onPress={disabled ? undefined : onPress}
+      onPressIn={() => {
+        if (!disabled) {
+          pressed.value = withSpring(1, { damping: 25, stiffness: 600 });
+          onPressIn?.();
+        }
+      }}
+      onPressOut={() => {
+        if (!disabled) {
+          pressed.value = withSpring(0, { damping: 25, stiffness: 600 });
+          onPressOut?.();
+        }
+      }}
+      style={style}
+    >
+      <Animated.View
+        style={[
+          animatedStyle,
+          animatedBorderStyle,
+          {
+            borderTopWidth: s.borderTop,
+            borderLeftWidth: s.borderSide,
+            borderRightWidth: s.borderSide,
+          },
+        ]}
+        className={`${bgColor} ${rounded} ${borderColor} ${disabled ? 'opacity-50' : ''}`}
+      >
+        {children}
+      </Animated.View>
+    </Pressable>
+  );
+};
+
+// Big action button for main wishing well actions - extra chunky and toylike
+// Uses same 3D border-based animation style as ChunkyButton for consistency
+const BigActionButton = ({
+  onPress,
+  children,
+  bgColor,
+  borderColor,
+  disabled = false,
+  flex = 1,
+  aspectSquare = false,
+}: {
+  onPress: () => void;
+  children: React.ReactNode;
+  bgColor: string;
+  borderColor: string;
+  disabled?: boolean;
+  flex?: number;
+  aspectSquare?: boolean;
+}) => {
+  const pressed = useSharedValue(0);
+  const borderBottom = 12; // Chunky bottom border for 3D effect
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateY: interpolate(pressed.value, [0, 1], [0, borderBottom - 3]) },
+    ],
+  }));
+
+  const animatedBorderStyle = useAnimatedStyle(() => ({
+    borderBottomWidth: interpolate(pressed.value, [0, 1], [borderBottom, 3]),
+  }));
+
+  return (
+    <Pressable
+      onPressIn={() => {
+        if (!disabled) {
+          pressed.value = withSpring(1, { damping: 25, stiffness: 600 });
+        }
+      }}
+      onPressOut={() => {
+        if (!disabled) {
+          pressed.value = withSpring(0, { damping: 25, stiffness: 600 });
+          // Small delay to let the animation complete before action
+          setTimeout(() => {
+            onPress();
+          }, 100);
+        }
+      }}
+      style={{ flex, aspectRatio: aspectSquare ? 1 : undefined }}
+    >
+      <Animated.View
+        style={[
+          animatedStyle,
+          animatedBorderStyle,
+          {
+            flex: 1,
+            backgroundColor: bgColor,
+            borderRadius: 32,
+            borderTopWidth: 4,
+            borderLeftWidth: 5,
+            borderRightWidth: 5,
+            borderColor: borderColor,
+            alignItems: 'center',
+            justifyContent: 'center',
+            opacity: disabled ? 0.5 : 1,
+          },
+        ]}
+      >
+        {children}
+      </Animated.View>
+    </Pressable>
+  );
+};
+
+
 const Avatar = ({
   config,
   scale = 1,
@@ -46,41 +215,88 @@ const Avatar = ({
       className="relative w-48 h-64 items-center"
       style={{ transform: [{ scale }] }}
     >
+      {/* Body */}
       <View
-        className="absolute bottom-0 w-24 h-32 rounded-[32px] border-4 border-black/10"
-        style={{ backgroundColor: config.skinColor }}
+        className="absolute bottom-0 w-24 h-32 rounded-[32px]"
+        style={{
+          backgroundColor: config.skinColor,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.15,
+          shadowRadius: 8,
+          borderWidth: 4,
+          borderColor: 'rgba(0,0,0,0.1)',
+        }}
       />
 
+      {/* Clothes */}
       <View
-        className={`absolute bottom-0 w-28 h-24 rounded-t-[32px] rounded-b-[40px] z-10 ${outfit.color} border-4 border-black/5 items-center justify-center`}
+        className={`absolute bottom-0 w-28 h-24 rounded-t-[32px] rounded-b-[40px] z-10 ${outfit.color} items-center justify-center`}
+        style={{
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+          borderWidth: 4,
+          borderColor: 'rgba(0,0,0,0.05)',
+        }}
       >
         <View className="opacity-20">
           <Star size={32} color="white" />
         </View>
       </View>
 
+      {/* Head */}
       <View
-        className="absolute top-4 w-32 h-36 rounded-[48px] z-20 items-center justify-center pt-6 border-4 border-black/10"
-        style={{ backgroundColor: config.skinColor }}
+        className="absolute top-4 w-32 h-36 rounded-[48px] z-20 items-center justify-center pt-6"
+        style={{
+          backgroundColor: config.skinColor,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.15,
+          shadowRadius: 8,
+          borderWidth: 4,
+          borderColor: 'rgba(0,0,0,0.1)',
+        }}
       >
+        {/* Eyes */}
         <View className="flex-row gap-4 mb-2">
           <View className="w-3 h-3 bg-slate-800 rounded-full" />
           <View className="w-3 h-3 bg-slate-800 rounded-full" />
         </View>
+        {/* Smile */}
         <View className="w-6 h-3 border-b-4 border-slate-800 rounded-full" />
+        {/* Cheeks */}
+        <View className="absolute top-20 left-4 w-5 h-2 bg-pink-400/30 rounded-full" style={{ opacity: 0.5 }} />
+        <View className="absolute top-20 right-4 w-5 h-2 bg-pink-400/30 rounded-full" style={{ opacity: 0.5 }} />
       </View>
 
+      {/* Hat */}
       {hat && hat.id !== 'none' && (
-        <View className="absolute -top-4 z-30">
-          {hat.id === 'crown' && <Crown size={80} color="#fbbf24" fill="#fbbf24" />}
+        <View className="absolute -top-4 z-30" style={{ transform: [{ scale: 0.9 }] }}>
+          {hat.id === 'crown' && (
+            <View style={styles.hatShadow}>
+              <Crown size={80} color="#fbbf24" fill="#fbbf24" />
+            </View>
+          )}
           {hat.id === 'cap' && (
-            <View className="w-32 h-16 bg-blue-500 rounded-t-full border-4 border-blue-600" />
+            <View
+              className="w-32 h-16 bg-blue-500 rounded-t-full"
+              style={{
+                borderWidth: 4,
+                borderColor: '#2563eb',
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.2,
+                shadowRadius: 4,
+              }}
+            />
           )}
           {hat.id === 'bow' && (
             <View className="flex-row items-center">
-              <View className="w-8 h-8 bg-pink-400 rounded-full border-4 border-pink-500" />
-              <View className="w-10 h-10 bg-pink-400 rounded-full border-4 border-pink-500 -mx-2 z-10" />
-              <View className="w-8 h-8 bg-pink-400 rounded-full border-4 border-pink-500" />
+              <View className="w-8 h-8 bg-pink-400 rounded-full" style={{ borderWidth: 4, borderColor: '#ec4899' }} />
+              <View className="w-10 h-10 bg-pink-400 rounded-full -mx-2 z-10" style={{ borderWidth: 4, borderColor: '#ec4899' }} />
+              <View className="w-8 h-8 bg-pink-400 rounded-full" style={{ borderWidth: 4, borderColor: '#ec4899' }} />
             </View>
           )}
         </View>
@@ -89,39 +305,221 @@ const Avatar = ({
   );
 };
 
+// Big chunky room navigation button
 const RoomButton = ({
   active,
   onPress,
   icon: Icon,
   label,
   activeColor,
-  activeBorder,
+  activeBorderColor,
 }: {
   active: boolean;
   onPress: () => void;
   icon: typeof Shirt;
   label: string;
   activeColor: string;
-  activeBorder: string;
-}) => (
-  <Pressable
-    onPress={onPress}
-    className={`w-16 h-16 rounded-2xl border-b-[6px] border-x-4 border-t-4 items-center justify-center active:translate-y-1 ${
-      active
-        ? `${activeColor} ${activeBorder}`
-        : 'bg-white border-slate-300'
-    }`}
-  >
-    <Icon size={24} color={active ? '#1e293b' : '#94a3b8'} strokeWidth={2.5} />
-    <Text
-      className={`text-[9px] font-black uppercase tracking-wide ${
-        active ? 'text-slate-800' : 'text-slate-400'
-      }`}
+  activeBorderColor: string;
+}) => {
+  const pressed = useSharedValue(0);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: interpolate(pressed.value, [0, 1], [0, 4]) }],
+  }));
+
+  const animatedBorderStyle = useAnimatedStyle(() => ({
+    borderBottomWidth: interpolate(pressed.value, [0, 1], [8, 4]),
+  }));
+
+  return (
+    <Pressable
+      onPress={onPress}
+      onPressIn={() => {
+        pressed.value = withSpring(1, { damping: 25, stiffness: 600 });
+      }}
+      onPressOut={() => {
+        pressed.value = withSpring(0, { damping: 25, stiffness: 600 });
+      }}
     >
-      {label}
-    </Text>
-  </Pressable>
-);
+      <Animated.View
+        style={[
+          animatedStyle,
+          animatedBorderStyle,
+          {
+            borderTopWidth: 4,
+            borderLeftWidth: 4,
+            borderRightWidth: 4,
+            borderColor: active ? activeBorderColor : '#cbd5e1',
+            backgroundColor: active ? activeColor : '#ffffff',
+            width: 64,
+            height: 64,
+            borderRadius: 16,
+            alignItems: 'center',
+            justifyContent: 'center',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: active ? 4 : 2 },
+            shadowOpacity: active ? 0.2 : 0.1,
+            shadowRadius: active ? 6 : 3,
+            elevation: active ? 6 : 3,
+          },
+        ]}
+      >
+        <Icon size={24} color={active ? '#1e293b' : '#94a3b8'} strokeWidth={2.5} />
+        <Text
+          style={{
+            fontSize: 9,
+            fontWeight: '900',
+            textTransform: 'uppercase',
+            letterSpacing: 0.5,
+            color: active ? '#1e293b' : '#94a3b8',
+            marginTop: 2,
+          }}
+        >
+          {label}
+        </Text>
+      </Animated.View>
+    </Pressable>
+  );
+};
+
+// Animated lock button with chunky 3D feel
+const LockButton = ({
+  isLocked,
+  onPressIn,
+  onPressOut,
+}: {
+  isLocked: boolean;
+  onPressIn: () => void;
+  onPressOut: () => void;
+}) => {
+  const pressed = useSharedValue(0);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: interpolate(pressed.value, [0, 1], [0, 5]) }],
+  }));
+
+  const animatedBorderStyle = useAnimatedStyle(() => ({
+    borderBottomWidth: interpolate(pressed.value, [0, 1], [10, 4]),
+  }));
+
+  return (
+    <Pressable
+      onPressIn={() => {
+        pressed.value = withSpring(1, { damping: 25, stiffness: 600 });
+        onPressIn();
+      }}
+      onPressOut={() => {
+        pressed.value = withSpring(0, { damping: 25, stiffness: 600 });
+        onPressOut();
+      }}
+    >
+      <Animated.View
+        style={[
+          animatedStyle,
+          animatedBorderStyle,
+          {
+            width: 56,
+            height: 56,
+            borderRadius: 16,
+            borderTopWidth: 4,
+            borderLeftWidth: 4,
+            borderRightWidth: 4,
+            borderColor: isLocked ? '#b91c1c' : '#cbd5e1',
+            backgroundColor: isLocked ? '#ef4444' : '#ffffff',
+            alignItems: 'center',
+            justifyContent: 'center',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.25,
+            shadowRadius: 6,
+            elevation: 6,
+          },
+        ]}
+      >
+        {isLocked ? (
+          <Lock size={24} color="white" strokeWidth={3} />
+        ) : (
+          <Unlock size={24} color="#94a3b8" strokeWidth={2.5} />
+        )}
+      </Animated.View>
+    </Pressable>
+  );
+};
+
+// Animated wardrobe tab button
+const WardrobeTabButton = ({
+  active,
+  onPress,
+  icon: Icon,
+  activeColor,
+  activeBorderColor,
+}: {
+  active: boolean;
+  onPress: () => void;
+  icon: typeof Shirt;
+  activeColor: string;
+  activeBorderColor: string;
+}) => {
+  const pressed = useSharedValue(0);
+  const scale = useSharedValue(active ? 1.1 : 1);
+
+  useEffect(() => {
+    scale.value = withSpring(active ? 1.1 : 1, { damping: 25, stiffness: 600 });
+  }, [active]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateY: interpolate(pressed.value, [0, 1], [0, 3]) },
+      { scale: scale.value },
+    ],
+  }));
+
+  const animatedBorderStyle = useAnimatedStyle(() => ({
+    borderBottomWidth: interpolate(pressed.value, [0, 1], [6, 2]),
+  }));
+
+  return (
+    <Pressable
+      onPress={onPress}
+      onPressIn={() => {
+        pressed.value = withSpring(1, { damping: 25, stiffness: 600 });
+      }}
+      onPressOut={() => {
+        pressed.value = withSpring(0, { damping: 25, stiffness: 600 });
+      }}
+    >
+      <Animated.View
+        style={[
+          animatedStyle,
+          animatedBorderStyle,
+          {
+            width: 56,
+            height: 56,
+            borderRadius: 14,
+            borderTopWidth: 3,
+            borderLeftWidth: 3,
+            borderRightWidth: 3,
+            borderColor: active ? activeBorderColor : '#cbd5e1',
+            backgroundColor: active ? activeColor : '#ffffff',
+            alignItems: 'center',
+            justifyContent: 'center',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: active ? 4 : 2 },
+            shadowOpacity: active ? 0.2 : 0.1,
+            shadowRadius: active ? 5 : 3,
+            elevation: active ? 5 : 2,
+          },
+        ]}
+      >
+        <Icon
+          size={24}
+          color={active ? 'white' : '#cbd5e1'}
+          strokeWidth={3}
+        />
+      </Animated.View>
+    </Pressable>
+  );
+};
 
 export default function ChildHubScreen() {
   const [isLocked, setIsLocked] = useState(true);
@@ -191,11 +589,11 @@ export default function ChildHubScreen() {
     };
   }, []);
 
-  const tabItems: { id: WardrobeTab; icon: typeof Shirt; color: string; border: string }[] = [
-    { id: 'clothes', icon: Shirt, color: 'bg-blue-400', border: 'border-blue-600' },
-    { id: 'hats', icon: Crown, color: 'bg-yellow-400', border: 'border-yellow-600' },
-    { id: 'toys', icon: Gift, color: 'bg-purple-400', border: 'border-purple-600' },
-    { id: 'skin', icon: Palette, color: 'bg-orange-400', border: 'border-orange-600' },
+  const tabItems: { id: WardrobeTab; icon: typeof Shirt; bgColor: string; borderColorValue: string }[] = [
+    { id: 'clothes', icon: Shirt, bgColor: '#60a5fa', borderColorValue: '#2563eb' },
+    { id: 'hats', icon: Crown, bgColor: '#facc15', borderColorValue: '#ca8a04' },
+    { id: 'toys', icon: Gift, bgColor: '#c084fc', borderColorValue: '#9333ea' },
+    { id: 'skin', icon: Palette, bgColor: '#fb923c', borderColorValue: '#ea580c' },
   ];
 
   return (
@@ -219,47 +617,51 @@ export default function ChildHubScreen() {
               onPress={() => setActiveRoom('wardrobe')}
               icon={Shirt}
               label="Me"
-              activeColor="bg-[#FFF176]"
-              activeBorder="border-yellow-600"
+              activeColor="#FFF176"
+              activeBorderColor="#ca8a04"
             />
             <RoomButton
               active={activeRoom === 'read'}
               onPress={() => setActiveRoom('read')}
               icon={BookOpen}
               label="Read"
-              activeColor="bg-[#A5D6A7]"
-              activeBorder="border-green-700"
+              activeColor="#A5D6A7"
+              activeBorderColor="#15803d"
             />
             <RoomButton
               active={activeRoom === 'well'}
               onPress={() => setActiveRoom('well')}
               icon={Sparkles}
               label="Wish"
-              activeColor="bg-[#4DD0E1]"
-              activeBorder="border-cyan-700"
+              activeColor="#4DD0E1"
+              activeBorderColor="#0e7490"
             />
           </View>
         )}
 
         <View className="items-end ml-auto">
-          <Pressable
+          <LockButton
+            isLocked={isLocked}
             onPressIn={handleLockPressStart}
             onPressOut={handleLockPressEnd}
-            className={`w-14 h-14 rounded-2xl border-b-8 border-x-4 border-t-4 items-center justify-center active:translate-y-1 ${
-              isLocked
-                ? 'bg-red-500 border-red-700'
-                : 'bg-white border-slate-300'
-            }`}
-          >
-            {isLocked ? (
-              <Lock size={24} color="white" />
-            ) : (
-              <Unlock size={24} color="#94a3b8" />
-            )}
-          </Pressable>
+          />
           {showUnlockHint && isLocked && (
-            <View className="mt-2 bg-red-500 px-2 py-1 rounded-lg border-2 border-red-700">
-              <Text className="text-xs font-black text-white">HOLD!</Text>
+            <View
+              style={{
+                marginTop: 8,
+                backgroundColor: '#ef4444',
+                paddingHorizontal: 10,
+                paddingVertical: 6,
+                borderRadius: 10,
+                borderWidth: 3,
+                borderColor: '#b91c1c',
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.2,
+                shadowRadius: 3,
+              }}
+            >
+              <Text style={{ fontSize: 11, fontWeight: '900', color: 'white' }}>HOLD!</Text>
             </View>
           )}
         </View>
@@ -274,23 +676,16 @@ export default function ChildHubScreen() {
           </View>
 
           <View className="px-4 pb-4">
-            <View className="flex-row gap-2 mb-4 justify-center">
+            <View className="flex-row gap-3 mb-4 justify-center">
               {tabItems.map(tab => (
-                <Pressable
+                <WardrobeTabButton
                   key={tab.id}
+                  active={wardrobeTab === tab.id}
                   onPress={() => setWardrobeTab(tab.id)}
-                  className={`w-14 h-14 rounded-xl border-b-4 border-x-2 border-t-2 items-center justify-center active:translate-y-1 ${
-                    wardrobeTab === tab.id
-                      ? `${tab.color} ${tab.border}`
-                      : 'bg-white border-slate-300'
-                  }`}
-                >
-                  <tab.icon
-                    size={24}
-                    color={wardrobeTab === tab.id ? 'white' : '#cbd5e1'}
-                    strokeWidth={3}
-                  />
-                </Pressable>
+                  icon={tab.icon}
+                  activeColor={tab.bgColor}
+                  activeBorderColor={tab.borderColorValue}
+                />
               ))}
             </View>
 
@@ -304,11 +699,10 @@ export default function ChildHubScreen() {
                         onPress={() =>
                           setAvatarConfig({ ...avatarConfig, outfitId: item.id })
                         }
-                        className={`w-20 h-20 rounded-2xl items-center justify-center border-4 ${item.color} ${
-                          currentOutfit.id === item.id
-                            ? 'border-black/20 ring-4'
-                            : 'border-transparent opacity-90'
-                        }`}
+                        className={`w-20 h-20 rounded-2xl items-center justify-center border-4 ${item.color} ${currentOutfit.id === item.id
+                          ? 'border-black/20 ring-4'
+                          : 'border-transparent opacity-90'
+                          }`}
                       >
                         <Text className="text-4xl">{item.iconName}</Text>
                       </Pressable>
@@ -321,11 +715,10 @@ export default function ChildHubScreen() {
                         onPress={() =>
                           setAvatarConfig({ ...avatarConfig, hatId: item.id })
                         }
-                        className={`w-20 h-20 rounded-2xl items-center justify-center bg-slate-100 border-4 ${
-                          currentHat?.id === item.id
-                            ? 'border-yellow-400 bg-white'
-                            : 'border-slate-200'
-                        }`}
+                        className={`w-20 h-20 rounded-2xl items-center justify-center bg-slate-100 border-4 ${currentHat?.id === item.id
+                          ? 'border-yellow-400 bg-white'
+                          : 'border-slate-200'
+                          }`}
                       >
                         <Text className="text-4xl">{item.id === 'crown' ? '👑' : item.id === 'cap' ? '🧢' : item.id === 'bow' ? '🎀' : '❌'}</Text>
                       </Pressable>
@@ -338,11 +731,10 @@ export default function ChildHubScreen() {
                         onPress={() =>
                           setAvatarConfig({ ...avatarConfig, toyId: item.id })
                         }
-                        className={`w-20 h-20 rounded-2xl items-center justify-center bg-slate-100 border-4 ${
-                          currentToy?.id === item.id
-                            ? 'border-purple-400 bg-white'
-                            : 'border-slate-200'
-                        }`}
+                        className={`w-20 h-20 rounded-2xl items-center justify-center bg-slate-100 border-4 ${currentToy?.id === item.id
+                          ? 'border-purple-400 bg-white'
+                          : 'border-slate-200'
+                          }`}
                       >
                         <Text className="text-4xl">{item.id === 'star' ? '⭐' : item.id === 'camera' ? '📷' : item.id === 'game' ? '🎮' : '❌'}</Text>
                       </Pressable>
@@ -356,11 +748,10 @@ export default function ChildHubScreen() {
                           setAvatarConfig({ ...avatarConfig, skinColor: color })
                         }
                         style={{ backgroundColor: color }}
-                        className={`w-20 h-20 rounded-full border-4 ${
-                          avatarConfig.skinColor === color
-                            ? 'border-white ring-4 ring-black/10'
-                            : 'border-transparent'
-                        }`}
+                        className={`w-20 h-20 rounded-full border-4 ${avatarConfig.skinColor === color
+                          ? 'border-white ring-4 ring-black/10'
+                          : 'border-transparent'
+                          }`}
                       />
                     ))}
                 </View>
@@ -444,30 +835,56 @@ export default function ChildHubScreen() {
 
           <View className="w-full max-w-sm pb-4">
             {wishState === 'idle' && (
-              <View className="flex-row gap-4">
-                <Pressable
+              <View className="flex-row gap-4" style={{ height: 180 }}>
+                <BigActionButton
                   onPress={handleStartRecording}
-                  className="flex-1 aspect-square bg-rose-500 rounded-[48px] border-4 border-b-[16px] border-rose-700 items-center justify-center active:translate-y-3 active:border-b-4 shadow-sm"
+                  bgColor="#f43f5e"
+                  borderColor="#be123c"
+                  aspectSquare
                 >
-                  <View className="bg-white/20 p-6 rounded-full mb-4">
-                    <Mic size={56} color="white" strokeWidth={4} />
+                  <View style={{
+                    backgroundColor: 'rgba(255,255,255,0.2)',
+                    padding: 16,
+                    borderRadius: 999,
+                    marginBottom: 8,
+                  }}>
+                    <Mic size={40} color="white" strokeWidth={3} />
                   </View>
-                  <Text className="text-white font-black text-3xl uppercase tracking-wide">
+                  <Text style={{
+                    color: 'white',
+                    fontWeight: '900',
+                    fontSize: 22,
+                    textTransform: 'uppercase',
+                    letterSpacing: 1,
+                  }}>
                     Talk
                   </Text>
-                </Pressable>
+                </BigActionButton>
 
-                <Pressable
+                <BigActionButton
                   onPress={() => setWishState('typing')}
-                  className="flex-1 aspect-square bg-sky-500 rounded-[48px] border-4 border-b-[16px] border-sky-700 items-center justify-center active:translate-y-3 active:border-b-4 shadow-sm"
+                  bgColor="#0ea5e9"
+                  borderColor="#0369a1"
+                  aspectSquare
                 >
-                  <View className="bg-white/20 p-6 rounded-full mb-4">
-                    <Keyboard size={56} color="white" strokeWidth={4} />
+                  <View style={{
+                    backgroundColor: 'rgba(255,255,255,0.2)',
+                    padding: 16,
+                    borderRadius: 999,
+                    marginBottom: 8,
+                  }}>
+                    <Keyboard size={40} color="white" strokeWidth={3} />
                   </View>
-                  <Text className="text-white font-black text-3xl uppercase tracking-wide">
+                  <Text style={{
+                    color: 'white',
+                    fontWeight: '900',
+                    fontSize: 22,
+                    textTransform: 'uppercase',
+                    letterSpacing: 1,
+                  }}>
                     Type
                   </Text>
-                </Pressable>
+                </BigActionButton>
               </View>
             )}
 
@@ -480,15 +897,26 @@ export default function ChildHubScreen() {
                   </Text>
                 </View>
 
-                <Pressable
-                  onPress={handleStopRecording}
-                  className="w-full h-32 rounded-[48px] bg-rose-500 border-4 border-b-[16px] border-rose-800 items-center justify-center flex-row gap-4 active:translate-y-2 active:border-b-4 shadow-sm"
-                >
-                  <View className="w-10 h-10 bg-white rounded-lg" />
-                  <Text className="text-white font-black text-4xl uppercase tracking-wider">
-                    Stop
-                  </Text>
-                </Pressable>
+                <View style={{ width: '100%', height: 128 }}>
+                  <BigActionButton
+                    onPress={handleStopRecording}
+                    bgColor="#f43f5e"
+                    borderColor="#9f1239"
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+                      <View style={{ width: 40, height: 40, backgroundColor: 'white', borderRadius: 8 }} />
+                      <Text style={{
+                        color: 'white',
+                        fontWeight: '900',
+                        fontSize: 36,
+                        textTransform: 'uppercase',
+                        letterSpacing: 2,
+                      }}>
+                        Stop
+                      </Text>
+                    </View>
+                  </BigActionButton>
+                </View>
               </View>
             )}
 
@@ -509,27 +937,35 @@ export default function ChildHubScreen() {
                   </Text>
                 </View>
 
-                <View className="flex-row gap-4">
-                  <Pressable
-                    onPress={() => {
-                      setWishState('idle');
-                      setWishText('');
-                    }}
-                    className="w-32 h-32 items-center justify-center rounded-[48px] bg-slate-200 border-4 border-b-[16px] border-slate-300 active:translate-y-2 active:border-b-4 shadow-sm"
-                  >
-                    <X size={48} color="#64748b" strokeWidth={5} />
-                  </Pressable>
-                  <Pressable
+                <View className="flex-row gap-4" style={{ height: 128 }}>
+                  <View style={{ width: 128 }}>
+                    <BigActionButton
+                      onPress={() => {
+                        setWishState('idle');
+                        setWishText('');
+                      }}
+                      bgColor="#e2e8f0"
+                      borderColor="#94a3b8"
+                    >
+                      <X size={48} color="#64748b" strokeWidth={4} />
+                    </BigActionButton>
+                  </View>
+                  <BigActionButton
                     onPress={() => setWishState('review')}
                     disabled={!wishText.trim()}
-                    className={`flex-1 h-32 rounded-[48px] bg-sky-500 border-4 border-b-[16px] border-sky-700 items-center justify-center active:translate-y-2 active:border-b-4 shadow-sm ${
-                      !wishText.trim() ? 'opacity-50' : ''
-                    }`}
+                    bgColor="#0ea5e9"
+                    borderColor="#0369a1"
                   >
-                    <Text className="text-white font-black text-4xl uppercase tracking-wider">
+                    <Text style={{
+                      color: 'white',
+                      fontWeight: '900',
+                      fontSize: 36,
+                      textTransform: 'uppercase',
+                      letterSpacing: 2,
+                    }}>
                       Done
                     </Text>
-                  </Pressable>
+                  </BigActionButton>
                 </View>
               </View>
             )}
@@ -557,8 +993,8 @@ export default function ChildHubScreen() {
                     </View>
                   )}
                 </View>
-                <View className="flex-row gap-4">
-                  <Pressable
+                <View className="flex-row gap-4" style={{ height: 128 }}>
+                  <BigActionButton
                     onPress={() => {
                       if (wishText) {
                         setWishState('typing');
@@ -566,22 +1002,39 @@ export default function ChildHubScreen() {
                         setWishState('idle');
                       }
                     }}
-                    className="flex-1 h-32 rounded-[48px] bg-white border-4 border-b-[16px] border-slate-300 items-center justify-center active:translate-y-2 active:border-b-4 shadow-sm"
+                    bgColor="#ffffff"
+                    borderColor="#cbd5e1"
                   >
                     <RotateCcw size={32} color="#64748b" strokeWidth={4} />
-                    <Text className="text-slate-500 font-black text-xl uppercase mt-2">
+                    <Text style={{
+                      color: '#64748b',
+                      fontWeight: '900',
+                      fontSize: 18,
+                      textTransform: 'uppercase',
+                      marginTop: 8,
+                    }}>
                       Again
                     </Text>
-                  </Pressable>
-                  <Pressable
+                  </BigActionButton>
+                  <BigActionButton
                     onPress={handleSendWish}
-                    className="flex-[2] h-32 rounded-[48px] bg-emerald-500 border-4 border-b-[16px] border-emerald-700 flex-row items-center justify-center gap-4 active:translate-y-2 active:border-b-4 shadow-sm"
+                    bgColor="#10b981"
+                    borderColor="#047857"
+                    flex={2}
                   >
-                    <Text className="text-white font-black text-3xl uppercase tracking-wider">
-                      Throw It!
-                    </Text>
-                    <Send size={40} color="white" strokeWidth={4} />
-                  </Pressable>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                      <Text style={{
+                        color: 'white',
+                        fontWeight: '900',
+                        fontSize: 28,
+                        textTransform: 'uppercase',
+                        letterSpacing: 1,
+                      }}>
+                        Throw It!
+                      </Text>
+                      <Send size={36} color="white" strokeWidth={3} />
+                    </View>
+                  </BigActionButton>
                 </View>
               </View>
             )}
@@ -612,3 +1065,27 @@ export default function ChildHubScreen() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  hatShadow: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  chunkyButtonBase: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+  toyBoxShadow: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 10,
+  },
+});
