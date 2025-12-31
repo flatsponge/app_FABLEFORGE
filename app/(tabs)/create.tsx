@@ -861,6 +861,7 @@ export default function CreateScreen() {
           </Pressable>
         </View>
       </ScrollView>
+      </View>
     </>
   );
 }
