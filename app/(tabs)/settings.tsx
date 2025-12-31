@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable, Image } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
+import Animated, { useSharedValue, useAnimatedScrollHandler } from 'react-native-reanimated';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
 import {
   Bell,
@@ -69,11 +70,31 @@ export default function SettingsScreen() {
   const [notifications, setNotifications] = useState(true);
   const [sound, setSound] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
+  const scrollY = useSharedValue(0);
+
+  const scrollHandler = useAnimatedScrollHandler((event) => {
+    scrollY.value = event.contentOffset.y;
+  });
 
   return (
     <View className="flex-1 bg-background">
-      <UnifiedHeader title="Settings" />
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 100 }}>
+      <View className="absolute top-0 left-0 right-0 z-10">
+        <UnifiedHeader title="Settings" scrollY={scrollY} />
+      </View>
+      
+      <Animated.ScrollView 
+        className="flex-1" 
+        contentContainerStyle={{ paddingBottom: 100 }}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
+        showsVerticalScrollIndicator={false}
+      >
+        <View className="pt-28 px-6 pb-2">
+          <Text className="text-4xl font-bold text-slate-900 dark:text-white tracking-tight">
+            Settings
+          </Text>
+        </View>
+
         <View className="px-6 py-6 gap-8">
           <View className="flex-row items-center gap-4 p-4 bg-white rounded-3xl border border-slate-100 shadow-sm">
           <View className="w-16 h-16 rounded-2xl bg-slate-100 items-center justify-center border-2 border-white shadow-sm overflow-hidden">
@@ -193,7 +214,7 @@ export default function SettingsScreen() {
           </View>
         </View>
       </View>
-      </ScrollView>
+      </Animated.ScrollView>
     </View>
   );
 }

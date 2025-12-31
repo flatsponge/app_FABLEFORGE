@@ -8,6 +8,7 @@ import Animated, {
   withRepeat,
   withTiming,
   Easing,
+  useAnimatedScrollHandler,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
@@ -452,6 +453,11 @@ export default function CreateScreen() {
     );
   };
 
+  const scrollY = useSharedValue(0);
+  const scrollHandler = useAnimatedScrollHandler((event) => {
+    scrollY.value = event.contentOffset.y;
+  });
+
   if (step === 'generating-outline' || step === 'generating-story') {
     const isOutline = step === 'generating-outline';
     return (
@@ -624,32 +630,48 @@ export default function CreateScreen() {
 
 
       <View className="flex-1 bg-background">
-        <UnifiedHeader
-          title="Create Story"
-          rightAction={
-            <View className="flex-row items-center gap-2">
-              <Pressable
-                onPress={openManageAssets}
-                className="bg-white p-2 rounded-full border border-slate-100 shadow-sm"
-              >
-                <Pencil size={16} color="#64748b" />
-              </Pressable>
-              <Pressable className="bg-white p-2 rounded-full border border-slate-100 shadow-sm active:scale-95">
-                <Dices size={16} color="#64748b" />
-              </Pressable>
-              <Pressable
-                onPress={() => setShowCrystalModal(true)}
-                className="flex-row items-center gap-1.5 bg-white px-2 py-1.5 rounded-full shadow-sm border border-slate-100 active:scale-95"
-              >
-                <Diamond size={14} color="#06b6d4" fill="#06b6d4" />
-                <Text className="font-bold text-slate-800 text-xs">
-                  {crystalBalance}
-                </Text>
-              </Pressable>
-            </View>
-          }
-        />
-        <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 100 }}>
+        <View className="absolute top-0 left-0 right-0 z-10">
+          <UnifiedHeader
+            title="Create Story"
+            scrollY={scrollY}
+            rightAction={
+              <View className="flex-row items-center gap-2">
+                <Pressable
+                  onPress={openManageAssets}
+                  className="bg-white p-2 rounded-full border border-slate-100 shadow-sm"
+                >
+                  <Pencil size={16} color="#64748b" />
+                </Pressable>
+                <Pressable className="bg-white p-2 rounded-full border border-slate-100 shadow-sm active:scale-95">
+                  <Dices size={16} color="#64748b" />
+                </Pressable>
+                <Pressable
+                  onPress={() => setShowCrystalModal(true)}
+                  className="flex-row items-center gap-1.5 bg-white px-2 py-1.5 rounded-full shadow-sm border border-slate-100 active:scale-95"
+                >
+                  <Diamond size={14} color="#06b6d4" fill="#06b6d4" />
+                  <Text className="font-bold text-slate-800 text-xs">
+                    {crystalBalance}
+                  </Text>
+                </Pressable>
+              </View>
+            }
+          />
+        </View>
+        
+        <Animated.ScrollView 
+          className="flex-1" 
+          contentContainerStyle={{ paddingBottom: 100 }}
+          onScroll={scrollHandler}
+          scrollEventThrottle={16}
+          showsVerticalScrollIndicator={false}
+        >
+          <View className="pt-28 px-6 pb-2">
+            <Text className="text-4xl font-bold text-slate-900 dark:text-white tracking-tight">
+              Create Story
+            </Text>
+          </View>
+
           <View className="px-6 py-4">
             <Text className="text-xs font-bold text-slate-400 text-center uppercase tracking-wider">
               Turn memories into magic
@@ -859,9 +881,10 @@ export default function CreateScreen() {
               <Text className="text-white text-sm font-bold">{totalCost}</Text>
             </View>
           </Pressable>
-        </View>
-      </ScrollView>
-      </View>
-    </>
-  );
-}
+                  </View>
+                </Animated.ScrollView>
+              </View>
+            </>
+          );
+        }
+        

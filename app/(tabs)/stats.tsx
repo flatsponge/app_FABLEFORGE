@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
+import Animated, { useSharedValue, useAnimatedScrollHandler } from 'react-native-reanimated';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
 import {
   Heart,
@@ -674,6 +675,11 @@ const DetailView = ({ skill, onBack }: { skill: Skill; onBack: () => void }) => 
 export default function StatsScreen() {
   const [selectedSkillId, setSelectedSkillId] = useState<string | null>(null);
   const selectedSkill = SKILLS_DATA.find(s => s.id === selectedSkillId);
+  const scrollY = useSharedValue(0);
+
+  const scrollHandler = useAnimatedScrollHandler((event) => {
+    scrollY.value = event.contentOffset.y;
+  });
 
   if (selectedSkill) {
     return <DetailView skill={selectedSkill} onBack={() => setSelectedSkillId(null)} />;
@@ -681,15 +687,23 @@ export default function StatsScreen() {
 
   return (
     <View className="flex-1 bg-background">
-      <UnifiedHeader
-        title="Leo's Growth"
-        rightAction={
-          <View className="w-8 h-8 rounded-full bg-white border border-slate-200 items-center justify-center shadow-sm">
-            <Text className="font-black text-[10px] text-slate-700 tracking-wider">LEO</Text>
-          </View>
-        }
-      />
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 100 }}>
+      <View className="absolute top-0 left-0 right-0 z-10">
+        <UnifiedHeader title="Growth" scrollY={scrollY} />
+      </View>
+      
+      <Animated.ScrollView 
+        className="flex-1" 
+        contentContainerStyle={{ paddingBottom: 100 }}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
+        showsVerticalScrollIndicator={false}
+      >
+        <View className="pt-28 px-6 pb-2">
+          <Text className="text-4xl font-bold text-slate-900 dark:text-white tracking-tight">
+            Growth
+          </Text>
+        </View>
+
         <View className="px-6 py-4">
           <Text className="text-sm font-medium text-slate-500 text-center">
             Impact from 12 books read
@@ -718,7 +732,7 @@ export default function StatsScreen() {
             </View>
           </View>
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
     </View>
   );
 }
