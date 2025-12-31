@@ -236,9 +236,6 @@ export const CustomTabBar: React.FC<CustomTabBarProps> = ({
         </View>
       </View>
 
-      {/* Safe area spacer at bottom (transparent, just for height) */}
-      <View style={{ height: insets.bottom, backgroundColor: 'white' }} />
-
       {/* FAB - positioned above the bar */}
       <View style={styles.fabWrapper}>
         <FabButton onPress={onFabPress} />
