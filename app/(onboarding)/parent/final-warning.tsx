@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, StyleSheet, Text } from 'react-native';
 import { useRouter } from 'expo-router';
-import Animated, { FadeIn, FadeInDown, SlideInUp } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
+import OnboardingLayout from '../../../components/OnboardingLayout';
+import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
+import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
 export default function FinalWarningScreen() {
     const router = useRouter();
@@ -13,68 +16,154 @@ export default function FinalWarningScreen() {
         return () => clearTimeout(timer);
     }, []);
 
+    const handleNext = () => {
+        router.push('/(onboarding)/parent/positive-outlook');
+    };
+
     return (
-        <View className="flex-1 bg-white">
-            <ScrollView
-                contentContainerStyle={{ paddingBottom: 100 }}
-                showsVerticalScrollIndicator={false}
-            >
+        <OnboardingLayout
+            progress={1.0}
+            onNext={handleNext}
+            nextLabel="See The Solution"
+            isScrollable={true}
+        >
+            <View style={styles.container}>
                 {/* Header */}
-                <View className="px-6 pt-16 pb-8">
-                    <Animated.View entering={FadeIn.delay(200)} className="items-center">
-                        <View className="bg-red-50 p-5 rounded-full mb-6 border border-red-100 relative">
-                            <View className="absolute inset-0 bg-red-100 rounded-full animate-ping" />
-                            <Ionicons name="hourglass-outline" size={40} color="#d92626" />
-                        </View>
-                        <Text className="text-3xl font-serif text-gray-900 text-center mb-3">
-                            The Cost of Waiting
-                        </Text>
-                        <Text className="text-gray-500 text-center text-lg max-w-[280px]">
-                            Every month of delay makes behavioral change harder.
-                        </Text>
-                    </Animated.View>
-                </View>
+                <Animated.View entering={FadeIn.delay(200)} style={styles.header}>
+                    <View style={styles.iconWrapper}>
+                        <Ionicons name="hourglass-outline" size={40} color={OnboardingTheme.Colors.Error} />
+                    </View>
+                    <OnboardingTitle style={styles.title}>The Cost of Waiting</OnboardingTitle>
+                    <OnboardingBody style={styles.subtitle}>
+                        Every month of delay makes behavioral change harder.
+                    </OnboardingBody>
+                </Animated.View>
 
                 {/* Cards */}
                 {showCards && (
-                    <View className="px-6 gap-4">
-                        <Animated.View entering={FadeInDown.delay(100)} className="bg-white p-5 rounded-3xl border border-gray-100">
-                            <Text className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Parent Regret</Text>
-                            <View className="flex-row items-end">
-                                <Text className="text-4xl font-black text-gray-900 mr-3">89%</Text>
-                                <Text className="text-gray-500 pb-2 flex-1">of parents wish they had started earlier.</Text>
+                    <View style={styles.cardsContainer}>
+                        <Animated.View entering={FadeInDown.delay(100)} style={styles.card}>
+                            <Text style={styles.cardLabel}>Parent Regret</Text>
+                            <View style={styles.cardContent}>
+                                <Text style={styles.cardValue}>89%</Text>
+                                <Text style={styles.cardText}>of parents wish they had started earlier.</Text>
                             </View>
                         </Animated.View>
 
-                        <Animated.View entering={FadeInDown.delay(300)} className="bg-white p-5 rounded-3xl border border-gray-100">
-                            <Text className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Avg Therapy Costs</Text>
-                            <View className="flex-row items-end">
-                                <Text className="text-4xl font-black text-gray-900 mr-3">$2.4k</Text>
-                                <Text className="text-gray-500 pb-2 flex-1">per year for traditional child therapy.</Text>
+                        <Animated.View entering={FadeInDown.delay(300)} style={styles.card}>
+                            <Text style={styles.cardLabel}>Avg Therapy Costs</Text>
+                            <View style={styles.cardContent}>
+                                <Text style={styles.cardValue}>$2.4k</Text>
+                                <Text style={styles.cardText}>per year for traditional child therapy.</Text>
                             </View>
                         </Animated.View>
 
-                        <Animated.View entering={FadeInDown.delay(500)} className="bg-red-50 p-5 rounded-3xl border border-red-100">
-                            <Text className="text-red-400 text-xs font-bold uppercase tracking-widest mb-1">Escalation Risk</Text>
-                            <View className="flex-row items-end">
-                                <Text className="text-4xl font-black text-red-600 mr-3">67%</Text>
-                                <Text className="text-red-800/60 pb-2 flex-1">escalation rate without intervention.</Text>
+                        <Animated.View entering={FadeInDown.delay(500)} style={styles.cardCritical}>
+                            <Text style={styles.cardLabelCritical}>Escalation Risk</Text>
+                            <View style={styles.cardContent}>
+                                <Text style={styles.cardValueCritical}>67%</Text>
+                                <Text style={styles.cardTextCritical}>escalation rate without intervention.</Text>
                             </View>
                         </Animated.View>
                     </View>
                 )}
-            </ScrollView>
-
-            {/* Floating CTA */}
-            <Animated.View entering={FadeIn.delay(800).duration(600)} className="absolute bottom-0 left-0 right-0 p-6 bg-white/90 blur-xl">
-                <TouchableOpacity
-                    onPress={() => router.push('/(onboarding)/parent/positive-outlook')}
-                    className="w-full bg-gray-900 py-5 rounded-full items-center flex-row justify-center"
-                >
-                    <Text className="text-white text-lg font-bold mr-2">See The Solution</Text>
-                    <Ionicons name="arrow-forward" size={20} color="white" />
-                </TouchableOpacity>
-            </Animated.View>
-        </View>
+            </View>
+        </OnboardingLayout>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        width: '100%',
+        paddingVertical: OnboardingTheme.Spacing.lg,
+    },
+    header: {
+        alignItems: 'center',
+        marginBottom: OnboardingTheme.Spacing.xl,
+    },
+    iconWrapper: {
+        backgroundColor: '#fef2f2', // red-50
+        padding: 20,
+        borderRadius: 9999,
+        marginBottom: OnboardingTheme.Spacing.md,
+        borderWidth: 1,
+        borderColor: '#fee2e2', // red-100
+    },
+    title: {
+        textAlign: 'center',
+        marginBottom: OnboardingTheme.Spacing.xs,
+    },
+    subtitle: {
+        textAlign: 'center',
+        color: OnboardingTheme.Colors.TextSecondary,
+    },
+    cardsContainer: {
+        width: '100%',
+        gap: OnboardingTheme.Spacing.md,
+    },
+    card: {
+        backgroundColor: 'white',
+        padding: OnboardingTheme.Spacing.lg,
+        borderRadius: OnboardingTheme.Radius.xl,
+        borderWidth: 1,
+        borderColor: OnboardingTheme.Colors.Border,
+    },
+    cardLabel: {
+        color: OnboardingTheme.Colors.TextSecondary,
+        fontSize: 10,
+        fontWeight: 'bold',
+        textTransform: 'uppercase',
+        letterSpacing: 1.2,
+        marginBottom: 4,
+        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+    },
+    cardContent: {
+        flexDirection: 'row',
+        alignItems: 'flex-end',
+    },
+    cardValue: {
+        fontSize: 32,
+        fontWeight: '900',
+        color: OnboardingTheme.Colors.Text,
+        marginRight: 12,
+        fontFamily: OnboardingTheme.Typography.Title.fontFamily,
+    },
+    cardText: {
+        color: OnboardingTheme.Colors.TextSecondary,
+        fontSize: 14,
+        flex: 1,
+        paddingBottom: 4,
+        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+    },
+    cardCritical: {
+        backgroundColor: '#fef2f2', // red-50
+        padding: OnboardingTheme.Spacing.lg,
+        borderRadius: OnboardingTheme.Radius.xl,
+        borderWidth: 1,
+        borderColor: '#fee2e2', // red-100
+    },
+    cardLabelCritical: {
+        color: OnboardingTheme.Colors.Error,
+        fontSize: 10,
+        fontWeight: 'bold',
+        textTransform: 'uppercase',
+        letterSpacing: 1.2,
+        marginBottom: 4,
+        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+    },
+    cardValueCritical: {
+        fontSize: 32,
+        fontWeight: '900',
+        color: OnboardingTheme.Colors.Error,
+        marginRight: 12,
+        fontFamily: OnboardingTheme.Typography.Title.fontFamily,
+    },
+    cardTextCritical: {
+        color: '#991b1b', // red-800
+        opacity: 0.6,
+        fontSize: 14,
+        flex: 1,
+        paddingBottom: 4,
+        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+    },
+});
