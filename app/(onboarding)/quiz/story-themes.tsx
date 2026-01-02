@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import Animated, { FadeIn, SlideInUp } from 'react-native-reanimated';
+import { useOnboarding } from '../../../contexts/OnboardingContext';
+import OnboardingLayout from '../../../components/OnboardingLayout';
+import { OnboardingTitle, OnboardingBody, OnboardingSubtitle } from '../../../components/OnboardingTypography';
+import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
+import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
 const THEMES = [
     { id: 'adventure', label: 'Adventure', emoji: '🗺️' },
@@ -18,6 +22,7 @@ const THEMES = [
 
 export default function StoryThemesScreen() {
     const router = useRouter();
+    const { data } = useOnboarding();
     const [selected, setSelected] = useState<string[]>([]);
 
     const toggleSelection = (id: string) => {
@@ -31,59 +36,63 @@ export default function StoryThemesScreen() {
     const canProceed = selected.length >= 2;
 
     const handleNext = () => {
-        router.push('/(onboarding)/quiz/previous-attempts');
+        if (canProceed) {
+            // updateData({ storyThemes: selected }); // Keeping logic consistent with context not having this field yet
+            router.push('/(onboarding)/quiz/previous-attempts');
+        }
     };
 
     return (
-        <View className="flex-1 bg-[#FDFBF7]">
-            <ScrollView className="flex-1 px-6 pt-12" contentContainerStyle={{ paddingBottom: 120 }}>
-                <View className="h-1.5 bg-gray-200 rounded-full mb-8 overflow-hidden">
-                    <View className="h-full bg-primary-500" style={{ width: '45%' }} />
+        <OnboardingLayout
+            progress={0.35}
+            onNext={handleNext}
+            nextLabel="Continue"
+        >
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scrollContent}
+            >
+                <OnboardingSubtitle>Step 6</OnboardingSubtitle>
+                <OnboardingTitle>What does {data.childName || 'your child'} love?</OnboardingTitle>
+                <OnboardingBody>
+                    Select 2 or more favorite themes.
+                </OnboardingBody>
+                <View style={styles.selectionCounter}>
+                    <OnboardingBody style={styles.counterText}>
+                        {selected.length} selected
+                    </OnboardingBody>
                 </View>
 
-                <Animated.View entering={FadeIn.delay(100)}>
-                    <Text className="text-3xl font-bold text-gray-900 mb-2">
-                        What does your child love?
-                    </Text>
-                    <Text className="text-lg text-gray-500 mb-2">
-                        Select 2 or more favorite themes.
-                    </Text>
-                    <Text className="text-sm text-primary-600 font-medium mb-8">
-                        {selected.length} selected
-                    </Text>
-                </Animated.View>
-
-                <View className="flex-row flex-wrap gap-3">
-                    {THEMES.map((theme, index) => (
-                        <Animated.View key={theme.id} entering={FadeIn.duration(300)}>
-                            <TouchableOpacity
-                                onPress={() => toggleSelection(theme.id)}
-                                className={`px-4 py-3 rounded-2xl border-2 flex-row items-center ${selected.includes(theme.id)
-                                    ? 'bg-primary-500 border-primary-500'
-                                    : 'bg-white border-gray-200'
-                                    }`}
-                            >
-                                <Text className="text-xl mr-2">{theme.emoji}</Text>
-                                <Text className={`font-semibold ${selected.includes(theme.id) ? 'text-white' : 'text-gray-700'}`}>
-                                    {theme.label}
-                                </Text>
-                            </TouchableOpacity>
-                        </Animated.View>
+                <View style={styles.optionsContainer}>
+                    {THEMES.map((theme) => (
+                        <OnboardingOptionCard
+                            key={theme.id}
+                            title={theme.label}
+                            selected={selected.includes(theme.id)}
+                            onPress={() => toggleSelection(theme.id)}
+                            icon={<View><OnboardingBody style={{ fontSize: 24 }}>{theme.emoji}</OnboardingBody></View>}
+                        />
                     ))}
                 </View>
             </ScrollView>
-
-            <View className="absolute bottom-0 left-0 right-0 p-6 bg-[#FDFBF7]">
-                <TouchableOpacity
-                    onPress={handleNext}
-                    disabled={!canProceed}
-                    className={`py-5 rounded-full items-center ${canProceed ? 'bg-primary-600' : 'bg-gray-200'}`}
-                >
-                    <Text className={`text-lg font-bold ${canProceed ? 'text-white' : 'text-gray-400'}`}>
-                        Continue
-                    </Text>
-                </TouchableOpacity>
-            </View>
-        </View>
+        </OnboardingLayout>
     );
 }
+
+const styles = StyleSheet.create({
+    scrollContent: {
+        paddingBottom: OnboardingTheme.Spacing.xl,
+    },
+    selectionCounter: {
+        marginTop: OnboardingTheme.Spacing.xs,
+        marginBottom: OnboardingTheme.Spacing.md,
+    },
+    counterText: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: OnboardingTheme.Colors.Accent,
+    },
+    optionsContainer: {
+        marginTop: OnboardingTheme.Spacing.md,
+    },
+});
