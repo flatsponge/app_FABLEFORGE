@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Text } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeIn, SlideInUp } from 'react-native-reanimated';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
+import OnboardingLayout from '../../../components/OnboardingLayout';
+import { OnboardingTitle, OnboardingBody, OnboardingSubtitle } from '../../../components/OnboardingTypography';
+import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
+import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
 const FREQUENCIES = [
     { id: 'daily', label: 'Daily', description: 'Almost every day', severity: 'high' },
@@ -26,51 +28,71 @@ export default function AggressionFrequencyScreen() {
     };
 
     return (
-        <View className="flex-1 bg-[#FDFBF7] px-6 pt-16 pb-8">
-            <Animated.View entering={FadeIn.delay(100)}>
-                <Text className="text-3xl font-bold text-gray-900 mb-2">
-                    How often does this happen?
-                </Text>
-                <Text className="text-lg text-gray-500 mb-8">
+        <OnboardingLayout
+            progress={0.6}
+            showNextButton={false}
+        >
+            <View style={styles.contentContainer}>
+                <OnboardingSubtitle>Step 11</OnboardingSubtitle>
+                <OnboardingTitle>How often does this happen?</OnboardingTitle>
+                <OnboardingBody>
                     This helps us understand the urgency level.
-                </Text>
-            </Animated.View>
+                </OnboardingBody>
 
-            <View className="flex-1">
-                {FREQUENCIES.map((freq, index) => (
-                    <Animated.View key={freq.id} entering={FadeIn.duration(300)}>
-                        <TouchableOpacity
+                <View style={styles.optionsContainer}>
+                    {FREQUENCIES.map((freq) => (
+                        <OnboardingOptionCard
+                            key={freq.id}
+                            title={freq.label}
+                            subtitle={freq.description}
+                            selected={selected === freq.id}
                             onPress={() => handleSelect(freq.id)}
-                            className={`mb-4 p-5 rounded-2xl border-2 flex-row items-center ${selected === freq.id
-                                ? 'bg-primary-50 border-primary-500'
-                                : 'bg-white border-gray-100'
-                                }`}
-                        >
-                            <View className="flex-1">
-                                <Text className={`text-xl font-bold mb-1 ${selected === freq.id ? 'text-primary-900' : 'text-gray-900'
-                                    }`}>
-                                    {freq.label}
-                                </Text>
-                                <Text className={`text-sm ${selected === freq.id ? 'text-primary-700' : 'text-gray-500'
-                                    }`}>
-                                    {freq.description}
-                                </Text>
-                            </View>
-
-                            {freq.severity === 'high' && (
-                                <View className="bg-red-100 px-3 py-1 rounded-full">
-                                    <Text className="text-red-700 text-xs font-bold">Urgent</Text>
-                                </View>
-                            )}
-                            {freq.severity === 'medium' && (
-                                <View className="bg-orange-100 px-3 py-1 rounded-full">
-                                    <Text className="text-orange-700 text-xs font-bold">Moderate</Text>
-                                </View>
-                            )}
-                        </TouchableOpacity>
-                    </Animated.View>
-                ))}
+                            rightContent={
+                                freq.severity === 'high' ? (
+                                    <View style={styles.badgeUrgent}>
+                                        <Text style={styles.badgeTextUrgent}>Urgent</Text>
+                                    </View>
+                                ) : freq.severity === 'medium' ? (
+                                    <View style={styles.badgeModerate}>
+                                        <Text style={styles.badgeTextModerate}>Moderate</Text>
+                                    </View>
+                                ) : undefined
+                            }
+                        />
+                    ))}
+                </View>
             </View>
-        </View>
+        </OnboardingLayout>
     );
 }
+
+const styles = StyleSheet.create({
+    contentContainer: {
+        width: '100%',
+    },
+    optionsContainer: {
+        marginTop: OnboardingTheme.Spacing.xl,
+    },
+    badgeUrgent: {
+        backgroundColor: '#fee2e2', // red-100
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+    },
+    badgeTextUrgent: {
+        color: '#b91c1c', // red-700
+        fontSize: 10,
+        fontWeight: 'bold',
+    },
+    badgeModerate: {
+        backgroundColor: '#ffedd5', // orange-100
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+    },
+    badgeTextModerate: {
+        color: '#c2410c', // orange-700
+        fontSize: 10,
+        fontWeight: 'bold',
+    },
+});
