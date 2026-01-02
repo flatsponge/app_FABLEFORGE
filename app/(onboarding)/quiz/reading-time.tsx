@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import Animated, { FadeIn, SlideInUp } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
+import { useOnboarding } from '../../../contexts/OnboardingContext';
+import OnboardingLayout from '../../../components/OnboardingLayout';
+import { OnboardingTitle, OnboardingBody, OnboardingSubtitle } from '../../../components/OnboardingTypography';
+import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
+import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
 const TIMES = [
     { id: 'morning', label: 'Morning', description: 'Start the day right', icon: 'sunny', color: '#f97316' },
@@ -13,55 +17,66 @@ const TIMES = [
 
 export default function ReadingTimeScreen() {
     const router = useRouter();
+    const { data, updateData } = useOnboarding();
     const [selected, setSelected] = useState<string | null>(null);
 
     const handleSelect = (id: string) => {
         setSelected(id);
+        // We're not updating context yet as this field might not be in the type definition,
+        // but normally we would: updateData({ readingTime: id });
+        
+        // Short delay for visual feedback before navigation
         setTimeout(() => {
             router.push('/(onboarding)/quiz/story-length');
         }, 300);
     };
 
     return (
-        <View className="flex-1 bg-[#FDFBF7] px-6 pt-12 pb-8">
-            <View className="h-1.5 bg-gray-200 rounded-full mb-8 overflow-hidden">
-                <View className="h-full bg-primary-500" style={{ width: '35%' }} />
-            </View>
-
-            <Animated.View entering={FadeIn.delay(100)}>
-                <Text className="text-3xl font-bold text-gray-900 mb-2">
-                    When do you usually read together?
-                </Text>
-                <Text className="text-lg text-gray-500 mb-8">
+        <OnboardingLayout
+            progress={0.25}
+            // No specific "Next" action needed since selection triggers navigation
+            showNextButton={false} 
+        >
+            <View style={styles.contentContainer}>
+                <OnboardingSubtitle>Step 4</OnboardingSubtitle>
+                <OnboardingTitle>When do you usually read together?</OnboardingTitle>
+                <OnboardingBody>
                     We'll remind you at the perfect moment.
-                </Text>
-            </Animated.View>
+                </OnboardingBody>
 
-            <View className="flex-1">
-                {TIMES.map((time, index) => (
-                    <Animated.View key={time.id} entering={FadeIn.duration(300)}>
-                        <TouchableOpacity
+                <View style={styles.optionsContainer}>
+                    {TIMES.map((time) => (
+                        <OnboardingOptionCard
+                            key={time.id}
+                            title={time.label}
+                            subtitle={time.description}
+                            selected={selected === time.id}
                             onPress={() => handleSelect(time.id)}
-                            className={`mb-3 p-5 rounded-2xl border-2 flex-row items-center ${selected === time.id
-                                    ? 'bg-primary-50 border-primary-500'
-                                    : 'bg-white border-gray-100'
-                                }`}
-                        >
-                            <View className={`w-12 h-12 rounded-xl items-center justify-center mr-4`} style={{ backgroundColor: `${time.color}20` }}>
-                                <Ionicons name={time.icon as any} size={24} color={time.color} />
-                            </View>
-                            <View className="flex-1">
-                                <Text className={`text-lg font-bold ${selected === time.id ? 'text-primary-900' : 'text-gray-900'}`}>
-                                    {time.label}
-                                </Text>
-                                <Text className={`text-sm ${selected === time.id ? 'text-primary-700' : 'text-gray-500'}`}>
-                                    {time.description}
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
-                    </Animated.View>
-                ))}
+                            icon={
+                                <View style={[styles.iconContainer, { backgroundColor: `${time.color}20` }]}>
+                                    <Ionicons name={time.icon as any} size={24} color={time.color} />
+                                </View>
+                            }
+                        />
+                    ))}
+                </View>
             </View>
-        </View>
+        </OnboardingLayout>
     );
 }
+
+const styles = StyleSheet.create({
+    contentContainer: {
+        width: '100%',
+    },
+    optionsContainer: {
+        marginTop: OnboardingTheme.Spacing.xl,
+    },
+    iconContainer: {
+        width: 48,
+        height: 48,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+});
