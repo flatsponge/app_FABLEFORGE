@@ -34,7 +34,6 @@ export default function ParentingStyleScreen() {
             showNextButton={false}
         >
             <View style={styles.contentContainer}>
-                <OnboardingSubtitle>Step 4</OnboardingSubtitle>
                 <OnboardingTitle>How would you describe your parenting style?</OnboardingTitle>
                 <OnboardingBody>
                     No judgment—just helps us tailor the approach.

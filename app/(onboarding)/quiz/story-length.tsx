@@ -22,7 +22,7 @@ export default function StoryLengthScreen() {
     const handleSelect = (id: string) => {
         setSelected(id);
         // updateData({ storyLength: id }); // Updating context if type allows
-        
+
         setTimeout(() => {
             router.push('/(onboarding)/quiz/story-themes');
         }, 300);
@@ -34,7 +34,6 @@ export default function StoryLengthScreen() {
             showNextButton={false}
         >
             <View style={styles.contentContainer}>
-                <OnboardingSubtitle>Step 5</OnboardingSubtitle>
                 <OnboardingTitle>How long should stories be?</OnboardingTitle>
                 <OnboardingBody>
                     We'll adjust the story length to fit.

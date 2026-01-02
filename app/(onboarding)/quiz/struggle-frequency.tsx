@@ -34,7 +34,6 @@ export default function StruggleFrequencyScreen() {
             showNextButton={false}
         >
             <View style={styles.contentContainer}>
-                <OnboardingSubtitle>Step 14</OnboardingSubtitle>
                 <OnboardingTitle>How often do these issues come up?</OnboardingTitle>
                 <OnboardingBody>
                     This helps us gauge the intensity of support needed.

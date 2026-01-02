@@ -34,7 +34,6 @@ export default function AggressionDetailsScreen() {
             showNextButton={false}
         >
             <View style={styles.contentContainer}>
-                <OnboardingSubtitle>Step 10</OnboardingSubtitle>
                 <OnboardingTitle>Who is this aggression usually directed toward?</OnboardingTitle>
                 <OnboardingBody>
                     Understanding the trigger helps us script the solution.

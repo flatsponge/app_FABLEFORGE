@@ -52,7 +52,6 @@ export default function StoryThemesScreen() {
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
             >
-                <OnboardingSubtitle>Step 6</OnboardingSubtitle>
                 <OnboardingTitle>What does {data.childName || 'your child'} love?</OnboardingTitle>
                 <OnboardingBody>
                     Select 2 or more favorite themes.

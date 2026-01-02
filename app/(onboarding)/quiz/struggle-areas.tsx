@@ -50,7 +50,6 @@ export default function StruggleAreasScreen() {
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
             >
-                <OnboardingSubtitle>Step 13</OnboardingSubtitle>
                 <OnboardingTitle>Where does your child struggle most?</OnboardingTitle>
                 <OnboardingBody>
                     Select up to 3 areas where you'd like to see improvement.

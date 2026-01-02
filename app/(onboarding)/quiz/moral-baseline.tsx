@@ -26,7 +26,7 @@ export default function MoralBaselineScreen() {
     const router = useRouter();
     const { updateData } = useOnboarding();
     const [ratings, setRatings] = useState<Record<string, number>>({});
-    
+
     // We can use a local state to track which skill we are on
     const currentSkillIndex = Object.keys(ratings).length;
     const currentSkill = MORAL_SKILLS[currentSkillIndex];
@@ -39,11 +39,12 @@ export default function MoralBaselineScreen() {
 
     useEffect(() => {
         if (isComplete) {
-             const avg = Object.values(ratings).reduce((a, b) => a + b, 0) / MORAL_SKILLS.length;
-             updateData({ moralScore: avg * 20 });
-             router.push('/(onboarding)/quiz/parent-guilt');
+            const avg = Object.values(ratings).reduce((a, b) => a + b, 0) / MORAL_SKILLS.length;
+            updateData({ moralScore: avg * 20 });
+            router.push('/(onboarding)/quiz/parent-guilt');
         }
-    }, [isComplete, ratings, router, updateData]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isComplete, ratings]);
 
     const handleSelect = (value: number) => {
         if (currentSkill) {
@@ -52,16 +53,16 @@ export default function MoralBaselineScreen() {
     };
 
     if (isComplete) {
-         return null; // Or a loading spinner while redirecting
+        return null; // Or a loading spinner while redirecting
     }
 
     return (
         <OnboardingLayout
             progress={currentProgress}
             showNextButton={false}
+            onNext={() => { }}
         >
             <View style={styles.contentContainer}>
-                <OnboardingSubtitle>Assessment {currentSkillIndex + 1}/{MORAL_SKILLS.length}</OnboardingSubtitle>
                 <OnboardingTitle>{currentSkill.label}</OnboardingTitle>
                 <OnboardingBody>
                     {currentSkill.question}
@@ -76,11 +77,7 @@ export default function MoralBaselineScreen() {
                         <OnboardingOptionCard
                             key={option.value}
                             title={option.label}
-                            subtitle={option.description}
-                            // We don't have a 'selected' state for the current question 
-                            // because selecting immediately advances (in this simple implementation)
-                            // or we could show selection. 
-                            // Let's just highlight if selected (though it will change quickly)
+                            description={option.description}
                             onPress={() => handleSelect(option.value)}
                         />
                     ))}

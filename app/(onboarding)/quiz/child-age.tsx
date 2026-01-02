@@ -30,7 +30,6 @@ export default function ChildAgeScreen() {
             nextLabel="Continue"
         >
             <View style={styles.contentContainer}>
-                <OnboardingSubtitle>Step 2</OnboardingSubtitle>
                 <OnboardingTitle>How old is {data.childName || 'your child'}?</OnboardingTitle>
                 <OnboardingBody>
                     We'll tailor the stories to their age.

@@ -47,11 +47,10 @@ export default function ChildPersonalityScreen() {
             onNext={handleNext}
             nextLabel="Continue"
         >
-            <ScrollView 
+            <ScrollView
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
             >
-                <OnboardingSubtitle>Step 3</OnboardingSubtitle>
                 <OnboardingTitle>Describe {data.childName || 'your child'}</OnboardingTitle>
                 <OnboardingBody>
                     Select up to 3 personality traits so we can match the story tone.

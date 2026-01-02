@@ -50,7 +50,6 @@ export default function ParentChallengesScreen() {
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
             >
-                <OnboardingSubtitle>Step 8</OnboardingSubtitle>
                 <OnboardingTitle>What's your biggest parenting challenge right now?</OnboardingTitle>
                 <OnboardingBody>
                     Pick up to 3 that resonate with you.

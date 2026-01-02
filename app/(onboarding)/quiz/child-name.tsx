@@ -27,7 +27,6 @@ export default function ChildNameScreen() {
             nextLabel="Continue"
         >
             <View style={styles.contentContainer}>
-                <OnboardingSubtitle>Step 1</OnboardingSubtitle>
                 <OnboardingTitle>What's your child's name?</OnboardingTitle>
                 <OnboardingBody>
                     We'll personalize every story just for them.

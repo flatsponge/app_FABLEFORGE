@@ -33,7 +33,6 @@ export default function GoalsTimelineScreen() {
             showNextButton={false}
         >
             <View style={styles.contentContainer}>
-                <OnboardingSubtitle>Step 3</OnboardingSubtitle>
                 <OnboardingTitle>How quickly do you want to see changes?</OnboardingTitle>
                 <OnboardingBody>
                     This helps us set realistic milestones.

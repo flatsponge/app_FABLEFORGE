@@ -9,6 +9,16 @@ export const OnboardingTheme = {
     Surface: '#F9FAFB', // Gray 50
     Border: '#E5E7EB', // Gray 200
     White: '#FFFFFF',
+    Error: '#EF4444', // Red 500
+    Success: '#22C55E', // Green 500
+  },
+  Radius: {
+    sm: 4,
+    md: 8,
+    lg: 12,
+    xl: 16,
+    xxl: 24,
+    full: 9999,
   },
   Typography: {
     Title: {

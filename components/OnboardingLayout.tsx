@@ -39,7 +39,7 @@ export default function OnboardingLayout({
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const progressWidth = useSharedValue(0);
+  const progressWidth = useSharedValue(progress * 100);
 
   // Update progress width when prop changes
   React.useEffect(() => {
@@ -62,11 +62,11 @@ export default function OnboardingLayout({
   };
 
   const ContentWrapper = isScrollable ? ScrollView : View;
-  const contentWrapperProps = isScrollable 
-    ? { 
-        showsVerticalScrollIndicator: false,
-        contentContainerStyle: styles.scrollContentContainer 
-      } 
+  const contentWrapperProps = isScrollable
+    ? {
+      showsVerticalScrollIndicator: false,
+      contentContainerStyle: styles.scrollContentContainer
+    }
     : { style: styles.content };
 
   return (
@@ -78,27 +78,27 @@ export default function OnboardingLayout({
             <ArrowLeft size={24} color={backButtonColor} />
           </TouchableOpacity>
         ) : (
-             <View style={{ width: 24 + OnboardingTheme.Spacing.md }} /> 
+          <View style={{ width: 24 + OnboardingTheme.Spacing.md }} />
         )}
-        
+
         <View style={styles.progressContainer}>
-            <View style={[styles.progressBarBackground, { backgroundColor: progressBarTrackColor }]}>
-                <Animated.View style={[styles.progressBarFill, progressStyle]} />
-            </View>
+          <View style={[styles.progressBarBackground, { backgroundColor: progressBarTrackColor }]}>
+            <Animated.View style={[styles.progressBarFill, progressStyle]} />
+          </View>
         </View>
         {/* Spacer to balance the layout visually if needed, though flex handles it */}
-        <View style={{ width: 24 + OnboardingTheme.Spacing.md }} /> 
+        <View style={{ width: 24 + OnboardingTheme.Spacing.md }} />
       </View>
 
       {/* Content */}
       {isScrollable ? (
-          <ScrollView {...contentWrapperProps}>
-              {children}
-          </ScrollView>
+        <ScrollView {...contentWrapperProps}>
+          {children}
+        </ScrollView>
       ) : (
-          <View style={styles.content}>
-              {children}
-          </View>
+        <View style={styles.content}>
+          {children}
+        </View>
       )}
 
       {/* Footer */}
@@ -108,7 +108,7 @@ export default function OnboardingLayout({
           keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
         >
           <View style={styles.footer}>
-              <OnboardingButton onPress={onNext} title={nextLabel} />
+            <OnboardingButton onPress={onNext} title={nextLabel} />
           </View>
         </KeyboardAvoidingView>
       )}
@@ -137,8 +137,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   progressBarBackground: {
-      flex: 1,
-      borderRadius: 3,
+    flex: 1,
+    borderRadius: 3,
   },
   progressBarFill: {
     height: '100%',
@@ -150,8 +150,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center', // Vertically center content by default
   },
   scrollContentContainer: {
-      paddingHorizontal: OnboardingTheme.Spacing.lg,
-      paddingBottom: OnboardingTheme.Spacing.xl,
+    paddingHorizontal: OnboardingTheme.Spacing.lg,
+    paddingBottom: OnboardingTheme.Spacing.xl,
   },
   footer: {
     paddingHorizontal: OnboardingTheme.Spacing.lg,

@@ -33,29 +33,24 @@ export default function SofteningScreen() {
                 <View style={styles.statsContainer}>
                     <View style={styles.statItem}>
                         <Text style={styles.statNumber}>65%</Text>
-                        <Text style={styles.statLabel}>Lose patience{'
-'}weekly</Text>
+                        <Text style={styles.statLabel}>Lose patience{"\n"}weekly</Text>
                     </View>
                     <View style={styles.divider} />
                     <View style={styles.statItem}>
                         <Text style={styles.statNumber}>78%</Text>
-                        <Text style={styles.statLabel}>Feel guilty{'
-'}about yelling</Text>
+                        <Text style={styles.statLabel}>Feel guilty{"\n"}about yelling</Text>
                     </View>
                     <View style={styles.divider} />
                     <View style={styles.statItem}>
                         <Text style={styles.statNumber}>91%</Text>
-                        <Text style={styles.statLabel}>Want a{'
-'}better way</Text>
+                        <Text style={styles.statLabel}>Want a{"\n"}better way</Text>
                     </View>
                 </View>
 
                 <View style={styles.messageContainer}>
                     <Text style={styles.messageText}>
                         The fact that you're here means you <Text style={styles.messageBold}>care deeply</Text> about your child's development.
-                        {'
-
-'}
+                        {"\n\n"}
                         Our AI creates <Text style={styles.messageBold}>personalized stories</Text> that address exactly the behaviors you mentioned—<Text style={styles.messageBold}>without lectures, timeouts, or guilt</Text>.
                     </Text>
                 </View>

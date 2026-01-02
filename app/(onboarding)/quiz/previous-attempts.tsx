@@ -22,7 +22,7 @@ export default function PreviousAttemptsScreen() {
     const handleSelect = (id: string) => {
         setSelected(id);
         // updateData({ previousAttempts: id }); // Update context if available
-        
+
         setTimeout(() => {
             router.push('/(onboarding)/quiz/parent-challenges');
         }, 300);
@@ -34,7 +34,6 @@ export default function PreviousAttemptsScreen() {
             showNextButton={false}
         >
             <View style={styles.contentContainer}>
-                <OnboardingSubtitle>Step 7</OnboardingSubtitle>
                 <OnboardingTitle>Have you tried other solutions before?</OnboardingTitle>
                 <OnboardingBody>
                     Understanding your journey helps us help you.

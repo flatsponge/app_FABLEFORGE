@@ -50,7 +50,6 @@ export default function TriggerSituationsScreen() {
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
             >
-                <OnboardingSubtitle>Step 12</OnboardingSubtitle>
                 <OnboardingTitle>What situations trigger the most conflict?</OnboardingTitle>
                 <OnboardingBody>
                     Select all that apply. We'll create stories that address these moments.

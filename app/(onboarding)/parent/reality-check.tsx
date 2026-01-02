@@ -114,20 +114,17 @@ export default function RealityCheckScreen() {
                     <View style={styles.summaryStatsRow}>
                         <View style={styles.summaryStatItem}>
                             <Text style={styles.summaryStatValueCritical}>{criticalCount}</Text>
-                            <Text style={styles.summaryStatLabel}>Critical{'
-'}Areas</Text>
+                            <Text style={styles.summaryStatLabel}>Critical{"\n"}Areas</Text>
                         </View>
                         <View style={styles.summaryDivider} />
                         <View style={styles.summaryStatItem}>
                             <Text style={styles.summaryStatValueWarning}>{needsWorkCount}</Text>
-                            <Text style={styles.summaryStatLabel}>Needs{'
-'}Attention</Text>
+                            <Text style={styles.summaryStatLabel}>Needs{"\n"}Attention</Text>
                         </View>
                         <View style={styles.summaryDivider} />
                         <View style={styles.summaryStatItem}>
                             <Text style={styles.summaryStatValueGray}>32%</Text>
-                            <Text style={styles.summaryStatLabel}>Overall{'
-'}Score</Text>
+                            <Text style={styles.summaryStatLabel}>Overall{"\n"}Score</Text>
                         </View>
                     </View>
                     <View style={styles.summaryBadge}>

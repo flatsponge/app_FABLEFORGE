@@ -33,7 +33,6 @@ export default function AggressionFrequencyScreen() {
             showNextButton={false}
         >
             <View style={styles.contentContainer}>
-                <OnboardingSubtitle>Step 11</OnboardingSubtitle>
                 <OnboardingTitle>How often does this happen?</OnboardingTitle>
                 <OnboardingBody>
                     This helps us understand the urgency level.

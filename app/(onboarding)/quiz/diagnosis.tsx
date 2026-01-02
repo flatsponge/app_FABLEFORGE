@@ -39,7 +39,6 @@ export default function DiagnosisScreen() {
             showNextButton={false}
         >
             <View style={styles.contentContainer}>
-                <OnboardingSubtitle>Step 9</OnboardingSubtitle>
                 <OnboardingTitle>How does your child typically handle frustration?</OnboardingTitle>
                 <OnboardingBody>
                     This helps us identify their primary coping mechanism.

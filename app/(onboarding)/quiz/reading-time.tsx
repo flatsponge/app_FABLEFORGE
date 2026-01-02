@@ -24,7 +24,7 @@ export default function ReadingTimeScreen() {
         setSelected(id);
         // We're not updating context yet as this field might not be in the type definition,
         // but normally we would: updateData({ readingTime: id });
-        
+
         // Short delay for visual feedback before navigation
         setTimeout(() => {
             router.push('/(onboarding)/quiz/story-length');
@@ -35,10 +35,9 @@ export default function ReadingTimeScreen() {
         <OnboardingLayout
             progress={0.25}
             // No specific "Next" action needed since selection triggers navigation
-            showNextButton={false} 
+            showNextButton={false}
         >
             <View style={styles.contentContainer}>
-                <OnboardingSubtitle>Step 4</OnboardingSubtitle>
                 <OnboardingTitle>When do you usually read together?</OnboardingTitle>
                 <OnboardingBody>
                     We'll remind you at the perfect moment.

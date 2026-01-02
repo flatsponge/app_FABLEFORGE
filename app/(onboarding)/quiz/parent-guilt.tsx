@@ -33,20 +33,14 @@ export default function ParentGuiltScreen() {
         <OnboardingLayout
             progress={0.8}
             showNextButton={false}
+            isScrollable={true}
+            onNext={() => { }}
         >
             <View style={styles.contentContainer}>
-                <OnboardingSubtitle>Step 15</OnboardingSubtitle>
                 <OnboardingTitle>Be honest: how do you usually react?</OnboardingTitle>
                 <OnboardingBody>
                     There's no judgment here—this is a safe space.
                 </OnboardingBody>
-
-                <View style={styles.privacyBanner}>
-                    <Ionicons name="lock-closed" size={16} color={OnboardingTheme.Colors.Primary} style={styles.privacyIcon} />
-                    <Text style={styles.privacyText}>
-                        Your answers are private and help us create the right approach.
-                    </Text>
-                </View>
 
                 <View style={styles.optionsContainer}>
                     {REACTIONS.map((reaction) => (
@@ -74,26 +68,6 @@ const styles = StyleSheet.create({
     contentContainer: {
         width: '100%',
     },
-    privacyBanner: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#f3e8ff', // primary-50
-        borderColor: '#e9d5ff', // primary-100
-        borderWidth: 1,
-        borderRadius: OnboardingTheme.Radius.md,
-        padding: OnboardingTheme.Spacing.sm,
-        marginTop: OnboardingTheme.Spacing.sm,
-        marginBottom: OnboardingTheme.Spacing.sm,
-    },
-    privacyIcon: {
-        marginRight: OnboardingTheme.Spacing.xs,
-    },
-    privacyText: {
-        flex: 1,
-        color: '#6b21a8', // primary-800
-        fontSize: 14,
-        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
-    },
     optionsContainer: {
         marginTop: OnboardingTheme.Spacing.md,
     },
@@ -106,7 +80,6 @@ const styles = StyleSheet.create({
     reassuranceText: {
         color: OnboardingTheme.Colors.TextSecondary,
         fontSize: 14,
-        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
         fontStyle: 'italic',
         textAlign: 'center',
     },

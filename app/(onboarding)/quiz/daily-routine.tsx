@@ -33,7 +33,6 @@ export default function DailyRoutineScreen() {
             showNextButton={false}
         >
             <View style={styles.contentContainer}>
-                <OnboardingSubtitle>Step 6</OnboardingSubtitle>
                 <OnboardingTitle>How would you describe your daily routine?</OnboardingTitle>
                 <OnboardingBody>
                     This helps us suggest the best story times.
