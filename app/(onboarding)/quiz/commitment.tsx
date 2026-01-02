@@ -1,68 +1,92 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeIn, SlideInUp } from 'react-native-reanimated';
+import OnboardingLayout from '../../../components/OnboardingLayout';
+import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
+import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
 export default function CommitmentScreen() {
     const router = useRouter();
 
+    const handleNext = () => {
+        router.push('/(onboarding)/quiz/softening');
+    };
+
     return (
-        <View className="flex-1 bg-[#FDFBF7] px-6 pt-12 pb-8">
-            <View className="h-1.5 bg-gray-200 rounded-full mb-8 overflow-hidden">
-                <View className="h-full bg-primary-500" style={{ width: '75%' }} />
-            </View>
+        <OnboardingLayout
+            progress={0.85}
+            onNext={handleNext}
+            nextLabel="Yes, I'm Ready!"
+        >
+            <View style={styles.contentContainer}>
+                <View style={styles.iconContainer}>
+                    <Ionicons name="heart" size={48} color={OnboardingTheme.Colors.Primary} />
+                </View>
 
-            <View className="flex-1 items-center justify-center">
-                <Animated.View entering={FadeIn.delay(200)} className="items-center">
-                    <View className="bg-primary-100 p-6 rounded-full mb-6">
-                        <Ionicons name="heart" size={48} color="#9333ea" />
+                <OnboardingTitle style={styles.centerText}>One last thing...</OnboardingTitle>
+
+                <OnboardingBody style={[styles.centerText, styles.descriptionText]}>
+                    Are you ready to commit <Text style={styles.boldText}>5 minutes a day</Text> to your child's character growth?
+                </OnboardingBody>
+
+                <View style={styles.benefitsContainer}>
+                    <View style={styles.benefitRow}>
+                        <Ionicons name="checkmark-circle" size={24} color="#22c55e" />
+                        <Text style={styles.benefitText}>Just one story per day</Text>
                     </View>
-
-                    <Text className="text-3xl font-bold text-center text-gray-900 mb-4">
-                        One last thing...
-                    </Text>
-
-                    <Text className="text-xl text-center text-gray-600 mb-8 leading-relaxed">
-                        Are you ready to commit{'\n'}
-                        <Text className="font-bold text-primary-600">5 minutes a day</Text>{'\n'}
-                        to your child's character growth?
-                    </Text>
-
-                    <View className="bg-white p-6 rounded-3xl border border-gray-100 mb-8 w-full">
-                        <View className="flex-row items-center mb-3">
-                            <Ionicons name="checkmark-circle" size={24} color="#22c55e" />
-                            <Text className="text-gray-800 font-medium ml-3">Just one story per day</Text>
-                        </View>
-                        <View className="flex-row items-center mb-3">
-                            <Ionicons name="checkmark-circle" size={24} color="#22c55e" />
-                            <Text className="text-gray-800 font-medium ml-3">See results in 7-14 days</Text>
-                        </View>
-                        <View className="flex-row items-center">
-                            <Ionicons name="checkmark-circle" size={24} color="#22c55e" />
-                            <Text className="text-gray-800 font-medium ml-3">Cancel anytime, no pressure</Text>
-                        </View>
+                    <View style={styles.benefitRow}>
+                        <Ionicons name="checkmark-circle" size={24} color="#22c55e" />
+                        <Text style={styles.benefitText}>See results in 7-14 days</Text>
                     </View>
-                </Animated.View>
+                    <View style={styles.benefitRow}>
+                        <Ionicons name="checkmark-circle" size={24} color="#22c55e" />
+                        <Text style={styles.benefitText}>Cancel anytime, no pressure</Text>
+                    </View>
+                </View>
             </View>
-
-            <Animated.View entering={FadeIn.duration(300)}>
-                <TouchableOpacity
-                    onPress={() => router.push('/(onboarding)/quiz/softening')}
-                    className="bg-primary-600 py-5 rounded-full items-center"
-                >
-                    <Text className="text-white text-lg font-bold">Yes, I'm Ready!</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    onPress={() => router.push('/(onboarding)/quiz/softening')}
-                    className="py-4"
-                >
-                    <Text className="text-center text-gray-400 font-medium">
-                        I'll try my best
-                    </Text>
-                </TouchableOpacity>
-            </Animated.View>
-        </View>
+        </OnboardingLayout>
     );
 }
+
+const styles = StyleSheet.create({
+    contentContainer: {
+        alignItems: 'center',
+        width: '100%',
+    },
+    iconContainer: {
+        backgroundColor: '#f3e8ff', // primary-100
+        padding: 24,
+        borderRadius: 9999,
+        marginBottom: OnboardingTheme.Spacing.lg,
+    },
+    centerText: {
+        textAlign: 'center',
+    },
+    descriptionText: {
+        marginBottom: OnboardingTheme.Spacing.xl,
+    },
+    boldText: {
+        fontWeight: 'bold',
+        color: OnboardingTheme.Colors.Primary,
+    },
+    benefitsContainer: {
+        backgroundColor: 'white',
+        padding: OnboardingTheme.Spacing.lg,
+        borderRadius: OnboardingTheme.Radius.lg,
+        borderWidth: 1,
+        borderColor: OnboardingTheme.Colors.Border,
+        width: '100%',
+    },
+    benefitRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: OnboardingTheme.Spacing.sm,
+    },
+    benefitText: {
+        marginLeft: OnboardingTheme.Spacing.sm,
+        fontSize: 16,
+        color: OnboardingTheme.Colors.Text,
+        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+    },
+});
