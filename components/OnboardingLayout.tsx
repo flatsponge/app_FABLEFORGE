@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { useAnimatedStyle, withTiming, useSharedValue } from 'react-native-reanimated';
 import { ArrowLeft } from 'lucide-react-native';
 import { OnboardingTheme } from '../constants/OnboardingTheme';
+import OnboardingButton from './OnboardingButton';
 
 interface OnboardingLayoutProps {
   children: React.ReactNode;
@@ -79,9 +80,7 @@ export default function OnboardingLayout({
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
         <View style={styles.footer}>
-            <TouchableOpacity onPress={onNext} style={styles.button} activeOpacity={0.8}>
-                <Text style={styles.buttonText}>{nextLabel}</Text>
-            </TouchableOpacity>
+            <OnboardingButton onPress={onNext} title={nextLabel} />
         </View>
       </KeyboardAvoidingView>
     </View>
@@ -129,19 +128,4 @@ const styles = StyleSheet.create({
     paddingTop: OnboardingTheme.Spacing.md,
     paddingBottom: OnboardingTheme.Spacing.md,
   },
-  button: {
-    backgroundColor: OnboardingTheme.Colors.Primary,
-    paddingVertical: 16,
-    borderRadius: 100, // Full rounded
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  buttonText: {
-    ...OnboardingTheme.Typography.Button,
-  }
 });
