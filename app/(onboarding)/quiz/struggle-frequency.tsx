@@ -1,76 +1,99 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Text } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeIn, SlideInUp } from 'react-native-reanimated';
+import { useOnboarding } from '../../../contexts/OnboardingContext';
+import OnboardingLayout from '../../../components/OnboardingLayout';
+import { OnboardingTitle, OnboardingBody, OnboardingSubtitle } from '../../../components/OnboardingTypography';
+import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
+import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
 const FREQUENCIES = [
-    { id: 'multiple_daily', label: 'Multiple times a day', emoji: '🔥', severity: 'critical', color: 'red' },
-    { id: 'daily', label: 'Once a day', emoji: '⚠️', severity: 'high', color: 'orange' },
-    { id: 'few_weekly', label: 'A few times a week', emoji: '📊', severity: 'moderate', color: 'yellow' },
-    { id: 'weekly', label: 'Once a week', emoji: '📈', severity: 'low', color: 'green' },
-    { id: 'rarely', label: 'Rarely', emoji: '✨', severity: 'minimal', color: 'gray' },
+    { id: 'multiple_daily', label: 'Multiple times a day', emoji: '🔥', severity: 'critical' },
+    { id: 'daily', label: 'Once a day', emoji: '⚠️', severity: 'high' },
+    { id: 'few_weekly', label: 'A few times a week', emoji: '📊', severity: 'moderate' },
+    { id: 'weekly', label: 'Once a week', emoji: '📈', severity: 'low' },
+    { id: 'rarely', label: 'Rarely', emoji: '✨', severity: 'minimal' },
 ];
 
 export default function StruggleFrequencyScreen() {
     const router = useRouter();
+    const { updateData } = useOnboarding();
     const [selected, setSelected] = useState<string | null>(null);
 
     const handleSelect = (id: string) => {
         setSelected(id);
+        // updateData({ struggleFrequency: id }); // Update context if available
         setTimeout(() => {
             router.push('/(onboarding)/quiz/parent-guilt');
-        }, 400);
+        }, 300);
     };
 
     return (
-        <View className="flex-1 bg-[#FDFBF7] px-6 pt-12 pb-8">
-            {/* Progress */}
-            <View className="h-1.5 bg-gray-200 rounded-full mb-8 overflow-hidden">
-                <View className="h-full bg-primary-500" style={{ width: '58%' }} />
-            </View>
-
-            <Animated.View entering={FadeIn.delay(100)}>
-                <Text className="text-3xl font-bold text-gray-900 mb-2">
-                    How often do these issues come up?
-                </Text>
-                <Text className="text-lg text-gray-500 mb-8">
+        <OnboardingLayout
+            progress={0.75}
+            showNextButton={false}
+        >
+            <View style={styles.contentContainer}>
+                <OnboardingSubtitle>Step 14</OnboardingSubtitle>
+                <OnboardingTitle>How often do these issues come up?</OnboardingTitle>
+                <OnboardingBody>
                     This helps us gauge the intensity of support needed.
-                </Text>
-            </Animated.View>
+                </OnboardingBody>
 
-            <View className="flex-1">
-                {FREQUENCIES.map((freq, index) => (
-                    <Animated.View key={freq.id} entering={FadeIn.duration(300)}>
-                        <TouchableOpacity
+                <View style={styles.optionsContainer}>
+                    {FREQUENCIES.map((freq) => (
+                        <OnboardingOptionCard
+                            key={freq.id}
+                            title={freq.label}
+                            selected={selected === freq.id}
                             onPress={() => handleSelect(freq.id)}
-                            className={`mb-4 p-5 rounded-2xl border-2 flex-row items-center ${selected === freq.id
-                                    ? 'bg-primary-50 border-primary-500'
-                                    : 'bg-white border-gray-100'
-                                }`}
-                        >
-                            <Text className="text-2xl mr-4">{freq.emoji}</Text>
-                            <View className="flex-1">
-                                <Text className={`text-lg font-bold ${selected === freq.id ? 'text-primary-900' : 'text-gray-900'
-                                    }`}>
-                                    {freq.label}
-                                </Text>
-                            </View>
-
-                            {freq.severity === 'critical' && (
-                                <View className="bg-red-100 px-3 py-1 rounded-full">
-                                    <Text className="text-red-700 text-xs font-bold">Critical</Text>
-                                </View>
-                            )}
-                            {freq.severity === 'high' && (
-                                <View className="bg-orange-100 px-3 py-1 rounded-full">
-                                    <Text className="text-orange-700 text-xs font-bold">High</Text>
-                                </View>
-                            )}
-                        </TouchableOpacity>
-                    </Animated.View>
-                ))}
+                            icon={<View><OnboardingBody style={{ fontSize: 24 }}>{freq.emoji}</OnboardingBody></View>}
+                            rightContent={
+                                freq.severity === 'critical' ? (
+                                    <View style={styles.badgeCritical}>
+                                        <Text style={styles.badgeTextCritical}>Critical</Text>
+                                    </View>
+                                ) : freq.severity === 'high' ? (
+                                    <View style={styles.badgeHigh}>
+                                        <Text style={styles.badgeTextHigh}>High</Text>
+                                    </View>
+                                ) : undefined
+                            }
+                        />
+                    ))}
+                </View>
             </View>
-        </View>
+        </OnboardingLayout>
     );
 }
+
+const styles = StyleSheet.create({
+    contentContainer: {
+        width: '100%',
+    },
+    optionsContainer: {
+        marginTop: OnboardingTheme.Spacing.xl,
+    },
+    badgeCritical: {
+        backgroundColor: '#fee2e2', // red-100
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+    },
+    badgeTextCritical: {
+        color: '#b91c1c', // red-700
+        fontSize: 10,
+        fontWeight: 'bold',
+    },
+    badgeHigh: {
+        backgroundColor: '#ffedd5', // orange-100
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+    },
+    badgeTextHigh: {
+        color: '#c2410c', // orange-700
+        fontSize: 10,
+        fontWeight: 'bold',
+    },
+});
