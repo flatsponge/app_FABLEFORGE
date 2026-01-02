@@ -14,6 +14,11 @@ interface OnboardingLayoutProps {
   nextLabel?: string;
   showBack?: boolean;
   onBack?: () => void;
+  showNextButton?: boolean;
+  backgroundColor?: string;
+  progressBarColor?: string;
+  progressBarTrackColor?: string;
+  backButtonColor?: string;
 }
 
 export default function OnboardingLayout({
@@ -23,6 +28,11 @@ export default function OnboardingLayout({
   nextLabel = 'Continue',
   showBack = true,
   onBack,
+  showNextButton = true,
+  backgroundColor = OnboardingTheme.Colors.Background,
+  progressBarColor = OnboardingTheme.Colors.Primary,
+  progressBarTrackColor = '#E5E7EB',
+  backButtonColor = OnboardingTheme.Colors.Text,
 }: OnboardingLayoutProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -37,6 +47,7 @@ export default function OnboardingLayout({
   const progressStyle = useAnimatedStyle(() => {
     return {
       width: `${progressWidth.value}%`,
+      backgroundColor: progressBarColor,
     };
   });
 
@@ -49,19 +60,19 @@ export default function OnboardingLayout({
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom, backgroundColor }]}>
       {/* Header */}
       <View style={styles.header}>
         {showBack ? (
           <TouchableOpacity onPress={handleBack} style={styles.backButton} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <ArrowLeft size={24} color={OnboardingTheme.Colors.Text} />
+            <ArrowLeft size={24} color={backButtonColor} />
           </TouchableOpacity>
         ) : (
              <View style={{ width: 24 + OnboardingTheme.Spacing.md }} /> 
         )}
         
         <View style={styles.progressContainer}>
-            <View style={styles.progressBarBackground}>
+            <View style={[styles.progressBarBackground, { backgroundColor: progressBarTrackColor }]}>
                 <Animated.View style={[styles.progressBarFill, progressStyle]} />
             </View>
         </View>
@@ -75,14 +86,16 @@ export default function OnboardingLayout({
       </View>
 
       {/* Footer */}
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
-      >
-        <View style={styles.footer}>
-            <OnboardingButton onPress={onNext} title={nextLabel} />
-        </View>
-      </KeyboardAvoidingView>
+      {showNextButton && (
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        >
+          <View style={styles.footer}>
+              <OnboardingButton onPress={onNext} title={nextLabel} />
+          </View>
+        </KeyboardAvoidingView>
+      )}
     </View>
   );
 }
@@ -90,7 +103,6 @@ export default function OnboardingLayout({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: OnboardingTheme.Colors.Background,
   },
   header: {
     flexDirection: 'row',
@@ -110,12 +122,10 @@ const styles = StyleSheet.create({
   },
   progressBarBackground: {
       flex: 1,
-      backgroundColor: '#E5E7EB', // Gray 200
       borderRadius: 3,
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: OnboardingTheme.Colors.Primary, 
     borderRadius: 3,
   },
   content: {

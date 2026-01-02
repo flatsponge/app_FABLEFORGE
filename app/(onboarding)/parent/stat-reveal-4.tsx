@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { FadeIn, FadeInUp, ZoomIn, Easing } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
+import OnboardingLayout from '../../../components/OnboardingLayout';
+import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
+import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
 export default function StatReveal4Screen() {
     const router = useRouter();
@@ -27,46 +30,124 @@ export default function StatReveal4Screen() {
         desc: "Early intervention is the key. Waiting makes behavioral correction significantly more difficult and expensive."
     };
 
+    const handleNext = () => {
+        router.push('/(onboarding)/parent/social-warning');
+    };
+
     return (
-        <View className="flex-1 bg-red-600 items-center justify-center px-6">
-
-            <Animated.View entering={FadeIn.delay(200)} className="items-center w-full mb-12">
-                <View className="bg-white/20 p-4 rounded-full mb-8 backdrop-blur-sm">
-                    <Ionicons name="alarm" size={40} color="white" />
-                </View>
-
-                <Text className="text-2xl text-red-100 text-center mb-6 font-medium leading-relaxed px-4">
-                    {content.intro}
-                </Text>
-
-                <Animated.View entering={ZoomIn.duration(600)} className="items-center">
-                    <Text className="text-[140px] font-black text-white leading-tight" style={{ textShadowColor: 'rgba(0,0,0,0.2)', textShadowOffset: { width: 0, height: 4 }, textShadowRadius: 10 }}>4x</Text>
-                    <Text className="text-5xl text-red-200 font-bold uppercase tracking-[0.2em] -mt-5">{content.val}</Text>
-                </Animated.View>
-            </Animated.View>
-
-            {showContext && (
-                <Animated.View entering={FadeInUp.duration(600).easing(Easing.out(Easing.cubic))} className="w-full">
-                    <View className="bg-white p-6 rounded-3xl mb-8">
-                        <Text className="text-gray-900 text-center text-lg leading-relaxed font-medium mb-4">
-                            "{content.desc}"
-                        </Text>
-                        <View className="bg-red-50 self-center px-3 py-1 rounded-full">
-                            <Text className="text-red-700 text-xs uppercase tracking-wide font-bold">
-                                Journal of Pediatric Psychology
-                            </Text>
-                        </View>
+        <OnboardingLayout
+            progress={1.0}
+            showNextButton={showContext}
+            onNext={handleNext}
+            nextLabel="See The Ripple Effect"
+            backgroundColor={OnboardingTheme.Colors.Error}
+            progressBarColor="white"
+            progressBarTrackColor="rgba(255, 255, 255, 0.3)"
+            backButtonColor="white"
+        >
+            <View style={styles.container}>
+                <Animated.View entering={FadeIn.delay(200)} style={styles.headerContainer}>
+                    <View style={styles.iconWrapper}>
+                        <Ionicons name="alarm" size={40} color="white" />
                     </View>
 
-                    <TouchableOpacity
-                        onPress={() => router.push('/(onboarding)/parent/social-warning')}
-                        className="w-full bg-gray-900 py-4 rounded-full flex-row items-center justify-center"
-                    >
-                        <Text className="text-white text-lg font-bold mr-2">See The Ripple Effect</Text>
-                        <Ionicons name="arrow-forward" size={20} color="white" />
-                    </TouchableOpacity>
+                    <Text style={styles.introText}>{content.intro}</Text>
+
+                    <Animated.View entering={ZoomIn.duration(600)} style={styles.statContainer}>
+                        <Text style={styles.statValue}>4x</Text>
+                        <Text style={styles.statLabel}>{content.val}</Text>
+                    </Animated.View>
                 </Animated.View>
-            )}
-        </View>
+
+                {showContext && (
+                    <Animated.View entering={FadeInUp.duration(600)} style={styles.contextCard}>
+                        <Text style={styles.description}>
+                            "{content.desc}"
+                        </Text>
+                        <View style={styles.sourceBadge}>
+                            <Text style={styles.sourceText}>Journal of Pediatric Psychology</Text>
+                        </View>
+                    </Animated.View>
+                )}
+            </View>
+        </OnboardingLayout>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        alignItems: 'center',
+        width: '100%',
+    },
+    headerContainer: {
+        alignItems: 'center',
+        marginBottom: OnboardingTheme.Spacing.xl,
+    },
+    iconWrapper: {
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        padding: 16,
+        borderRadius: 9999,
+        marginBottom: OnboardingTheme.Spacing.lg,
+    },
+    introText: {
+        fontSize: 22,
+        color: 'white',
+        textAlign: 'center',
+        marginBottom: OnboardingTheme.Spacing.md,
+        fontWeight: '500',
+        paddingHorizontal: 16,
+        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+    },
+    statContainer: {
+        alignItems: 'center',
+    },
+    statValue: {
+        fontSize: 120,
+        fontWeight: '900',
+        color: 'white',
+        lineHeight: 130,
+        textShadowColor: 'rgba(0,0,0,0.2)',
+        textShadowOffset: { width: 0, height: 4 },
+        textShadowRadius: 10,
+        fontFamily: OnboardingTheme.Typography.Title.fontFamily,
+    },
+    statLabel: {
+        fontSize: 40,
+        color: 'rgba(255, 255, 255, 0.8)',
+        fontWeight: 'bold',
+        textTransform: 'uppercase',
+        letterSpacing: 4,
+        marginTop: -10,
+        fontFamily: OnboardingTheme.Typography.Title.fontFamily,
+    },
+    contextCard: {
+        width: '100%',
+        backgroundColor: 'white',
+        padding: OnboardingTheme.Spacing.lg,
+        borderRadius: OnboardingTheme.Radius.xl,
+        alignItems: 'center',
+    },
+    description: {
+        color: OnboardingTheme.Colors.Text,
+        textAlign: 'center',
+        fontSize: 16,
+        lineHeight: 24,
+        fontWeight: '500',
+        marginBottom: OnboardingTheme.Spacing.md,
+        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+    },
+    sourceBadge: {
+        backgroundColor: '#fef2f2', // red-50
+        paddingHorizontal: 12,
+        paddingVertical: 4,
+        borderRadius: 9999,
+    },
+    sourceText: {
+        color: '#b91c1c', // red-700
+        fontSize: 10,
+        fontWeight: 'bold',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+    },
+});
