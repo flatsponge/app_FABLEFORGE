@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Text } from 'react-native';
 import { useRouter } from 'expo-router';
-import Animated, { FadeIn, SlideInUp } from 'react-native-reanimated';
+import { useOnboarding } from '../../../contexts/OnboardingContext';
+import OnboardingLayout from '../../../components/OnboardingLayout';
+import { OnboardingTitle, OnboardingBody, OnboardingSubtitle } from '../../../components/OnboardingTypography';
+import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
+import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
 const TIMELINES = [
     { id: 'immediate', label: 'Right away', description: 'We need help now', emoji: '🔥', urgency: 'high' },
@@ -12,58 +16,67 @@ const TIMELINES = [
 
 export default function GoalsTimelineScreen() {
     const router = useRouter();
+    const { updateData } = useOnboarding();
     const [selected, setSelected] = useState<string | null>(null);
 
     const handleSelect = (id: string) => {
         setSelected(id);
+        // updateData({ goalsTimeline: id }); // Update context if available
         setTimeout(() => {
             router.push('/(onboarding)/quiz/parenting-style');
         }, 300);
     };
 
     return (
-        <View className="flex-1 bg-[#FDFBF7] px-6 pt-12 pb-8">
-            <View className="h-1.5 bg-gray-200 rounded-full mb-8 overflow-hidden">
-                <View className="h-full bg-primary-500" style={{ width: '15%' }} />
-            </View>
-
-            <Animated.View entering={FadeIn.delay(100)}>
-                <Text className="text-3xl font-bold text-gray-900 mb-2">
-                    How quickly do you want to see changes?
-                </Text>
-                <Text className="text-lg text-gray-500 mb-8">
+        <OnboardingLayout
+            progress={0.2} // Adjusted progress to fit sequence (child-age is 0.15)
+            showNextButton={false}
+        >
+            <View style={styles.contentContainer}>
+                <OnboardingSubtitle>Step 3</OnboardingSubtitle>
+                <OnboardingTitle>How quickly do you want to see changes?</OnboardingTitle>
+                <OnboardingBody>
                     This helps us set realistic milestones.
-                </Text>
-            </Animated.View>
+                </OnboardingBody>
 
-            <View className="flex-1">
-                {TIMELINES.map((timeline, index) => (
-                    <Animated.View key={timeline.id} entering={FadeIn.duration(300)}>
-                        <TouchableOpacity
+                <View style={styles.optionsContainer}>
+                    {TIMELINES.map((timeline) => (
+                        <OnboardingOptionCard
+                            key={timeline.id}
+                            title={timeline.label}
+                            subtitle={timeline.description}
+                            selected={selected === timeline.id}
                             onPress={() => handleSelect(timeline.id)}
-                            className={`mb-3 p-5 rounded-2xl border-2 flex-row items-center ${selected === timeline.id
-                                    ? 'bg-primary-50 border-primary-500'
-                                    : 'bg-white border-gray-100'
-                                }`}
-                        >
-                            <Text className="text-3xl mr-4">{timeline.emoji}</Text>
-                            <View className="flex-1">
-                                <Text className={`text-lg font-bold ${selected === timeline.id ? 'text-primary-900' : 'text-gray-900'}`}>
-                                    {timeline.label}
-                                </Text>
-                                <Text className={`text-sm ${selected === timeline.id ? 'text-primary-700' : 'text-gray-500'}`}>
-                                    {timeline.description}
-                                </Text>
-                            </View>
-                            {timeline.urgency === 'high' && (
-                                <View className="bg-red-100 px-2 py-1 rounded">
-                                    <Text className="text-red-700 text-xs font-bold">Urgent</Text>
+                            icon={<View><OnboardingBody style={{ fontSize: 24 }}>{timeline.emoji}</OnboardingBody></View>}
+                            rightContent={timeline.urgency === 'high' ? (
+                                <View style={styles.badgeUrgent}>
+                                    <Text style={styles.badgeTextUrgent}>Urgent</Text>
                                 </View>
-                            )}
-                        </TouchableOpacity>
-                    </Animated.View>
-                ))}
+                            ) : undefined}
+                        />
+                    ))}
+                </View>
             </View>
-        </View>
+        </OnboardingLayout>
     );
 }
+
+const styles = StyleSheet.create({
+    contentContainer: {
+        width: '100%',
+    },
+    optionsContainer: {
+        marginTop: OnboardingTheme.Spacing.xl,
+    },
+    badgeUrgent: {
+        backgroundColor: '#fee2e2', // red-100
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 4,
+    },
+    badgeTextUrgent: {
+        color: '#b91c1c', // red-700
+        fontSize: 10,
+        fontWeight: 'bold',
+    },
+});
