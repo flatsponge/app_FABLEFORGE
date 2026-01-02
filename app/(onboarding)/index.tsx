@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
-import { View } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { OnboardingScreen } from '../../components/OnboardingScreen';
-import { SelectionCard } from '../../components/SelectionCard';
 import { useOnboarding } from '../../contexts/OnboardingContext';
+import OnboardingLayout from '../../components/OnboardingLayout';
+import { OnboardingTitle, OnboardingBody, OnboardingSubtitle } from '../../components/OnboardingTypography';
+import OnboardingOptionCard from '../../components/OnboardingOptionCard';
+import { OnboardingTheme } from '../../constants/OnboardingTheme';
+import { Ionicons } from '@expo/vector-icons';
 
 const GOALS = [
     { id: 'resilience', title: 'Emotional Resilience', description: 'Help them handle big feelings better', icon: 'heart' },
@@ -26,26 +29,58 @@ export default function OnboardingStart() {
     };
 
     return (
-        <OnboardingScreen
-            title="What is your ultimate goal for your child?"
-            subtitle="We'll tailor the stories to help them grow in this direction."
-            currentStep={1}
-            totalSteps={12}
-            showBack={false}
+        <OnboardingLayout
+            progress={0.05}
+            showNextButton={false}
         >
-            <View className="pb-8">
-                {GOALS.map((goal, index) => (
-                    <SelectionCard
-                        key={goal.id}
-                        index={index}
-                        title={goal.title}
-                        description={goal.description}
-                        icon={goal.icon as any}
-                        selected={selected === goal.id}
-                        onPress={() => handleSelect(goal.id)}
-                    />
-                ))}
+            <View style={styles.contentContainer}>
+                <OnboardingSubtitle>Welcome</OnboardingSubtitle>
+                <OnboardingTitle>What is your ultimate goal for your child?</OnboardingTitle>
+                <OnboardingBody>
+                    We'll tailor the stories to help them grow in this direction.
+                </OnboardingBody>
+
+                <View style={styles.optionsContainer}>
+                    {GOALS.map((goal) => (
+                        <OnboardingOptionCard
+                            key={goal.id}
+                            title={goal.title}
+                            subtitle={goal.description}
+                            selected={selected === goal.id}
+                            onPress={() => handleSelect(goal.id)}
+                            icon={
+                                <View style={[styles.iconContainer, selected === goal.id && styles.iconContainerSelected]}>
+                                    <Ionicons
+                                        name={goal.icon as any}
+                                        size={24}
+                                        color={selected === goal.id ? OnboardingTheme.Colors.Primary : '#6b7280'}
+                                    />
+                                </View>
+                            }
+                        />
+                    ))}
+                </View>
             </View>
-        </OnboardingScreen>
+        </OnboardingLayout>
     );
 }
+
+const styles = StyleSheet.create({
+    contentContainer: {
+        width: '100%',
+    },
+    optionsContainer: {
+        marginTop: OnboardingTheme.Spacing.xl,
+    },
+    iconContainer: {
+        width: 48,
+        height: 48,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#f9fafb', // gray-50
+    },
+    iconContainerSelected: {
+        backgroundColor: '#f3e8ff', // primary-100 (approx)
+    },
+});
