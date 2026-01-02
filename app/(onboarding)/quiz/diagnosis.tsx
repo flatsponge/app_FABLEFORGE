@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeIn, SlideInUp } from 'react-native-reanimated';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
+import OnboardingLayout from '../../../components/OnboardingLayout';
+import { OnboardingTitle, OnboardingBody, OnboardingSubtitle } from '../../../components/OnboardingTypography';
+import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
+import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
 const BEHAVIORS = [
     { id: 'arguing', title: 'Verbal Defiance', description: 'Argues back or refuses to listen', icon: 'chatbox-ellipses', severity: 'common' },
@@ -31,60 +34,101 @@ export default function DiagnosisScreen() {
     };
 
     return (
-        <View className="flex-1 bg-[#FDFBF7] px-6 pt-12 pb-8">
-            <View className="h-1.5 bg-gray-200 rounded-full mb-8 overflow-hidden">
-                <View className="h-full bg-primary-500" style={{ width: '60%' }} />
-            </View>
-
-            <Animated.View entering={FadeIn.delay(100)}>
-                <Text className="text-3xl font-bold text-gray-900 mb-2">
-                    How does your child typically handle frustration?
-                </Text>
-                <Text className="text-lg text-gray-500 mb-2">
+        <OnboardingLayout
+            progress={0.5}
+            showNextButton={false}
+        >
+            <View style={styles.contentContainer}>
+                <OnboardingSubtitle>Step 9</OnboardingSubtitle>
+                <OnboardingTitle>How does your child typically handle frustration?</OnboardingTitle>
+                <OnboardingBody>
                     This helps us identify their primary coping mechanism.
-                </Text>
-                <View className="bg-amber-50 border border-amber-200 p-3 rounded-xl mb-6">
-                    <Text className="text-amber-800 text-sm">
-                        <Ionicons name="information-circle" size={14} color="#92400e" /> Studies show 67% of children lack healthy coping skills by age 6.
+                </OnboardingBody>
+
+                <View style={styles.infoBanner}>
+                    <Ionicons name="information-circle" size={16} color="#92400e" style={styles.infoIcon} />
+                    <Text style={styles.infoText}>
+                        Studies show 67% of children lack healthy coping skills by age 6.
                     </Text>
                 </View>
-            </Animated.View>
 
-            <View className="flex-1">
-                {BEHAVIORS.map((behavior, index) => (
-                    <Animated.View key={behavior.id} entering={FadeIn.duration(300)}>
-                        <TouchableOpacity
+                <View style={styles.optionsContainer}>
+                    {BEHAVIORS.map((behavior) => (
+                        <OnboardingOptionCard
+                            key={behavior.id}
+                            title={behavior.title}
+                            subtitle={behavior.description}
+                            selected={selected === behavior.id}
                             onPress={() => handleSelect(behavior.id)}
-                            className={`mb-3 p-4 rounded-2xl border-2 flex-row items-center ${selected === behavior.id
-                                ? 'bg-primary-50 border-primary-500'
-                                : 'bg-white border-gray-100'
-                                }`}
-                        >
-                            <View className={`w-12 h-12 rounded-xl items-center justify-center mr-4 ${selected === behavior.id ? 'bg-primary-100' : 'bg-gray-50'
-                                }`}>
-                                <Ionicons
-                                    name={behavior.icon as any}
-                                    size={24}
-                                    color={selected === behavior.id ? '#9333ea' : '#6b7280'}
-                                />
-                            </View>
-                            <View className="flex-1">
-                                <Text className={`text-lg font-bold ${selected === behavior.id ? 'text-primary-900' : 'text-gray-900'}`}>
-                                    {behavior.title}
-                                </Text>
-                                <Text className={`text-sm ${selected === behavior.id ? 'text-primary-700' : 'text-gray-500'}`}>
-                                    {behavior.description}
-                                </Text>
-                            </View>
-                            {behavior.severity === 'urgent' && (
-                                <View className="bg-red-100 px-2 py-1 rounded">
-                                    <Text className="text-red-700 text-xs font-bold">Priority</Text>
+                            icon={
+                                <View style={[styles.iconContainer, selected === behavior.id && styles.iconContainerSelected]}>
+                                    <Ionicons
+                                        name={behavior.icon as any}
+                                        size={24}
+                                        color={selected === behavior.id ? OnboardingTheme.Colors.Primary : '#6b7280'}
+                                    />
                                 </View>
-                            )}
-                        </TouchableOpacity>
-                    </Animated.View>
-                ))}
+                            }
+                            rightContent={behavior.severity === 'urgent' ? (
+                                <View style={styles.priorityBadge}>
+                                    <Text style={styles.priorityText}>Priority</Text>
+                                </View>
+                            ) : undefined}
+                        />
+                    ))}
+                </View>
             </View>
-        </View>
+        </OnboardingLayout>
     );
 }
+
+const styles = StyleSheet.create({
+    contentContainer: {
+        width: '100%',
+    },
+    infoBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#fffbeb', // amber-50
+        borderColor: '#fde68a', // amber-200
+        borderWidth: 1,
+        borderRadius: OnboardingTheme.Radius.md,
+        padding: OnboardingTheme.Spacing.sm,
+        marginTop: OnboardingTheme.Spacing.sm,
+        marginBottom: OnboardingTheme.Spacing.sm,
+    },
+    infoIcon: {
+        marginRight: OnboardingTheme.Spacing.xs,
+    },
+    infoText: {
+        flex: 1,
+        color: '#92400e', // amber-800
+        fontSize: 14,
+        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+    },
+    optionsContainer: {
+        marginTop: OnboardingTheme.Spacing.md,
+    },
+    iconContainer: {
+        width: 48,
+        height: 48,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#f9fafb', // gray-50
+    },
+    iconContainerSelected: {
+        backgroundColor: '#f3e8ff', // primary-100 (approx)
+    },
+    priorityBadge: {
+        backgroundColor: '#fee2e2', // red-100
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 4,
+    },
+    priorityText: {
+        color: '#b91c1c', // red-700
+        fontSize: 10,
+        fontWeight: 'bold',
+    },
+});
