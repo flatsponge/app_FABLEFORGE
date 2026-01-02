@@ -2,8 +2,8 @@
 
 ## Phase 1: Foundation & Layout
 - [x] Task: Create `OnboardingTheme` constants (Colors, Typography, Spacing) based on "shocking pages" style a3db1c4
-- [ ] Task: Create `OnboardingLayout` component (Header, animated ProgressBar, Safe Area with `react-native-safe-area-context`, Sticky Footer)
-- [ ] Task: Create `OnboardingTitle` and `OnboardingBody` typography components
+- [x] Task: Create `OnboardingLayout` component (Header, animated ProgressBar, Safe Area with `react-native-safe-area-context`, Sticky Footer) 77cf727
+- [~] Task: Create `OnboardingTitle` and `OnboardingBody` typography components
 - [ ] Task: Create `OnboardingButton` component (matching existing "shocking" style)
 - [ ] Task: Create `OnboardingOptionCard` component for multiple-choice selections
 - [ ] Task: Conductor - User Manual Verification 'Foundation & Layout' (Protocol in workflow.md)
