@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeIn, SlideInUp } from 'react-native-reanimated';
+import { useOnboarding } from '../../../contexts/OnboardingContext';
+import OnboardingLayout from '../../../components/OnboardingLayout';
+import { OnboardingTitle, OnboardingBody, OnboardingSubtitle } from '../../../components/OnboardingTypography';
+import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
+import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
 const REACTIONS = [
     { id: 'calm', title: 'I stay calm (mostly)', icon: 'happy', emoji: '😌' },
@@ -14,62 +18,96 @@ const REACTIONS = [
 
 export default function ParentGuiltScreen() {
     const router = useRouter();
+    const { updateData } = useOnboarding();
     const [selected, setSelected] = useState<string | null>(null);
 
     const handleSelect = (id: string) => {
         setSelected(id);
+        // updateData({ parentReaction: id }); // Update context if available
         setTimeout(() => {
             router.push('/(onboarding)/quiz/commitment');
         }, 300);
     };
 
     return (
-        <View className="flex-1 bg-[#FDFBF7] px-6 pt-12 pb-8">
-            <View className="h-1.5 bg-gray-200 rounded-full mb-8 overflow-hidden">
-                <View className="h-full bg-primary-500" style={{ width: '72%' }} />
-            </View>
-
-            <Animated.View entering={FadeIn.delay(100)}>
-                <Text className="text-3xl font-bold text-gray-900 mb-2">
-                    Be honest: how do you usually react?
-                </Text>
-                <Text className="text-lg text-gray-500 mb-2">
+        <OnboardingLayout
+            progress={0.8}
+            showNextButton={false}
+        >
+            <View style={styles.contentContainer}>
+                <OnboardingSubtitle>Step 15</OnboardingSubtitle>
+                <OnboardingTitle>Be honest: how do you usually react?</OnboardingTitle>
+                <OnboardingBody>
                     There's no judgment here—this is a safe space.
-                </Text>
-                <View className="bg-primary-50 border border-primary-100 p-3 rounded-xl mb-6 flex-row items-center">
-                    <Ionicons name="lock-closed" size={16} color="#7c3aed" style={{ marginRight: 8 }} />
-                    <Text className="text-primary-800 text-sm flex-1">
+                </OnboardingBody>
+
+                <View style={styles.privacyBanner}>
+                    <Ionicons name="lock-closed" size={16} color={OnboardingTheme.Colors.Primary} style={styles.privacyIcon} />
+                    <Text style={styles.privacyText}>
                         Your answers are private and help us create the right approach.
                     </Text>
                 </View>
-            </Animated.View>
 
-            <View className="flex-1">
-                {REACTIONS.map((reaction, index) => (
-                    <Animated.View key={reaction.id} entering={FadeIn.duration(300)}>
-                        <TouchableOpacity
+                <View style={styles.optionsContainer}>
+                    {REACTIONS.map((reaction) => (
+                        <OnboardingOptionCard
+                            key={reaction.id}
+                            title={reaction.title}
+                            selected={selected === reaction.id}
                             onPress={() => handleSelect(reaction.id)}
-                            className={`mb-3 p-4 rounded-2xl border-2 flex-row items-center ${selected === reaction.id
-                                    ? 'bg-primary-50 border-primary-500'
-                                    : 'bg-white border-gray-100'
-                                }`}
-                        >
-                            <Text className="text-3xl mr-4">{reaction.emoji}</Text>
-                            <Text className={`text-lg font-semibold flex-1 ${selected === reaction.id ? 'text-primary-900' : 'text-gray-900'
-                                }`}>
-                                {reaction.title}
-                            </Text>
-                        </TouchableOpacity>
-                    </Animated.View>
-                ))}
-            </View>
+                            icon={<View><OnboardingBody style={{ fontSize: 24 }}>{reaction.emoji}</OnboardingBody></View>}
+                        />
+                    ))}
+                </View>
 
-            {/* Reassurance */}
-            <View className="bg-gray-50 p-4 rounded-xl">
-                <Text className="text-gray-500 text-sm text-center italic">
-                    "The goal isn't perfect parenting—it's having better tools."
-                </Text>
+                <View style={styles.reassuranceContainer}>
+                    <Text style={styles.reassuranceText}>
+                        "The goal isn't perfect parenting—it's having better tools."
+                    </Text>
+                </View>
             </View>
-        </View>
+        </OnboardingLayout>
     );
 }
+
+const styles = StyleSheet.create({
+    contentContainer: {
+        width: '100%',
+    },
+    privacyBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#f3e8ff', // primary-50
+        borderColor: '#e9d5ff', // primary-100
+        borderWidth: 1,
+        borderRadius: OnboardingTheme.Radius.md,
+        padding: OnboardingTheme.Spacing.sm,
+        marginTop: OnboardingTheme.Spacing.sm,
+        marginBottom: OnboardingTheme.Spacing.sm,
+    },
+    privacyIcon: {
+        marginRight: OnboardingTheme.Spacing.xs,
+    },
+    privacyText: {
+        flex: 1,
+        color: '#6b21a8', // primary-800
+        fontSize: 14,
+        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+    },
+    optionsContainer: {
+        marginTop: OnboardingTheme.Spacing.md,
+    },
+    reassuranceContainer: {
+        marginTop: OnboardingTheme.Spacing.xl,
+        backgroundColor: '#f9fafb', // gray-50
+        padding: OnboardingTheme.Spacing.md,
+        borderRadius: OnboardingTheme.Radius.lg,
+    },
+    reassuranceText: {
+        color: OnboardingTheme.Colors.TextSecondary,
+        fontSize: 14,
+        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+        fontStyle: 'italic',
+        textAlign: 'center',
+    },
+});
