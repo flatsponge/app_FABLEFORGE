@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import OnboardingLayout from '../../../components/OnboardingLayout';
+import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
+import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
 const MESSAGES = [
     { text: "Analyzing behavioral patterns...", icon: "analytics" },
@@ -38,61 +41,148 @@ export default function ProcessingScreen() {
     const progress = ((currentMessageIndex + 1) / MESSAGES.length) * 100;
 
     return (
-        <View className="flex-1 bg-gray-900 items-center justify-center px-8">
-            <Animated.View entering={FadeIn.duration(800)} className="items-center w-full">
-                {/* Animated Icon */}
-                <View className="mb-10 p-8 bg-primary-900 rounded-full border border-primary-700">
-                    <ActivityIndicator size="large" color="#a855f7" />
+        <OnboardingLayout
+            progress={0.95}
+            showNextButton={false}
+        >
+            <View style={styles.contentContainer}>
+                <View style={styles.spinnerContainer}>
+                    <ActivityIndicator size="large" color={OnboardingTheme.Colors.Primary} />
                 </View>
 
-                {/* Title */}
-                <Text className="text-2xl font-bold text-white text-center mb-2">
-                    Analyzing Your Responses
-                </Text>
-                <Text className="text-gray-400 text-center mb-10">
+                <OnboardingTitle style={styles.centerText}>Analyzing Your Responses</OnboardingTitle>
+                <OnboardingBody style={[styles.centerText, styles.subtitle]}>
                     Creating your personalized plan...
-                </Text>
+                </OnboardingBody>
 
-                {/* Current Task */}
-                <View className="h-20 items-center justify-center w-full">
+                <View style={styles.messageWrapper}>
                     <Animated.View
                         key={currentMessageIndex}
                         entering={FadeIn.duration(300)}
                         exiting={FadeOut.duration(300)}
-                        className="flex-row items-center bg-gray-800 px-6 py-4 rounded-2xl"
+                        style={styles.messageContainer}
                     >
                         <Ionicons
                             name={MESSAGES[currentMessageIndex].icon as any}
                             size={24}
-                            color="#a855f7"
-                            style={{ marginRight: 12 }}
+                            color={OnboardingTheme.Colors.Primary}
+                            style={styles.icon}
                         />
-                        <Text className="text-white font-medium text-center flex-1">
+                        <OnboardingBody style={styles.messageText}>
                             {MESSAGES[currentMessageIndex].text}
-                        </Text>
+                        </OnboardingBody>
                     </Animated.View>
                 </View>
 
-                {/* Progress Bar */}
-                <View className="w-full mt-10">
-                    <View className="w-full bg-gray-700 h-2 rounded-full overflow-hidden">
+                <View style={styles.progressBarContainer}>
+                    <View style={styles.progressBarBackground}>
                         <View
-                            className="h-full bg-primary-500 rounded-full transition-all duration-500"
-                            style={{ width: `${progress}%` }}
+                            style={[styles.progressBarFill, { width: `${progress}%` }]}
                         />
                     </View>
-                    <View className="flex-row justify-between mt-3">
-                        <Text className="text-gray-500 text-xs">Processing...</Text>
-                        <Text className="text-primary-400 text-xs font-medium">{Math.round(progress)}%</Text>
+                    <View style={styles.progressTextContainer}>
+                        <OnboardingBody style={styles.progressLabel}>Processing...</OnboardingBody>
+                        <OnboardingBody style={styles.progressValue}>{Math.round(progress)}%</OnboardingBody>
                     </View>
                 </View>
 
-                {/* Trust indicators */}
-                <View className="mt-12 flex-row items-center justify-center">
+                <View style={styles.trustContainer}>
                     <Ionicons name="shield-checkmark" size={16} color="#4ade80" />
-                    <Text className="text-gray-400 text-xs ml-2">Your data is encrypted and secure</Text>
+                    <OnboardingBody style={styles.trustText}>Your data is encrypted and secure</OnboardingBody>
                 </View>
-            </Animated.View>
-        </View>
+            </View>
+        </OnboardingLayout>
     );
 }
+
+const styles = StyleSheet.create({
+    contentContainer: {
+        alignItems: 'center',
+        width: '100%',
+        paddingTop: OnboardingTheme.Spacing.xl,
+    },
+    spinnerContainer: {
+        marginBottom: OnboardingTheme.Spacing.xl,
+        padding: 24,
+        backgroundColor: '#f3e8ff', // primary-50
+        borderRadius: 9999,
+        borderWidth: 1,
+        borderColor: '#e9d5ff', // primary-100
+    },
+    centerText: {
+        textAlign: 'center',
+    },
+    subtitle: {
+        marginBottom: OnboardingTheme.Spacing.xl,
+        color: OnboardingTheme.Colors.TextSecondary,
+    },
+    messageWrapper: {
+        height: 80,
+        width: '100%',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    messageContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'white',
+        paddingHorizontal: OnboardingTheme.Spacing.lg,
+        paddingVertical: OnboardingTheme.Spacing.md,
+        borderRadius: OnboardingTheme.Radius.lg,
+        borderWidth: 1,
+        borderColor: OnboardingTheme.Colors.Border,
+        width: '100%',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    icon: {
+        marginRight: OnboardingTheme.Spacing.md,
+    },
+    messageText: {
+        flex: 1,
+        fontSize: 14,
+    },
+    progressBarContainer: {
+        width: '100%',
+        marginTop: OnboardingTheme.Spacing.xl,
+    },
+    progressBarBackground: {
+        width: '100%',
+        height: 8,
+        backgroundColor: '#e5e7eb', // gray-200
+        borderRadius: 9999,
+        overflow: 'hidden',
+    },
+    progressBarFill: {
+        height: '100%',
+        backgroundColor: OnboardingTheme.Colors.Primary,
+        borderRadius: 9999,
+    },
+    progressTextContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: OnboardingTheme.Spacing.xs,
+    },
+    progressLabel: {
+        fontSize: 12,
+        color: OnboardingTheme.Colors.TextSecondary,
+    },
+    progressValue: {
+        fontSize: 12,
+        color: OnboardingTheme.Colors.Primary,
+        fontWeight: 'bold',
+    },
+    trustContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: OnboardingTheme.Spacing.xl * 2,
+    },
+    trustText: {
+        marginLeft: OnboardingTheme.Spacing.xs,
+        fontSize: 12,
+        color: OnboardingTheme.Colors.TextSecondary,
+    },
+});
