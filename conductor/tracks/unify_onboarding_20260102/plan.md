@@ -3,10 +3,10 @@
 ## Phase 1: Foundation & Layout
 - [x] Task: Create `OnboardingTheme` constants (Colors, Typography, Spacing) based on "shocking pages" style a3db1c4
 - [x] Task: Create `OnboardingLayout` component (Header, animated ProgressBar, Safe Area with `react-native-safe-area-context`, Sticky Footer) 77cf727
-- [~] Task: Create `OnboardingTitle` and `OnboardingBody` typography components
-- [ ] Task: Create `OnboardingButton` component (matching existing "shocking" style)
-- [ ] Task: Create `OnboardingOptionCard` component for multiple-choice selections
-- [ ] Task: Conductor - User Manual Verification 'Foundation & Layout' (Protocol in workflow.md)
+- [x] Task: Create `OnboardingTitle` and `OnboardingBody` typography components b2c563a
+- [x] Task: Create `OnboardingButton` component (matching existing "shocking" style) f4ff488
+- [x] Task: Create `OnboardingOptionCard` component for multiple-choice selections 5244a11
+- [x] Task: Conductor - User Manual Verification 'Foundation & Layout' (Protocol in workflow.md)
 
 ## Phase 2: Quiz Section Migration
 - [ ] Task: Refactor `quiz/child-name.tsx` to use new Layout & Components (Verify Safe Area & Button Position)
