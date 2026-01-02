@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import Animated, { FadeIn, SlideInUp } from 'react-native-reanimated';
+import { useOnboarding } from '../../../contexts/OnboardingContext';
+import OnboardingLayout from '../../../components/OnboardingLayout';
+import { OnboardingTitle, OnboardingBody, OnboardingSubtitle } from '../../../components/OnboardingTypography';
+import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
+import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
 const TRAITS = [
     { id: 'shy', label: 'Shy / Reserved', emoji: '🙈' },
@@ -16,6 +20,7 @@ const TRAITS = [
 
 export default function ChildPersonalityScreen() {
     const router = useRouter();
+    const { data } = useOnboarding();
     const [selected, setSelected] = useState<string[]>([]);
 
     const toggleSelection = (id: string) => {
@@ -29,59 +34,64 @@ export default function ChildPersonalityScreen() {
     const canProceed = selected.length >= 1;
 
     const handleNext = () => {
-        router.push('/(onboarding)/quiz/daily-routine');
+        if (canProceed) {
+            // Note: Not currently saving traits to context as it's not in the type definition,
+            // but keeping logic consistent with existing screen.
+            router.push('/(onboarding)/quiz/daily-routine');
+        }
     };
 
     return (
-        <View className="flex-1 bg-[#FDFBF7]">
-            <ScrollView className="flex-1 px-6 pt-12" contentContainerStyle={{ paddingBottom: 120 }}>
-                <View className="h-1.5 bg-gray-200 rounded-full mb-8 overflow-hidden">
-                    <View className="h-full bg-primary-500" style={{ width: '25%' }} />
+        <OnboardingLayout
+            progress={0.2}
+            onNext={handleNext}
+            nextLabel="Continue"
+        >
+            <ScrollView 
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scrollContent}
+            >
+                <OnboardingSubtitle>Step 3</OnboardingSubtitle>
+                <OnboardingTitle>Describe {data.childName || 'your child'}</OnboardingTitle>
+                <OnboardingBody>
+                    Select up to 3 personality traits so we can match the story tone.
+                </OnboardingBody>
+                <View style={styles.selectionCounter}>
+                    <OnboardingBody style={styles.counterText}>
+                        {selected.length}/3 selected
+                    </OnboardingBody>
                 </View>
 
-                <Animated.View entering={FadeIn.delay(100)}>
-                    <Text className="text-3xl font-bold text-gray-900 mb-2">
-                        Pick words that describe your child
-                    </Text>
-                    <Text className="text-lg text-gray-500 mb-2">
-                        Select up to 3 personality traits.
-                    </Text>
-                    <Text className="text-sm text-primary-600 font-medium mb-8">
-                        {selected.length}/3 selected
-                    </Text>
-                </Animated.View>
-
-                <View className="flex-row flex-wrap gap-3">
-                    {TRAITS.map((trait, index) => (
-                        <Animated.View key={trait.id} entering={FadeIn.duration(300)}>
-                            <TouchableOpacity
-                                onPress={() => toggleSelection(trait.id)}
-                                className={`px-4 py-3 rounded-full border-2 flex-row items-center ${selected.includes(trait.id)
-                                        ? 'bg-primary-500 border-primary-500'
-                                        : 'bg-white border-gray-200'
-                                    }`}
-                            >
-                                <Text className="text-lg mr-2">{trait.emoji}</Text>
-                                <Text className={`font-semibold ${selected.includes(trait.id) ? 'text-white' : 'text-gray-700'}`}>
-                                    {trait.label}
-                                </Text>
-                            </TouchableOpacity>
-                        </Animated.View>
+                <View style={styles.optionsContainer}>
+                    {TRAITS.map((trait) => (
+                        <OnboardingOptionCard
+                            key={trait.id}
+                            title={trait.label}
+                            selected={selected.includes(trait.id)}
+                            onPress={() => toggleSelection(trait.id)}
+                            icon={<View><OnboardingBody style={{ fontSize: 24 }}>{trait.emoji}</OnboardingBody></View>}
+                        />
                     ))}
                 </View>
             </ScrollView>
-
-            <View className="absolute bottom-0 left-0 right-0 p-6 bg-[#FDFBF7]">
-                <TouchableOpacity
-                    onPress={handleNext}
-                    disabled={!canProceed}
-                    className={`py-5 rounded-full items-center ${canProceed ? 'bg-primary-600' : 'bg-gray-200'}`}
-                >
-                    <Text className={`text-lg font-bold ${canProceed ? 'text-white' : 'text-gray-400'}`}>
-                        Continue
-                    </Text>
-                </TouchableOpacity>
-            </View>
-        </View>
+        </OnboardingLayout>
     );
 }
+
+const styles = StyleSheet.create({
+    scrollContent: {
+        paddingBottom: OnboardingTheme.Spacing.xl,
+    },
+    selectionCounter: {
+        marginTop: OnboardingTheme.Spacing.xs,
+        marginBottom: OnboardingTheme.Spacing.md,
+    },
+    counterText: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: OnboardingTheme.Colors.Accent,
+    },
+    optionsContainer: {
+        marginTop: OnboardingTheme.Spacing.md,
+    },
+});
