@@ -54,6 +54,7 @@ import {
 } from 'lucide-react-native';
 import { LucideIcon } from 'lucide-react-native';
 import { PRESET_LOCATIONS, FRIENDS, VOICE_PRESETS } from '@/constants/data';
+import { StoryControls, StoryLength, StoryDifficulty, StoryTime } from '@/components/StoryControls';
 
 const MAX_CRYSTALS = 160;
 const REGEN_TIME_SECONDS = 1800;
@@ -187,159 +188,159 @@ const CrystalModal = ({
   return (
     <Modal visible={visible} transparent animationType="slide">
       <View className="flex-1 bg-black/60 justify-end">
-          <ScrollView className="bg-white rounded-t-[40px] max-h-[90%]">
-            <Pressable
-              onPress={onClose}
-              className="absolute top-5 right-5 z-20 w-8 h-8 rounded-full bg-black/5 items-center justify-center"
-            >
-              <X size={20} color="#64748b" />
-            </Pressable>
+        <ScrollView className="bg-white rounded-t-[40px] max-h-[90%]">
+          <Pressable
+            onPress={onClose}
+            className="absolute top-5 right-5 z-20 w-8 h-8 rounded-full bg-black/5 items-center justify-center"
+          >
+            <X size={20} color="#64748b" />
+          </Pressable>
 
-            <View className="bg-background p-8 pb-10 border-b border-slate-100 relative overflow-hidden">
-              <View className="absolute top-0 right-0 w-64 h-64 bg-cyan-100/30 rounded-full -mr-16 -mt-16" />
+          <View className="bg-background p-8 pb-10 border-b border-slate-100 relative overflow-hidden">
+            <View className="absolute top-0 right-0 w-64 h-64 bg-cyan-100/30 rounded-full -mr-16 -mt-16" />
 
-              <View className="items-center">
-                <Text className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
-                  Current Balance
-                </Text>
-                <View className="flex-row items-center gap-2 mb-4">
-                  <Diamond size={32} color="#06b6d4" fill="#06b6d4" />
-                  <Text className="text-5xl font-black text-slate-800">{balance}</Text>
-                  <Text className="text-2xl font-bold text-slate-300">/{max}</Text>
-                </View>
-
-                {balance < max ? (
-                  <View className="flex-row items-center gap-3 bg-white px-4 py-2 rounded-full border border-slate-200">
-                    <View className="flex-row items-center gap-1.5">
-                      <Clock size={14} color="#06b6d4" />
-                      <Text className="text-xs font-bold text-slate-600">
-                        +1 in <Text className="font-mono text-cyan-600">{formatTime(timeToNext)}</Text>
-                      </Text>
-                    </View>
-                    <View className="w-px h-3 bg-slate-200" />
-                    <View className="flex-row items-center gap-1.5">
-                      <BatteryCharging size={14} color="#a855f7" />
-                      <Text className="text-xs font-bold text-slate-600">
-                        Full in <Text className="font-mono text-purple-600">{formatFullTimer(fullInSeconds)}</Text>
-                      </Text>
-                    </View>
-                  </View>
-                ) : (
-                  <View className="bg-emerald-50 px-4 py-2 rounded-full flex-row items-center gap-2">
-                    <Check size={16} color="#059669" />
-                    <Text className="text-xs font-bold text-emerald-600">Fully Charged</Text>
-                  </View>
-                )}
-              </View>
-            </View>
-
-            <View className="p-6 gap-6 bg-white">
-              <AnimatedGradientBorder>
-                <View className="bg-slate-900 p-6 relative overflow-hidden">
-                  <View className="flex-row justify-between items-start mb-4">
-                    <View>
-                      <View className="flex-row items-center gap-2 mb-1">
-                        <View className="bg-amber-400 px-2 py-0.5 rounded-md">
-                          <Text className="text-[10px] font-black text-slate-900 uppercase">Best Value</Text>
-                        </View>
-                      </View>
-                      <Text className="text-2xl font-black text-white italic tracking-wide">
-                        STORY<Text className="text-amber-400">MAX</Text>
-                      </Text>
-                    </View>
-                    <Crown size={40} color="#fbbf24" />
-                  </View>
-
-                  <View className="gap-3 mb-6">
-                    <View className="flex-row items-center gap-3">
-                      <View className="w-8 h-8 rounded-full bg-white/10 items-center justify-center">
-                        <Zap size={16} color="#fbbf24" />
-                      </View>
-                      <View>
-                        <Text className="font-bold text-sm text-white">2x Faster Generation</Text>
-                        <Text className="text-[10px] text-slate-400">Crystals refill every 15m</Text>
-                      </View>
-                    </View>
-                    <View className="flex-row items-center gap-3">
-                      <View className="w-8 h-8 rounded-full bg-white/10 items-center justify-center">
-                        <Infinity size={16} color="#c084fc" />
-                      </View>
-                      <View>
-                        <Text className="font-bold text-sm text-white">2x Cap Increase</Text>
-                        <Text className="text-[10px] text-slate-400">Hold up to 320 Crystals</Text>
-                      </View>
-                    </View>
-                    <View className="flex-row items-center gap-3">
-                      <View className="w-8 h-8 rounded-full bg-white/10 items-center justify-center">
-                        <Diamond size={16} color="#22d3ee" />
-                      </View>
-                      <View>
-                        <Text className="font-bold text-sm text-white">+1000 Instant Boost</Text>
-                        <Text className="text-[10px] text-slate-400">One-time bonus</Text>
-                      </View>
-                    </View>
-                  </View>
-
-                  <Pressable
-                    onPress={() => onRefill(1000)}
-                    className="w-full py-4 rounded-xl bg-amber-400 items-center flex-row justify-center gap-2 active:scale-95"
-                  >
-                    <Text className="text-slate-900 font-black text-sm">Upgrade to MAX</Text>
-                    <View className="bg-black/10 px-1.5 py-0.5 rounded">
-                      <Text className="text-xs text-slate-900/70">$9.99/mo</Text>
-                    </View>
-                  </Pressable>
-                </View>
-              </AnimatedGradientBorder>
-
-              <View className="flex-row items-center gap-4">
-                <View className="h-px bg-slate-100 flex-1" />
-                <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Or Top Up</Text>
-                <View className="h-px bg-slate-100 flex-1" />
-              </View>
-
-              <View className="flex-row gap-4">
-                <Pressable
-                  onPress={() => onRefill(100)}
-                  className="flex-1 bg-slate-50 p-4 rounded-3xl border border-slate-200 items-center gap-3 active:scale-95"
-                >
-                  <View className="w-12 h-12 bg-white rounded-full items-center justify-center">
-                    <Diamond size={24} color="#22d3ee" fill="#22d3ee" />
-                  </View>
-                  <View className="items-center">
-                    <Text className="font-bold text-slate-800 text-lg">100</Text>
-                    <Text className="text-xs font-bold text-slate-400">Crystals</Text>
-                  </View>
-                  <View className="bg-slate-900 px-4 py-2 rounded-full w-full items-center">
-                    <Text className="text-white text-xs font-bold">$1.99</Text>
-                  </View>
-                </Pressable>
-
-                <Pressable
-                  onPress={() => onRefill(500)}
-                  className="flex-1 bg-slate-50 p-4 rounded-3xl border border-slate-200 items-center gap-3 active:scale-95 relative overflow-hidden"
-                >
-                  <View className="absolute top-0 right-0 bg-rose-500 px-2 py-1 rounded-bl-xl">
-                    <Text className="text-white text-[9px] font-bold">POPULAR</Text>
-                  </View>
-                  <View className="w-12 h-12 bg-white rounded-full items-center justify-center">
-                    <Diamond size={24} color="#06b6d4" fill="#06b6d4" />
-                  </View>
-                  <View className="items-center">
-                    <Text className="font-bold text-slate-800 text-lg">500</Text>
-                    <Text className="text-xs font-bold text-slate-400">Crystals</Text>
-                  </View>
-                  <View className="bg-slate-900 px-4 py-2 rounded-full w-full items-center">
-                    <Text className="text-white text-xs font-bold">$4.99</Text>
-                  </View>
-                </Pressable>
-              </View>
-
-              <Text className="text-center text-[10px] text-slate-400 font-medium pb-8">
-                Purchase is restored automatically. Cancel anytime.
+            <View className="items-center">
+              <Text className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
+                Current Balance
               </Text>
+              <View className="flex-row items-center gap-2 mb-4">
+                <Diamond size={32} color="#06b6d4" fill="#06b6d4" />
+                <Text className="text-5xl font-black text-slate-800">{balance}</Text>
+                <Text className="text-2xl font-bold text-slate-300">/{max}</Text>
+              </View>
+
+              {balance < max ? (
+                <View className="flex-row items-center gap-3 bg-white px-4 py-2 rounded-full border border-slate-200">
+                  <View className="flex-row items-center gap-1.5">
+                    <Clock size={14} color="#06b6d4" />
+                    <Text className="text-xs font-bold text-slate-600">
+                      +1 in <Text className="font-mono text-cyan-600">{formatTime(timeToNext)}</Text>
+                    </Text>
+                  </View>
+                  <View className="w-px h-3 bg-slate-200" />
+                  <View className="flex-row items-center gap-1.5">
+                    <BatteryCharging size={14} color="#a855f7" />
+                    <Text className="text-xs font-bold text-slate-600">
+                      Full in <Text className="font-mono text-purple-600">{formatFullTimer(fullInSeconds)}</Text>
+                    </Text>
+                  </View>
+                </View>
+              ) : (
+                <View className="bg-emerald-50 px-4 py-2 rounded-full flex-row items-center gap-2">
+                  <Check size={16} color="#059669" />
+                  <Text className="text-xs font-bold text-emerald-600">Fully Charged</Text>
+                </View>
+              )}
             </View>
-          </ScrollView>
+          </View>
+
+          <View className="p-6 gap-6 bg-white">
+            <AnimatedGradientBorder>
+              <View className="bg-slate-900 p-6 relative overflow-hidden">
+                <View className="flex-row justify-between items-start mb-4">
+                  <View>
+                    <View className="flex-row items-center gap-2 mb-1">
+                      <View className="bg-amber-400 px-2 py-0.5 rounded-md">
+                        <Text className="text-[10px] font-black text-slate-900 uppercase">Best Value</Text>
+                      </View>
+                    </View>
+                    <Text className="text-2xl font-black text-white italic tracking-wide">
+                      STORY<Text className="text-amber-400">MAX</Text>
+                    </Text>
+                  </View>
+                  <Crown size={40} color="#fbbf24" />
+                </View>
+
+                <View className="gap-3 mb-6">
+                  <View className="flex-row items-center gap-3">
+                    <View className="w-8 h-8 rounded-full bg-white/10 items-center justify-center">
+                      <Zap size={16} color="#fbbf24" />
+                    </View>
+                    <View>
+                      <Text className="font-bold text-sm text-white">2x Faster Generation</Text>
+                      <Text className="text-[10px] text-slate-400">Crystals refill every 15m</Text>
+                    </View>
+                  </View>
+                  <View className="flex-row items-center gap-3">
+                    <View className="w-8 h-8 rounded-full bg-white/10 items-center justify-center">
+                      <Infinity size={16} color="#c084fc" />
+                    </View>
+                    <View>
+                      <Text className="font-bold text-sm text-white">2x Cap Increase</Text>
+                      <Text className="text-[10px] text-slate-400">Hold up to 320 Crystals</Text>
+                    </View>
+                  </View>
+                  <View className="flex-row items-center gap-3">
+                    <View className="w-8 h-8 rounded-full bg-white/10 items-center justify-center">
+                      <Diamond size={16} color="#22d3ee" />
+                    </View>
+                    <View>
+                      <Text className="font-bold text-sm text-white">+1000 Instant Boost</Text>
+                      <Text className="text-[10px] text-slate-400">One-time bonus</Text>
+                    </View>
+                  </View>
+                </View>
+
+                <Pressable
+                  onPress={() => onRefill(1000)}
+                  className="w-full py-4 rounded-xl bg-amber-400 items-center flex-row justify-center gap-2 active:scale-95"
+                >
+                  <Text className="text-slate-900 font-black text-sm">Upgrade to MAX</Text>
+                  <View className="bg-black/10 px-1.5 py-0.5 rounded">
+                    <Text className="text-xs text-slate-900/70">$9.99/mo</Text>
+                  </View>
+                </Pressable>
+              </View>
+            </AnimatedGradientBorder>
+
+            <View className="flex-row items-center gap-4">
+              <View className="h-px bg-slate-100 flex-1" />
+              <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Or Top Up</Text>
+              <View className="h-px bg-slate-100 flex-1" />
+            </View>
+
+            <View className="flex-row gap-4">
+              <Pressable
+                onPress={() => onRefill(100)}
+                className="flex-1 bg-slate-50 p-4 rounded-3xl border border-slate-200 items-center gap-3 active:scale-95"
+              >
+                <View className="w-12 h-12 bg-white rounded-full items-center justify-center">
+                  <Diamond size={24} color="#22d3ee" fill="#22d3ee" />
+                </View>
+                <View className="items-center">
+                  <Text className="font-bold text-slate-800 text-lg">100</Text>
+                  <Text className="text-xs font-bold text-slate-400">Crystals</Text>
+                </View>
+                <View className="bg-slate-900 px-4 py-2 rounded-full w-full items-center">
+                  <Text className="text-white text-xs font-bold">$1.99</Text>
+                </View>
+              </Pressable>
+
+              <Pressable
+                onPress={() => onRefill(500)}
+                className="flex-1 bg-slate-50 p-4 rounded-3xl border border-slate-200 items-center gap-3 active:scale-95 relative overflow-hidden"
+              >
+                <View className="absolute top-0 right-0 bg-rose-500 px-2 py-1 rounded-bl-xl">
+                  <Text className="text-white text-[9px] font-bold">POPULAR</Text>
+                </View>
+                <View className="w-12 h-12 bg-white rounded-full items-center justify-center">
+                  <Diamond size={24} color="#06b6d4" fill="#06b6d4" />
+                </View>
+                <View className="items-center">
+                  <Text className="font-bold text-slate-800 text-lg">500</Text>
+                  <Text className="text-xs font-bold text-slate-400">Crystals</Text>
+                </View>
+                <View className="bg-slate-900 px-4 py-2 rounded-full w-full items-center">
+                  <Text className="text-white text-xs font-bold">$4.99</Text>
+                </View>
+              </Pressable>
+            </View>
+
+            <Text className="text-center text-[10px] text-slate-400 font-medium pb-8">
+              Purchase is restored automatically. Cancel anytime.
+            </Text>
+          </View>
+        </ScrollView>
       </View>
     </Modal>
   );
@@ -356,6 +357,9 @@ export default function CreateScreen() {
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(PRESET_LOCATIONS[0].id);
   const [selectedCharacterIds, setSelectedCharacterIds] = useState<string[]>(['me']);
   const [selectedVoiceId, setSelectedVoiceId] = useState<string>(VOICE_PRESETS[0].id);
+  const [storyLength, setStoryLength] = useState<StoryLength>('medium');
+  const [storyDifficulty, setStoryDifficulty] = useState<StoryDifficulty>('intermediate');
+  const [storyTime, setStoryTime] = useState<StoryTime>('day');
 
   const openAssetStudio = (tab: 'places' | 'faces' | 'voices') => {
     router.push({
@@ -658,9 +662,9 @@ export default function CreateScreen() {
             }
           />
         </View>
-        
-        <Animated.ScrollView 
-          className="flex-1" 
+
+        <Animated.ScrollView
+          className="flex-1"
           contentContainerStyle={{ paddingBottom: 100 }}
           onScroll={scrollHandler}
           scrollEventThrottle={16}
@@ -681,210 +685,219 @@ export default function CreateScreen() {
           <View className="px-6">
             <View className="mb-8">
               <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-lg font-bold text-slate-800">Scene & Cast</Text>
-              <View className="bg-white px-2 py-1 rounded-lg border border-slate-100">
-                <Text className="text-xs font-bold text-slate-400">Step 1</Text>
+                <Text className="text-lg font-bold text-slate-800">Scene & Cast</Text>
+                <View className="bg-white px-2 py-1 rounded-lg border border-slate-100">
+                  <Text className="text-xs font-bold text-slate-400">Step 1</Text>
+                </View>
               </View>
-            </View>
 
-            <View className="flex-row gap-3">
-              <Pressable
-                onPress={() => openAssetStudio('places')}
-                className="flex-1 h-28 rounded-3xl bg-white border border-slate-200 shadow-sm items-center justify-center p-2"
-              >
-                <View className="w-10 h-10 rounded-full bg-indigo-50 items-center justify-center mb-2">
-                  <MapPin size={20} color="#6366f1" />
-                </View>
-                <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Scene</Text>
-                <Text className="text-xs font-extrabold text-slate-700" numberOfLines={1}>
-                  {currentLocation?.name || 'Select'}
-                </Text>
-              </Pressable>
-
-              <Pressable
-                onPress={() => openAssetStudio('faces')}
-                className="flex-1 h-28 rounded-3xl bg-white border border-slate-200 shadow-sm items-center justify-center p-2"
-              >
-                <View className="w-10 h-10 rounded-full bg-orange-50 items-center justify-center mb-2">
-                  <User size={20} color="#f97316" />
-                </View>
-                <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Cast</Text>
-                <Text className="text-xs font-extrabold text-slate-700" numberOfLines={1}>
-                  {getCharacterSummary()}
-                </Text>
-              </Pressable>
-
-              <Pressable
-                onPress={() => openAssetStudio('voices')}
-                className="flex-1 h-28 rounded-3xl bg-white border border-slate-200 shadow-sm items-center justify-center p-2"
-              >
-                <View className="w-10 h-10 rounded-full bg-rose-50 items-center justify-center mb-2">
-                  <Mic size={20} color="#f43f5e" />
-                </View>
-                <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Voice</Text>
-                <Text className="text-xs font-extrabold text-slate-700" numberOfLines={1}>
-                  {currentVoice?.name || 'Select'}
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-
-          <View className="mb-6">
-            <View className="flex-row items-center justify-between mb-3">
-              <Text className="text-lg font-bold text-slate-800 leading-tight">What happened?</Text>
-              <View className="flex-row items-center bg-white p-1 rounded-full border border-slate-200 shadow-sm">
+              <View className="flex-row gap-3">
                 <Pressable
-                  onPress={() => setInputMode('requests')}
-                  className={`px-3 py-1.5 rounded-full flex-row items-center gap-1.5 ${inputMode === 'requests' ? 'bg-slate-900' : ''}`}
+                  onPress={() => openAssetStudio('places')}
+                  className="flex-1 h-28 rounded-3xl bg-white border border-slate-200 shadow-sm items-center justify-center p-2"
                 >
-                  <MessageCircle size={12} color={inputMode === 'requests' ? 'white' : '#94a3b8'} />
-                  <Text className={`text-[10px] font-bold ${inputMode === 'requests' ? 'text-white' : 'text-slate-400'}`}>
-                    Requests
+                  <View className="w-10 h-10 rounded-full bg-indigo-50 items-center justify-center mb-2">
+                    <MapPin size={20} color="#6366f1" />
+                  </View>
+                  <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Scene</Text>
+                  <Text className="text-xs font-extrabold text-slate-700" numberOfLines={1}>
+                    {currentLocation?.name || 'Select'}
                   </Text>
                 </Pressable>
+
                 <Pressable
-                  onPress={() => setInputMode('text')}
-                  className={`px-3 py-1.5 rounded-full flex-row items-center gap-1.5 ${inputMode === 'text' ? 'bg-slate-900' : ''}`}
+                  onPress={() => openAssetStudio('faces')}
+                  className="flex-1 h-28 rounded-3xl bg-white border border-slate-200 shadow-sm items-center justify-center p-2"
                 >
-                  <PenTool size={12} color={inputMode === 'text' ? 'white' : '#94a3b8'} />
-                  <Text className={`text-[10px] font-bold ${inputMode === 'text' ? 'text-white' : 'text-slate-400'}`}>
-                    Text
+                  <View className="w-10 h-10 rounded-full bg-orange-50 items-center justify-center mb-2">
+                    <User size={20} color="#f97316" />
+                  </View>
+                  <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Cast</Text>
+                  <Text className="text-xs font-extrabold text-slate-700" numberOfLines={1}>
+                    {getCharacterSummary()}
                   </Text>
                 </Pressable>
+
                 <Pressable
-                  onPress={() => setInputMode('values')}
-                  className={`px-3 py-1.5 rounded-full flex-row items-center gap-1.5 ${inputMode === 'values' ? 'bg-slate-900' : ''}`}
+                  onPress={() => openAssetStudio('voices')}
+                  className="flex-1 h-28 rounded-3xl bg-white border border-slate-200 shadow-sm items-center justify-center p-2"
                 >
-                  <GraduationCap size={12} color={inputMode === 'values' ? 'white' : '#94a3b8'} />
-                  <Text className={`text-[10px] font-bold ${inputMode === 'values' ? 'text-white' : 'text-slate-400'}`}>
-                    Values
+                  <View className="w-10 h-10 rounded-full bg-rose-50 items-center justify-center mb-2">
+                    <Mic size={20} color="#f43f5e" />
+                  </View>
+                  <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Voice</Text>
+                  <Text className="text-xs font-extrabold text-slate-700" numberOfLines={1}>
+                    {currentVoice?.name || 'Select'}
                   </Text>
                 </Pressable>
               </View>
             </View>
 
-            {inputMode === 'requests' && (
-              <View className="gap-3 mb-8">
-                {CHILD_REQUESTS.map(req => (
+            <View className="mb-6">
+              <View className="flex-row items-center justify-between mb-3">
+                <Text className="text-lg font-bold text-slate-800 leading-tight">What happened?</Text>
+                <View className="flex-row items-center bg-white p-1 rounded-full border border-slate-200 shadow-sm">
                   <Pressable
-                    key={req.id}
-                    onPress={() => handleUseRequest(req.text)}
-                    className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex-row items-center gap-4 active:scale-[0.98]"
+                    onPress={() => setInputMode('requests')}
+                    className={`px-3 py-1.5 rounded-full flex-row items-center gap-1.5 ${inputMode === 'requests' ? 'bg-slate-900' : ''}`}
                   >
-                    <View className={`w-12 h-12 rounded-full items-center justify-center ${req.isNew ? 'bg-red-50' : 'bg-slate-50'}`}>
-                      {req.isNew ? (
-                        <View className="w-3 h-3 bg-red-500 rounded-full" />
-                      ) : (
-                        <Play size={20} color="#94a3b8" fill="#94a3b8" />
-                      )}
-                    </View>
-                    <View className="flex-1">
-                      <Text className="font-bold text-slate-800 text-sm leading-tight mb-1" numberOfLines={1}>
-                        {req.text}
-                      </Text>
-                      <View className="flex-row items-center gap-3">
-                        <View className="flex-row items-center gap-1">
-                          <Calendar size={12} color="#94a3b8" />
-                          <Text className="text-[10px] font-bold text-slate-400 uppercase">{req.date}</Text>
+                    <MessageCircle size={12} color={inputMode === 'requests' ? 'white' : '#94a3b8'} />
+                    <Text className={`text-[10px] font-bold ${inputMode === 'requests' ? 'text-white' : 'text-slate-400'}`}>
+                      Requests
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => setInputMode('text')}
+                    className={`px-3 py-1.5 rounded-full flex-row items-center gap-1.5 ${inputMode === 'text' ? 'bg-slate-900' : ''}`}
+                  >
+                    <PenTool size={12} color={inputMode === 'text' ? 'white' : '#94a3b8'} />
+                    <Text className={`text-[10px] font-bold ${inputMode === 'text' ? 'text-white' : 'text-slate-400'}`}>
+                      Text
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => setInputMode('values')}
+                    className={`px-3 py-1.5 rounded-full flex-row items-center gap-1.5 ${inputMode === 'values' ? 'bg-slate-900' : ''}`}
+                  >
+                    <GraduationCap size={12} color={inputMode === 'values' ? 'white' : '#94a3b8'} />
+                    <Text className={`text-[10px] font-bold ${inputMode === 'values' ? 'text-white' : 'text-slate-400'}`}>
+                      Values
+                    </Text>
+                  </Pressable>
+                </View>
+              </View>
+
+              {inputMode === 'requests' && (
+                <View className="gap-3 mb-8">
+                  {CHILD_REQUESTS.map(req => (
+                    <Pressable
+                      key={req.id}
+                      onPress={() => handleUseRequest(req.text)}
+                      className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex-row items-center gap-4 active:scale-[0.98]"
+                    >
+                      <View className={`w-12 h-12 rounded-full items-center justify-center ${req.isNew ? 'bg-red-50' : 'bg-slate-50'}`}>
+                        {req.isNew ? (
+                          <View className="w-3 h-3 bg-red-500 rounded-full" />
+                        ) : (
+                          <Play size={20} color="#94a3b8" fill="#94a3b8" />
+                        )}
+                      </View>
+                      <View className="flex-1">
+                        <Text className="font-bold text-slate-800 text-sm leading-tight mb-1" numberOfLines={1}>
+                          {req.text}
+                        </Text>
+                        <View className="flex-row items-center gap-3">
+                          <View className="flex-row items-center gap-1">
+                            <Calendar size={12} color="#94a3b8" />
+                            <Text className="text-[10px] font-bold text-slate-400 uppercase">{req.date}</Text>
+                          </View>
                         </View>
                       </View>
-                    </View>
-                    <View className="w-8 h-8 rounded-full border border-slate-100 items-center justify-center">
-                      <Plus size={16} color="#cbd5e1" />
-                    </View>
-                  </Pressable>
-                ))}
-              </View>
-            )}
-
-            {inputMode === 'text' && (
-              <View className="bg-white rounded-[40px] p-6 border border-slate-200 mb-8 shadow-sm">
-                <TextInput
-                  className="w-full h-32 text-slate-700 text-lg font-medium"
-                  placeholder="Once upon a time..."
-                  placeholderTextColor="#cbd5e1"
-                  value={textPrompt}
-                  onChangeText={setTextPrompt}
-                  multiline
-                  textAlignVertical="top"
-                />
-                <View className="absolute bottom-6 right-6 flex-row items-center gap-1 bg-slate-50 px-2 py-1 rounded-full border border-slate-100">
-                  <Keyboard size={12} color="#cbd5e1" />
-                  <Text className="text-[10px] font-bold text-slate-300">{textPrompt.length} chars</Text>
+                      <View className="w-8 h-8 rounded-full border border-slate-100 items-center justify-center">
+                        <Plus size={16} color="#cbd5e1" />
+                      </View>
+                    </Pressable>
+                  ))}
                 </View>
-              </View>
-            )}
+              )}
 
-            {inputMode === 'values' && (
-              <View className="bg-white rounded-[40px] p-6 border border-slate-200 mb-8 shadow-sm">
-                <View className="flex-row items-center gap-2 mb-4">
-                  <Lightbulb size={16} color="#eab308" fill="#eab308" />
-                  <Text className="text-xs font-bold text-slate-400 uppercase tracking-widest">Select a Value to Teach</Text>
-                </View>
-                <View className="flex-row flex-wrap gap-3">
-                  {TEACHING_VALUES.map(val => {
-                    const IconComponent = val.icon;
-                    const isSelected = selectedValueId === val.id;
-                    return (
-                      <Pressable
-                        key={val.id}
-                        onPress={() => setSelectedValueId(isSelected ? null : val.id)}
-                        className={`p-4 rounded-3xl border-2 ${isSelected ? 'bg-slate-900 border-slate-900' : 'bg-slate-50 border-slate-100'} w-[48%]`}
-                      >
-                        <View className={`w-10 h-10 rounded-2xl items-center justify-center mb-3 ${isSelected ? 'bg-white/20' : val.color}`}>
-                          <IconComponent size={20} color={isSelected ? 'white' : '#64748b'} />
-                        </View>
-                        <Text className={`font-bold text-sm mb-0.5 ${isSelected ? 'text-white' : 'text-slate-800'}`}>
-                          {val.name}
-                        </Text>
-                        <Text className={`text-[10px] font-bold ${isSelected ? 'text-white/60' : 'text-slate-400'}`}>
-                          {val.desc}
-                        </Text>
-                        {isSelected && (
-                          <View className="absolute top-4 right-4">
-                            <Check size={16} color="white" />
-                          </View>
-                        )}
-                      </Pressable>
-                    );
-                  })}
-                </View>
-              </View>
-            )}
-
-            {inputMode !== 'values' && (
-              <View className="mb-8">
-                <Text className="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1 mb-4">Quick Add</Text>
-                <View className="flex-row flex-wrap gap-2.5">
-                  <QuickTag icon={Smile} label="Happy" color="#3b82f6" onPress={() => handleAddTag('Happy')} />
-                  <QuickTag icon={Zap} label="Energetic" color="#f97316" onPress={() => handleAddTag('Energetic')} />
-                  <QuickTag icon={Trees} label="Park" color="#22c55e" onPress={() => handleAddTag('Park')} />
-                  <QuickTag icon={GraduationCap} label="School" color="#6366f1" onPress={() => handleAddTag('School')} />
-                  <Pressable className="w-9 h-9 rounded-full bg-white border border-dashed border-slate-200 items-center justify-center active:scale-95">
-                    <Plus size={16} color="#94a3b8" />
-                  </Pressable>
-                </View>
-              </View>
-            )}
-          </View>
-        </View>
-
-        <View className="p-6 pb-32">
-          <Pressable
-            onPress={handleCreateOutline}
-            className="w-full py-5 rounded-[28px] bg-slate-900 flex-row items-center justify-center gap-3 shadow-lg active:scale-95"
-          >
-            <Sparkles size={20} color="#67e8f9" />
-            <Text className="text-white font-bold text-lg">Create Magic</Text>
-            <View className="flex-row items-center gap-1 bg-white/20 px-2 py-0.5 rounded-full">
-              <Diamond size={12} color="white" fill="white" />
-              <Text className="text-white text-sm font-bold">{totalCost}</Text>
-            </View>
-          </Pressable>
+              {inputMode === 'text' && (
+                <View className="bg-white rounded-[40px] p-6 border border-slate-200 mb-8 shadow-sm">
+                  <TextInput
+                    className="w-full h-32 text-slate-700 text-lg font-medium"
+                    placeholder="Once upon a time..."
+                    placeholderTextColor="#cbd5e1"
+                    value={textPrompt}
+                    onChangeText={setTextPrompt}
+                    multiline
+                    textAlignVertical="top"
+                  />
+                  <View className="absolute bottom-6 right-6 flex-row items-center gap-1 bg-slate-50 px-2 py-1 rounded-full border border-slate-100">
+                    <Keyboard size={12} color="#cbd5e1" />
+                    <Text className="text-[10px] font-bold text-slate-300">{textPrompt.length} chars</Text>
                   </View>
-                </Animated.ScrollView>
+                </View>
+              )}
+
+              {inputMode === 'values' && (
+                <View className="bg-white rounded-[40px] p-6 border border-slate-200 mb-8 shadow-sm">
+                  <View className="flex-row items-center gap-2 mb-4">
+                    <Lightbulb size={16} color="#eab308" fill="#eab308" />
+                    <Text className="text-xs font-bold text-slate-400 uppercase tracking-widest">Select a Value to Teach</Text>
+                  </View>
+                  <View className="flex-row flex-wrap gap-3">
+                    {TEACHING_VALUES.map(val => {
+                      const IconComponent = val.icon;
+                      const isSelected = selectedValueId === val.id;
+                      return (
+                        <Pressable
+                          key={val.id}
+                          onPress={() => setSelectedValueId(isSelected ? null : val.id)}
+                          className={`p-4 rounded-3xl border-2 ${isSelected ? 'bg-slate-900 border-slate-900' : 'bg-slate-50 border-slate-100'} w-[48%]`}
+                        >
+                          <View className={`w-10 h-10 rounded-2xl items-center justify-center mb-3 ${isSelected ? 'bg-white/20' : val.color}`}>
+                            <IconComponent size={20} color={isSelected ? 'white' : '#64748b'} />
+                          </View>
+                          <Text className={`font-bold text-sm mb-0.5 ${isSelected ? 'text-white' : 'text-slate-800'}`}>
+                            {val.name}
+                          </Text>
+                          <Text className={`text-[10px] font-bold ${isSelected ? 'text-white/60' : 'text-slate-400'}`}>
+                            {val.desc}
+                          </Text>
+                          {isSelected && (
+                            <View className="absolute top-4 right-4">
+                              <Check size={16} color="white" />
+                            </View>
+                          )}
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </View>
+              )}
+
+              {inputMode !== 'values' && (
+                <View className="mb-8">
+                  <Text className="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1 mb-4">Quick Add</Text>
+                  <View className="flex-row flex-wrap gap-2.5">
+                    <QuickTag icon={Smile} label="Happy" color="#3b82f6" onPress={() => handleAddTag('Happy')} />
+                    <QuickTag icon={Zap} label="Energetic" color="#f97316" onPress={() => handleAddTag('Energetic')} />
+                    <QuickTag icon={Trees} label="Park" color="#22c55e" onPress={() => handleAddTag('Park')} />
+                    <QuickTag icon={GraduationCap} label="School" color="#6366f1" onPress={() => handleAddTag('School')} />
+                    <Pressable className="w-9 h-9 rounded-full bg-white border border-dashed border-slate-200 items-center justify-center active:scale-95">
+                      <Plus size={16} color="#94a3b8" />
+                    </Pressable>
+                  </View>
+                </View>
+              )}
+            </View>
+
+            <StoryControls
+              length={storyLength}
+              setLength={setStoryLength}
+              difficulty={storyDifficulty}
+              setDifficulty={setStoryDifficulty}
+              time={storyTime}
+              setTime={setStoryTime}
+            />
+          </View>
+
+          <View className="p-6 pb-32">
+            <Pressable
+              onPress={handleCreateOutline}
+              className="w-full py-5 rounded-[28px] bg-slate-900 flex-row items-center justify-center gap-3 shadow-lg active:scale-95"
+            >
+              <Sparkles size={20} color="#67e8f9" />
+              <Text className="text-white font-bold text-lg">Create Magic</Text>
+              <View className="flex-row items-center gap-1 bg-white/20 px-2 py-0.5 rounded-full">
+                <Diamond size={12} color="white" fill="white" />
+                <Text className="text-white text-sm font-bold">{totalCost}</Text>
               </View>
-            </>
-          );
-        }
-        
+            </Pressable>
+          </View>
+        </Animated.ScrollView>
+      </View>
+    </>
+  );
+}
+
