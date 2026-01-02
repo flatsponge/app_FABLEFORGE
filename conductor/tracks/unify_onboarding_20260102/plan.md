@@ -9,7 +9,7 @@
 - [x] Task: Conductor - User Manual Verification 'Foundation & Layout' (Protocol in workflow.md)
 
 ## Phase 2: Quiz Section Migration
-- [ ] Task: Refactor `quiz/child-name.tsx` to use new Layout & Components (Verify Safe Area & Button Position)
+- [x] Task: Refactor `quiz/child-name.tsx` to use new Layout & Components (Verify Safe Area & Button Position) 7e694ab
 - [ ] Task: Refactor `quiz/child-age.tsx` to use new Layout & Components
 - [ ] Task: Refactor `quiz/child-personality.tsx` to use new Layout & Components
 - [ ] Task: Refactor `quiz/reading-time.tsx` to use new Layout & Components

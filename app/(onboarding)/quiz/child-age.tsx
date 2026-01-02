@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import Animated, { FadeIn, SlideInUp } from 'react-native-reanimated';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
+import OnboardingLayout from '../../../components/OnboardingLayout';
+import { OnboardingTitle, OnboardingBody, OnboardingSubtitle } from '../../../components/OnboardingTypography';
+import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
+import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
 const AGE_OPTIONS = ['2-3', '4-5', '6-7', '8-9', '10+'];
 
 export default function ChildAgeScreen() {
     const router = useRouter();
     const { data, updateData } = useOnboarding();
-    const [selectedAge, setSelectedAge] = useState<string | null>(null);
+    const [selectedAge, setSelectedAge] = useState<string | null>(data.childAge || null);
 
     const canProceed = selectedAge !== null;
 
@@ -21,50 +24,38 @@ export default function ChildAgeScreen() {
     };
 
     return (
-        <View className="flex-1 bg-[#FDFBF7] px-6 pt-16 pb-8">
-            <Animated.View entering={FadeIn.delay(100)}>
-                <Text className="text-3xl font-bold text-gray-900 mb-2">
-                    How old is {data.childName || 'your child'}?
-                </Text>
-                <Text className="text-lg text-gray-500 mb-8">
+        <OnboardingLayout
+            progress={0.15}
+            onNext={handleNext}
+            nextLabel="Continue"
+        >
+            <View style={styles.contentContainer}>
+                <OnboardingSubtitle>Step 2</OnboardingSubtitle>
+                <OnboardingTitle>How old is {data.childName || 'your child'}?</OnboardingTitle>
+                <OnboardingBody>
                     We'll tailor the stories to their age.
-                </Text>
-            </Animated.View>
+                </OnboardingBody>
 
-            <Animated.View entering={FadeIn.duration(300)}>
-                <Text className="text-sm font-bold text-gray-700 mb-3 uppercase tracking-wide">Age Range</Text>
-                <View className="flex-row flex-wrap gap-3">
+                <View style={styles.optionsContainer}>
                     {AGE_OPTIONS.map((age) => (
-                        <TouchableOpacity
+                        <OnboardingOptionCard
                             key={age}
+                            title={age}
+                            selected={selectedAge === age}
                             onPress={() => setSelectedAge(age)}
-                            className={`px-6 py-3 rounded-full border-2 ${selectedAge === age
-                                ? 'bg-primary-500 border-primary-500'
-                                : 'bg-white border-gray-200'
-                                }`}
-                        >
-                            <Text className={`text-lg font-bold ${selectedAge === age ? 'text-white' : 'text-gray-700'}`}>
-                                {age}
-                            </Text>
-                        </TouchableOpacity>
+                        />
                     ))}
                 </View>
-            </Animated.View>
-
-            <View className="flex-1" />
-
-            <Animated.View entering={FadeIn.duration(300)}>
-                <TouchableOpacity
-                    onPress={handleNext}
-                    disabled={!canProceed}
-                    className={`py-5 rounded-full items-center ${canProceed ? 'bg-primary-600' : 'bg-gray-200'
-                        }`}
-                >
-                    <Text className={`text-lg font-bold ${canProceed ? 'text-white' : 'text-gray-400'}`}>
-                        Continue
-                    </Text>
-                </TouchableOpacity>
-            </Animated.View>
-        </View>
+            </View>
+        </OnboardingLayout>
     );
 }
+
+const styles = StyleSheet.create({
+    contentContainer: {
+        width: '100%',
+    },
+    optionsContainer: {
+        marginTop: OnboardingTheme.Spacing.xl,
+    },
+});
