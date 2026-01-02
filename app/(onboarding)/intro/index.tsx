@@ -1,6 +1,5 @@
 import { Redirect } from 'expo-router';
 
-export default function OnboardingIndex() {
-    // New users start with the intro sizzle reel
+export default function IntroIndex() {
     return <Redirect href="/(onboarding)/intro/slide-1" />;
 }

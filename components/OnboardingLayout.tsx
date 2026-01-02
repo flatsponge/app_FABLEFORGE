@@ -9,12 +9,13 @@ import OnboardingButton from './OnboardingButton';
 
 interface OnboardingLayoutProps {
   children: React.ReactNode;
-  progress: number; // 0 to 1
-  onNext: () => void;
+  progress?: number; // 0 to 1
+  onNext?: () => void;
   nextLabel?: string;
   showBack?: boolean;
   onBack?: () => void;
   showNextButton?: boolean;
+  showProgressBar?: boolean;
   backgroundColor?: string;
   progressBarColor?: string;
   progressBarTrackColor?: string;
@@ -24,12 +25,13 @@ interface OnboardingLayoutProps {
 
 export default function OnboardingLayout({
   children,
-  progress,
+  progress = 0,
   onNext,
   nextLabel = 'Continue',
   showBack = true,
   onBack,
   showNextButton = true,
+  showProgressBar = true,
   backgroundColor = OnboardingTheme.Colors.Background,
   progressBarColor = OnboardingTheme.Colors.Primary,
   progressBarTrackColor = '#E5E7EB',
@@ -72,23 +74,25 @@ export default function OnboardingLayout({
   return (
     <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom, backgroundColor }]}>
       {/* Header */}
-      <View style={styles.header}>
-        {showBack ? (
-          <TouchableOpacity onPress={handleBack} style={styles.backButton} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <ArrowLeft size={24} color={backButtonColor} />
-          </TouchableOpacity>
-        ) : (
-          <View style={{ width: 24 + OnboardingTheme.Spacing.md }} />
-        )}
+      {showProgressBar && (
+        <View style={styles.header}>
+          {showBack ? (
+            <TouchableOpacity onPress={handleBack} style={styles.backButton} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <ArrowLeft size={24} color={backButtonColor} />
+            </TouchableOpacity>
+          ) : (
+            <View style={{ width: 24 + OnboardingTheme.Spacing.md }} />
+          )}
 
-        <View style={styles.progressContainer}>
-          <View style={[styles.progressBarBackground, { backgroundColor: progressBarTrackColor }]}>
-            <Animated.View style={[styles.progressBarFill, progressStyle]} />
+          <View style={styles.progressContainer}>
+            <View style={[styles.progressBarBackground, { backgroundColor: progressBarTrackColor }]}>
+              <Animated.View style={[styles.progressBarFill, progressStyle]} />
+            </View>
           </View>
+          {/* Spacer to balance the layout visually if needed, though flex handles it */}
+          <View style={{ width: 24 + OnboardingTheme.Spacing.md }} />
         </View>
-        {/* Spacer to balance the layout visually if needed, though flex handles it */}
-        <View style={{ width: 24 + OnboardingTheme.Spacing.md }} />
-      </View>
+      )}
 
       {/* Content */}
       {isScrollable ? (
