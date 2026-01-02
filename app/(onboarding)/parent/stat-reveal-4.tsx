@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import Animated, { FadeIn, FadeInUp, ZoomIn } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInUp, ZoomIn, Easing } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 
@@ -39,14 +39,14 @@ export default function StatReveal4Screen() {
                     {content.intro}
                 </Text>
 
-                <Animated.View entering={ZoomIn.springify()} className="items-center">
+                <Animated.View entering={ZoomIn.duration(600)} className="items-center">
                     <Text className="text-[140px] font-black text-white leading-tight" style={{ textShadowColor: 'rgba(0,0,0,0.2)', textShadowOffset: { width: 0, height: 4 }, textShadowRadius: 10 }}>4x</Text>
                     <Text className="text-5xl text-red-200 font-bold uppercase tracking-[0.2em] -mt-5">{content.val}</Text>
                 </Animated.View>
             </Animated.View>
 
             {showContext && (
-                <Animated.View entering={FadeInUp.springify().damping(15)} className="w-full">
+                <Animated.View entering={FadeInUp.duration(600).easing(Easing.out(Easing.cubic))} className="w-full">
                     <View className="bg-white p-6 rounded-3xl mb-8">
                         <Text className="text-gray-900 text-center text-lg leading-relaxed font-medium mb-4">
                             "{content.desc}"

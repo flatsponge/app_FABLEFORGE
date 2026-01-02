@@ -23,7 +23,7 @@ export default function ChildSetupScreen() {
                 </Text>
             </Animated.View>
 
-            <Animated.View entering={SlideInUp.delay(500)} className="w-full">
+            <Animated.View entering={FadeIn.delay(500).duration(600)} className="w-full">
                 <View className="p-6 bg-gray-800 rounded-2xl border border-gray-700 mb-8">
                     <Text className="text-white text-center font-bold mb-2">PARENTAL GATE</Text>
                     <Text className="text-gray-300 text-center text-sm">

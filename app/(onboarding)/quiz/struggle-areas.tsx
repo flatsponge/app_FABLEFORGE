@@ -64,7 +64,7 @@ export default function StruggleAreasScreen() {
                     {STRUGGLE_AREAS.map((area, index) => (
                         <Animated.View
                             key={area.id}
-                            entering={SlideInUp.delay(100 + index * 50)}
+                            entering={FadeIn.duration(300)}
                             className="w-[48%]"
                         >
                             <TouchableOpacity

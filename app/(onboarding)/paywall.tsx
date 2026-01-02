@@ -29,7 +29,7 @@ export default function PaywallScreen() {
 
       <View className="px-6">
         {/* Blinkist Timeline */}
-        <Animated.View entering={SlideInUp.delay(200)} className="bg-gray-50 rounded-3xl p-6 mb-8 border border-gray-100">
+        <Animated.View entering={FadeIn.delay(200).duration(500)} className="bg-gray-50 rounded-3xl p-6 mb-8 border border-gray-100">
           <Text className="text-lg font-bold text-gray-900 mb-6 text-center">
             How Your Free Trial Works
           </Text>
@@ -80,7 +80,7 @@ export default function PaywallScreen() {
         </Animated.View>
 
         {/* Features */}
-        <Animated.View entering={SlideInUp.delay(300)} className="mb-8">
+        <Animated.View entering={FadeIn.delay(300).duration(500)} className="mb-8">
           <Text className="text-lg font-bold text-gray-900 mb-4">What You Get</Text>
           {[
             { icon: 'book', text: 'Unlimited AI-Generated Stories' },
@@ -100,7 +100,7 @@ export default function PaywallScreen() {
         </Animated.View>
 
         {/* Pricing Cards */}
-        <Animated.View entering={SlideInUp.delay(400)} className="mb-6">
+        <Animated.View entering={FadeIn.delay(400).duration(500)} className="mb-6">
           {/* Yearly */}
           <TouchableOpacity
             onPress={() => setSelectedPlan('yearly')}

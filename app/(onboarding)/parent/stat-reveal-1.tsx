@@ -74,7 +74,7 @@ export default function StatReveal1Screen() {
                     </Svg>
 
                     <View className="items-center justify-center">
-                        <Animated.Text entering={ZoomIn.delay(800).springify()} className="text-6xl font-black text-gray-900 leading-tight">
+                        <Animated.Text entering={ZoomIn.delay(800).duration(600)} className="text-6xl font-black text-gray-900 leading-tight">
                             22%
                         </Animated.Text>
                         <View className="bg-red-100 px-3 py-1 rounded-full mt-4">
@@ -85,7 +85,7 @@ export default function StatReveal1Screen() {
             </Animated.View>
 
             {showContext && (
-                <Animated.View entering={FadeInUp.springify().damping(15)} className="w-full bg-gray-50 p-6 rounded-3xl border border-gray-100">
+                <Animated.View entering={FadeInUp.duration(600).easing(Easing.out(Easing.cubic))} className="w-full bg-gray-50 p-6 rounded-3xl border border-gray-100">
                     <View className="flex-row items-center justify-between mb-4">
                         <Text className="text-gray-500 font-medium">Ideally by this age</Text>
                         <Text className="text-green-600 font-bold text-lg">70%</Text>

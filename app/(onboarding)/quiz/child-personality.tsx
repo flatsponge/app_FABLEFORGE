@@ -53,7 +53,7 @@ export default function ChildPersonalityScreen() {
 
                 <View className="flex-row flex-wrap gap-3">
                     {TRAITS.map((trait, index) => (
-                        <Animated.View key={trait.id} entering={SlideInUp.delay(100 + index * 40)}>
+                        <Animated.View key={trait.id} entering={FadeIn.duration(300)}>
                             <TouchableOpacity
                                 onPress={() => toggleSelection(trait.id)}
                                 className={`px-4 py-3 rounded-full border-2 flex-row items-center ${selected.includes(trait.id)

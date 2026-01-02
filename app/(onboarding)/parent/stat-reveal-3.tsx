@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import Animated, { FadeIn, ZoomIn, SlideInRight } from 'react-native-reanimated';
+import Animated, { FadeIn, ZoomIn, FadeInUp, Easing } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 
@@ -52,7 +52,7 @@ export default function StatReveal3Screen() {
             </Animated.View>
 
             {/* The big stat visualization */}
-            <Animated.View entering={ZoomIn.springify()} className="items-center justify-center bg-white rounded-full w-64 h-64 border-[6px] border-amber-100 mb-10 relative">
+            <Animated.View entering={ZoomIn.duration(600)} className="items-center justify-center bg-white rounded-full w-64 h-64 border-[6px] border-amber-100 mb-10 relative">
                 <Text className="text-8xl font-black text-amber-500 z-10">{content.stat}</Text>
                 <Text className="text-gray-400 text-xs font-bold uppercase tracking-widest mt-2 px-3 py-1 rounded-full text-center">
                     {content.statLabel}
@@ -60,7 +60,7 @@ export default function StatReveal3Screen() {
             </Animated.View>
 
             {showCitation && (
-                <Animated.View entering={SlideInRight.springify()} className="w-full">
+                <Animated.View entering={FadeInUp.duration(600).easing(Easing.out(Easing.cubic))} className="w-full">
                     <View className="bg-gray-50 p-6 rounded-2xl border-l-4 border-amber-500 mb-8">
                         <Text className="text-gray-600 italic mb-4 leading-relaxed font-medium">
                             "{content.citation}"

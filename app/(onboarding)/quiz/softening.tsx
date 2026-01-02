@@ -55,7 +55,7 @@ export default function SofteningScreen() {
                 </View>
             </Animated.View>
 
-            <Animated.View entering={SlideInUp.delay(500)}>
+            <Animated.View entering={FadeIn.duration(300)}>
                 <TouchableOpacity
                     onPress={() => router.push('/(onboarding)/quiz/processing')}
                     className="bg-primary-600 py-5 rounded-full items-center"

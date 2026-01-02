@@ -55,7 +55,7 @@ export default function ResultsIntroScreen() {
             </Animated.View>
 
             {showContent && (
-                <Animated.View entering={FadeInDown.springify().damping(12)} className="w-full">
+                <Animated.View entering={FadeInDown.duration(600)} className="w-full">
                     <View className="bg-red-50 border border-red-100 p-6 rounded-3xl mb-8 w-full">
                         <View className="flex-row items-start mb-4">
                             <View className="bg-white p-2 rounded-full mr-4">

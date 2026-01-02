@@ -31,7 +31,7 @@ export default function ChildAgeScreen() {
                 </Text>
             </Animated.View>
 
-            <Animated.View entering={SlideInUp.delay(200)}>
+            <Animated.View entering={FadeIn.duration(300)}>
                 <Text className="text-sm font-bold text-gray-700 mb-3 uppercase tracking-wide">Age Range</Text>
                 <View className="flex-row flex-wrap gap-3">
                     {AGE_OPTIONS.map((age) => (
@@ -53,7 +53,7 @@ export default function ChildAgeScreen() {
 
             <View className="flex-1" />
 
-            <Animated.View entering={SlideInUp.delay(300)}>
+            <Animated.View entering={FadeIn.duration(300)}>
                 <TouchableOpacity
                     onPress={handleNext}
                     disabled={!canProceed}

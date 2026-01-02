@@ -38,7 +38,7 @@ export default function PreviousAttemptsScreen() {
 
             <View className="flex-1">
                 {OPTIONS.map((option, index) => (
-                    <Animated.View key={option.id} entering={SlideInUp.delay(150 + index * 60)}>
+                    <Animated.View key={option.id} entering={FadeIn.duration(300)}>
                         <TouchableOpacity
                             onPress={() => handleSelect(option.id)}
                             className={`mb-3 p-5 rounded-2xl border-2 flex-row items-center ${selected === option.id

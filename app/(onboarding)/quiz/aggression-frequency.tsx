@@ -38,7 +38,7 @@ export default function AggressionFrequencyScreen() {
 
             <View className="flex-1">
                 {FREQUENCIES.map((freq, index) => (
-                    <Animated.View key={freq.id} entering={SlideInUp.delay(150 + index * 80)}>
+                    <Animated.View key={freq.id} entering={FadeIn.duration(300)}>
                         <TouchableOpacity
                             onPress={() => handleSelect(freq.id)}
                             className={`mb-4 p-5 rounded-2xl border-2 flex-row items-center ${selected === freq.id

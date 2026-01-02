@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeIn, SlideInRight } from 'react-native-reanimated';
+import Animated, { FadeIn, SlideInRight, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 
 type OnboardingScreenProps = {
     title: string;
@@ -38,6 +38,15 @@ export function OnboardingScreen({
 
     const progress = (currentStep / totalSteps) * 100;
 
+    const progressWidth = React.useMemo(() => ({ width: `${progress}%` }), [progress]);
+    
+    // Animate the width change
+    const animatedStyle = useAnimatedStyle(() => {
+        return {
+            width: withSpring(`${progress}%`, { damping: 20, stiffness: 90 })
+        };
+    });
+
     return (
         <SafeAreaView className="flex-1 bg-[#FDFBF7]">
             {/* Header */}
@@ -54,7 +63,7 @@ export function OnboardingScreen({
                 <View className="flex-1 h-1.5 bg-gray-200 rounded-full mx-4 overflow-hidden">
                     <Animated.View
                         className="h-full bg-primary-600 rounded-full"
-                        style={{ width: `${progress}%` }}
+                        style={animatedStyle}
                     />
                 </View>
 
@@ -77,7 +86,7 @@ export function OnboardingScreen({
                     )}
                 </Animated.View>
 
-                <Animated.View entering={SlideInRight.duration(500).delay(200)}>
+                <Animated.View entering={FadeIn.duration(400)}>
                     {children}
                 </Animated.View>
             </ScrollView>

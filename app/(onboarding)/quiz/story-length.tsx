@@ -38,7 +38,7 @@ export default function StoryLengthScreen() {
 
             <View className="flex-1">
                 {LENGTHS.map((length, index) => (
-                    <Animated.View key={length.id} entering={SlideInUp.delay(150 + index * 60)}>
+                    <Animated.View key={length.id} entering={FadeIn.duration(300)}>
                         <TouchableOpacity
                             onPress={() => handleSelect(length.id)}
                             className={`mb-3 p-5 rounded-2xl border-2 flex-row items-center ${selected === length.id

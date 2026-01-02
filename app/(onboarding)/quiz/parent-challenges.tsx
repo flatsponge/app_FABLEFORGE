@@ -53,7 +53,7 @@ export default function ParentChallengesScreen() {
 
                 <View className="flex-row flex-wrap gap-3">
                     {CHALLENGES.map((challenge, index) => (
-                        <Animated.View key={challenge.id} entering={SlideInUp.delay(80 + index * 40)}>
+                        <Animated.View key={challenge.id} entering={FadeIn.duration(300)}>
                             <TouchableOpacity
                                 onPress={() => toggleSelection(challenge.id)}
                                 className={`px-4 py-3 rounded-2xl border-2 flex-row items-center ${selected.includes(challenge.id)

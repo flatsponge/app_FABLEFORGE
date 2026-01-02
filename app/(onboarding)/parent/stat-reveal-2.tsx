@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
-import Animated, { FadeIn, FadeInUp, ZoomIn } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInUp, ZoomIn, Easing } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
@@ -31,7 +31,7 @@ export default function StatReveal2Screen() {
                     Responsibility Score
                 </Text>
 
-                <Animated.View entering={ZoomIn.springify()} className="items-center mb-8">
+                <Animated.View entering={ZoomIn.duration(600)} className="items-center mb-8">
                     <Text className="text-9xl font-black text-red-500 leading-none">18%</Text>
                     <View className="bg-red-50 px-6 py-2 rounded-full mt-4">
                         <Text className="text-red-700 font-bold uppercase tracking-wider text-sm">Action Needed</Text>
@@ -58,7 +58,7 @@ export default function StatReveal2Screen() {
             </Animated.View>
 
             {showContext && (
-                <Animated.View entering={FadeInUp.springify().damping(15)} className="w-full bg-red-600 p-6 rounded-3xl">
+                <Animated.View entering={FadeInUp.duration(600).easing(Easing.out(Easing.cubic))} className="w-full bg-red-600 p-6 rounded-3xl">
                     <View className="flex-row items-start">
                         <View className="bg-white/20 p-3 rounded-full mr-4">
                             <Ionicons name="stats-chart" size={24} color="white" />

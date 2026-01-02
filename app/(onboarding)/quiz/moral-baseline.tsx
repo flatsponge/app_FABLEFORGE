@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
-import Animated, { FadeIn, FadeInDown, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
+import { OnboardingScreen } from '../../../components/OnboardingScreen';
 
 const MORAL_SKILLS = [
     { id: 'sharing', label: 'Sharing', emoji: '🤝', question: 'How well does your child share with others?' },
@@ -96,25 +97,20 @@ export default function MoralBaselineScreen() {
         );
     }
 
-    const progress = ((currentSkillIndex) / MORAL_SKILLS.length) * 100;
-
     return (
-        <View className="flex-1 bg-[#FDFBF7] px-6 pt-12 pb-8">
-            {/* Progress */}
-            <View className="h-1.5 bg-gray-200 rounded-full mb-6 overflow-hidden">
-                <View className="h-full bg-primary-500" style={{ width: `${progress}%` }} />
-            </View>
-
-            <View className="flex-1">
-                {/* Header */}
+        <OnboardingScreen
+            title={currentSkill.label}
+            subtitle={currentSkill.question}
+            currentStep={currentSkillIndex + 1}
+            totalSteps={MORAL_SKILLS.length}
+        >
+            <Animated.View 
+                key={currentSkill.id}
+                entering={FadeIn.duration(400)}
+                className="flex-1"
+            >
                 <View className="items-center mb-6">
                     <Text className="text-5xl mb-3">{currentSkill.emoji}</Text>
-                    <Text className="text-2xl font-bold text-center text-gray-900 mb-1">
-                        {currentSkill.label}
-                    </Text>
-                    <Text className="text-base text-center text-gray-500">
-                        {currentSkill.question}
-                    </Text>
                 </View>
 
                 {/* Options */}
@@ -134,7 +130,7 @@ export default function MoralBaselineScreen() {
                 <TouchableOpacity
                     onPress={handleNext}
                     disabled={currentRating === null}
-                    className={`py-4 rounded-full mx-4 ${currentRating !== null
+                    className={`py-4 rounded-full mt-6 ${currentRating !== null
                         ? 'bg-primary-600'
                         : 'bg-gray-200'
                         }`}
@@ -144,14 +140,7 @@ export default function MoralBaselineScreen() {
                         Next
                     </Text>
                 </TouchableOpacity>
-            </View>
-
-            {/* Step indicator */}
-            <View className="items-center mt-4">
-                <Text className="text-gray-400 text-sm">
-                    {currentSkillIndex + 1} of {MORAL_SKILLS.length}
-                </Text>
-            </View>
-        </View>
+            </Animated.View>
+        </OnboardingScreen>
     );
 }

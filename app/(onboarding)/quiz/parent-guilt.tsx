@@ -46,7 +46,7 @@ export default function ParentGuiltScreen() {
 
             <View className="flex-1">
                 {REACTIONS.map((reaction, index) => (
-                    <Animated.View key={reaction.id} entering={SlideInUp.delay(150 + index * 50)}>
+                    <Animated.View key={reaction.id} entering={FadeIn.duration(300)}>
                         <TouchableOpacity
                             onPress={() => handleSelect(reaction.id)}
                             className={`mb-3 p-4 rounded-2xl border-2 flex-row items-center ${selected === reaction.id

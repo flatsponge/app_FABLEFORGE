@@ -55,7 +55,7 @@ export default function StoryThemesScreen() {
 
                 <View className="flex-row flex-wrap gap-3">
                     {THEMES.map((theme, index) => (
-                        <Animated.View key={theme.id} entering={SlideInUp.delay(80 + index * 30)}>
+                        <Animated.View key={theme.id} entering={FadeIn.duration(300)}>
                             <TouchableOpacity
                                 onPress={() => toggleSelection(theme.id)}
                                 className={`px-4 py-3 rounded-2xl border-2 flex-row items-center ${selected.includes(theme.id)

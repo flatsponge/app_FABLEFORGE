@@ -53,7 +53,7 @@ export default function MagicMomentScreen() {
 
       {/* PHASE 3: PREVIEW */}
       {phase === 'preview' && (
-        <Animated.View entering={SlideInUp.springify()} className="w-full h-full pt-12 pb-8 flex-col justify-between">
+        <Animated.View entering={FadeIn.duration(600)} className="w-full h-full pt-12 pb-8 flex-col justify-between">
           <View>
             <View className="bg-gray-800 p-4 rounded-xl mb-6">
               <Text className="text-primary-300 font-bold tracking-widest text-xs uppercase mb-2">New Story Created!</Text>

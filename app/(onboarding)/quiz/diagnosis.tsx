@@ -52,7 +52,7 @@ export default function DiagnosisScreen() {
 
             <View className="flex-1">
                 {BEHAVIORS.map((behavior, index) => (
-                    <Animated.View key={behavior.id} entering={SlideInUp.delay(150 + index * 60)}>
+                    <Animated.View key={behavior.id} entering={FadeIn.duration(300)}>
                         <TouchableOpacity
                             onPress={() => handleSelect(behavior.id)}
                             className={`mb-3 p-4 rounded-2xl border-2 flex-row items-center ${selected === behavior.id

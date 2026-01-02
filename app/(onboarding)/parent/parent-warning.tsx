@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import Animated, { FadeIn, FadeInUp, ZoomIn } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInUp, ZoomIn, Easing } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function ParentWarningScreen() {
@@ -30,7 +30,7 @@ export default function ParentWarningScreen() {
                 </Text>
             </Animated.View>
 
-            <Animated.View entering={ZoomIn.delay(400).springify()} className="w-full bg-orange-50 border border-orange-100 p-8 rounded-3xl mb-8 items-center">
+            <Animated.View entering={ZoomIn.delay(400).duration(600)} className="w-full bg-orange-50 border border-orange-100 p-8 rounded-3xl mb-8 items-center">
 
                 <Text className="text-center text-gray-800 text-lg leading-relaxed font-medium">
                     Chronic parenting stress increases the risk of cardiovascular issues by
@@ -46,7 +46,7 @@ export default function ParentWarningScreen() {
             </Animated.View>
 
             {showStat && (
-                <Animated.View entering={FadeInUp.springify().damping(15)} className="w-full">
+                <Animated.View entering={FadeInUp.duration(600).easing(Easing.out(Easing.cubic))} className="w-full">
                     <Text className="text-gray-600 text-center mb-8 px-4 leading-relaxed">
                         Addressing your child's behavior isn't just about them—it's about reclaiming your <Text className="font-bold text-gray-900">peace of mind</Text>.
                     </Text>

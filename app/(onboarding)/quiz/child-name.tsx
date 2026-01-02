@@ -33,7 +33,7 @@ export default function ChildNameScreen() {
                     </Text>
                 </Animated.View>
 
-                <Animated.View entering={SlideInUp.delay(200)} className="mb-8">
+                <Animated.View entering={FadeIn.duration(300)} className="mb-8">
                     <Text className="text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Child's Name</Text>
                     <TextInput
                         value={childName}
@@ -49,7 +49,7 @@ export default function ChildNameScreen() {
 
                 <View className="flex-1" />
 
-                <Animated.View entering={SlideInUp.delay(300)}>
+                <Animated.View entering={FadeIn.duration(300)}>
                     <TouchableOpacity
                         onPress={handleNext}
                         disabled={!canProceed}

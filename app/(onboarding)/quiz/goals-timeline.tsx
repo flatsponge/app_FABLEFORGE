@@ -38,7 +38,7 @@ export default function GoalsTimelineScreen() {
 
             <View className="flex-1">
                 {TIMELINES.map((timeline, index) => (
-                    <Animated.View key={timeline.id} entering={SlideInUp.delay(150 + index * 60)}>
+                    <Animated.View key={timeline.id} entering={FadeIn.duration(300)}>
                         <TouchableOpacity
                             onPress={() => handleSelect(timeline.id)}
                             className={`mb-3 p-5 rounded-2xl border-2 flex-row items-center ${selected === timeline.id

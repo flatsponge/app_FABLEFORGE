@@ -108,7 +108,7 @@ export default function RealityCheckScreen() {
 
             <View className="px-6 -mt-6">
                 {/* Summary Card */}
-                <Animated.View entering={SlideInUp.delay(300)} className="bg-white rounded-3xl p-6 border border-gray-100 mb-6">
+                <Animated.View entering={FadeIn.delay(300).duration(600)} className="bg-white rounded-3xl p-6 border border-gray-100 mb-6">
                     <View className="flex-row justify-between mb-4">
                         <View className="items-center flex-1">
                             <Text className="text-4xl font-black text-red-500">{criticalCount}</Text>
@@ -133,7 +133,7 @@ export default function RealityCheckScreen() {
                 </Animated.View>
 
                 {/* Skills Assessment */}
-                <Animated.View entering={SlideInUp.delay(500)} className="mb-8">
+                <Animated.View entering={FadeIn.delay(500).duration(600)} className="mb-8">
                     <Text className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">
                         Detailed Skill Assessment
                     </Text>
@@ -171,7 +171,7 @@ export default function RealityCheckScreen() {
                 </Animated.View>
 
                 {/* Trajectory Graph */}
-                <Animated.View entering={SlideInUp.delay(1000)} className="bg-gray-900 rounded-3xl p-6 mb-8">
+                <Animated.View entering={FadeIn.delay(1000).duration(600)} className="bg-gray-900 rounded-3xl p-6 mb-8">
                     <Text className="font-bold text-white mb-1 text-lg">Behavioral Trajectory</Text>
                     <Text className="text-sm text-gray-400 mb-6">Projected development over next 12 months</Text>
 
@@ -268,7 +268,7 @@ export default function RealityCheckScreen() {
                 )}
 
                 {/* Success Stories */}
-                <Animated.View entering={SlideInUp.delay(1500)} className="bg-green-50 border border-green-200 p-6 rounded-3xl mb-8">
+                <Animated.View entering={FadeIn.delay(1500).duration(600)} className="bg-green-50 border border-green-200 p-6 rounded-3xl mb-8">
                     <View className="flex-row items-center mb-4">
                         <Ionicons name="star" size={24} color="#16a34a" />
                         <Text className="font-bold text-green-800 ml-2 text-lg">Parent Success Stories</Text>

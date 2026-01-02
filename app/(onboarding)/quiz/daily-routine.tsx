@@ -38,7 +38,7 @@ export default function DailyRoutineScreen() {
 
             <View className="flex-1">
                 {ROUTINES.map((routine, index) => (
-                    <Animated.View key={routine.id} entering={SlideInUp.delay(150 + index * 60)}>
+                    <Animated.View key={routine.id} entering={FadeIn.duration(300)}>
                         <TouchableOpacity
                             onPress={() => handleSelect(routine.id)}
                             className={`mb-3 p-5 rounded-2xl border-2 flex-row items-center ${selected === routine.id

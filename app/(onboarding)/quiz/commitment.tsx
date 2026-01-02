@@ -46,7 +46,7 @@ export default function CommitmentScreen() {
                 </Animated.View>
             </View>
 
-            <Animated.View entering={SlideInUp.delay(400)}>
+            <Animated.View entering={FadeIn.duration(300)}>
                 <TouchableOpacity
                     onPress={() => router.push('/(onboarding)/quiz/softening')}
                     className="bg-primary-600 py-5 rounded-full items-center"

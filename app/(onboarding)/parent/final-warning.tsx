@@ -66,7 +66,7 @@ export default function FinalWarningScreen() {
             </ScrollView>
 
             {/* Floating CTA */}
-            <Animated.View entering={SlideInUp.delay(800)} className="absolute bottom-0 left-0 right-0 p-6 bg-white/90 blur-xl">
+            <Animated.View entering={FadeIn.delay(800).duration(600)} className="absolute bottom-0 left-0 right-0 p-6 bg-white/90 blur-xl">
                 <TouchableOpacity
                     onPress={() => router.push('/(onboarding)/parent/positive-outlook')}
                     className="w-full bg-gray-900 py-5 rounded-full items-center flex-row justify-center"

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import Animated, { FadeIn, FadeInUp, ZoomIn } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInUp, ZoomIn, Easing } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function SocialWarningScreen() {
@@ -29,7 +29,7 @@ export default function SocialWarningScreen() {
                 </Text>
             </Animated.View>
 
-            <Animated.View entering={ZoomIn.delay(400).springify()} className="w-full bg-gray-50 border border-gray-200 p-8 rounded-3xl mb-8 items-center relative overflow-hidden">
+            <Animated.View entering={ZoomIn.delay(400).duration(600)} className="w-full bg-gray-50 border border-gray-200 p-8 rounded-3xl mb-8 items-center relative overflow-hidden">
                 <View className="absolute -right-10 -top-10 w-32 h-32 bg-red-100 rounded-full" />
                 <View className="absolute -left-10 -bottom-10 w-32 h-32 bg-red-100 rounded-full" />
 
@@ -47,7 +47,7 @@ export default function SocialWarningScreen() {
             </Animated.View>
 
             {showStat && (
-                <Animated.View entering={FadeInUp.springify().damping(15)} className="w-full">
+                <Animated.View entering={FadeInUp.duration(600).easing(Easing.out(Easing.cubic))} className="w-full">
                     <View className="bg-red-50 p-4 rounded-2xl border border-red-100 mb-8 flex-row items-center">
                         <Ionicons name="alert-circle" size={24} color="#dc2626" style={{ marginRight: 12 }} />
                         <Text className="text-red-800 text-sm flex-1 leading-relaxed">

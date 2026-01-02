@@ -67,8 +67,7 @@ export default function AvatarSelectionScreen() {
         </View>
 
         {/* Cosmetics Shelf (The Hook) */}
-        <Animated.View entering={SlideInRight.delay(400)} className="bg-white p-6 rounded-3xl border border-gray-100 mb-8">
-          <View className="flex-row justify-between items-center mb-4">
+                    <Animated.View entering={FadeIn.delay(400).duration(600)} className="bg-white p-6 rounded-3xl border border-gray-100 mb-8">          <View className="flex-row justify-between items-center mb-4">
             <Text className="text-lg font-bold text-gray-800">Hero Gear</Text>
             <View className="flex-row items-center bg-yellow-100 px-2 py-1 rounded-full">
               <Ionicons name="lock-closed" size={12} color="#854d0e" />

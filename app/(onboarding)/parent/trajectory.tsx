@@ -92,7 +92,7 @@ export default function TrajectoryScreen() {
             </View>
 
             {showLabels && (
-                <Animated.View entering={FadeInUp.springify().damping(12)}>
+                <Animated.View entering={FadeInUp.duration(600)}>
                     <View className="bg-white border border-red-100 p-4 rounded-2xl flex-row items-center mb-4">
                         <View className="w-10 h-10 rounded-full bg-red-50 items-center justify-center mr-4">
                             <Ionicons name="trending-down" size={20} color="#ef4444" />

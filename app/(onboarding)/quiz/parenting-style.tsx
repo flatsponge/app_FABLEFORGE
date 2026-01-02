@@ -39,7 +39,7 @@ export default function ParentingStyleScreen() {
 
             <View className="flex-1">
                 {STYLES.map((style, index) => (
-                    <Animated.View key={style.id} entering={SlideInUp.delay(150 + index * 60)}>
+                    <Animated.View key={style.id} entering={FadeIn.duration(300)}>
                         <TouchableOpacity
                             onPress={() => handleSelect(style.id)}
                             className={`mb-3 p-4 rounded-2xl border-2 flex-row items-center ${selected === style.id

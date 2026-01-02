@@ -58,7 +58,7 @@ export default function TriggerSituationsScreen() {
                     {SITUATIONS.map((situation, index) => (
                         <Animated.View
                             key={situation.id}
-                            entering={SlideInUp.delay(100 + index * 40)}
+                            entering={FadeIn.duration(300)}
                         >
                             <TouchableOpacity
                                 onPress={() => toggleSelection(situation.id)}

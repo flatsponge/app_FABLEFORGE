@@ -39,7 +39,7 @@ export default function ReadingTimeScreen() {
 
             <View className="flex-1">
                 {TIMES.map((time, index) => (
-                    <Animated.View key={time.id} entering={SlideInUp.delay(150 + index * 60)}>
+                    <Animated.View key={time.id} entering={FadeIn.duration(300)}>
                         <TouchableOpacity
                             onPress={() => handleSelect(time.id)}
                             className={`mb-3 p-5 rounded-2xl border-2 flex-row items-center ${selected === time.id
