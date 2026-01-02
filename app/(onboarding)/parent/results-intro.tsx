@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, Dimensions } from 'react-native';
+import { View, StyleSheet, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { FadeIn, FadeInDown, useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, withSequence } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
-
-const { width } = Dimensions.get('window');
+import OnboardingLayout from '../../../components/OnboardingLayout';
+import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
+import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
 export default function ResultsIntroScreen() {
     const router = useRouter();
@@ -31,56 +32,135 @@ export default function ResultsIntroScreen() {
         transform: [{ scale: scale.value }],
     }));
 
+    const handleNext = () => {
+        router.push('/(onboarding)/parent/stat-reveal-1');
+    };
+
     return (
-        <View className="flex-1 bg-white items-center justify-center px-6">
-            <Animated.View entering={FadeIn.delay(300)} className="items-center mb-12">
-                <View className="relative items-center justify-center mb-8">
-                    <Animated.View
-                        style={[
-                            { position: 'absolute', width: 140, height: 140, borderRadius: 70, backgroundColor: '#f3e8ff' },
-                            animatedCircleStyle
-                        ]}
-                    />
-                    <View className="w-28 h-28 bg-white rounded-full items-center justify-center border-4 border-primary-100 z-10">
-                        <Ionicons name="scan" size={48} color="#9333ea" />
+        <OnboardingLayout
+            progress={1.0} // Transition to results phase
+            showNextButton={showContent}
+            onNext={handleNext}
+            nextLabel="Reveal My Results"
+        >
+            <View style={styles.container}>
+                <Animated.View entering={FadeIn.delay(300)} style={styles.animationContainer}>
+                    <View style={styles.iconWrapper}>
+                        <Animated.View
+                            style={[
+                                styles.pulseCircle,
+                                animatedCircleStyle
+                            ]}
+                        />
+                        <View style={styles.iconCircle}>
+                            <Ionicons name="scan" size={48} color={OnboardingTheme.Colors.Primary} />
+                        </View>
                     </View>
-                </View>
 
-                <Text className="text-4xl font-black text-gray-900 text-center mb-2 tracking-tight">
-                    Analysis Complete
-                </Text>
-                <Text className="text-gray-500 font-medium tracking-widest uppercase text-xs">
-                    Processing 14 Data Points
-                </Text>
-            </Animated.View>
+                    <OnboardingTitle style={styles.title}>Analysis Complete</OnboardingTitle>
+                    <Text style={styles.subtitle}>Processing 14 Data Points</Text>
+                </Animated.View>
 
-            {showContent && (
-                <Animated.View entering={FadeInDown.duration(600)} className="w-full">
-                    <View className="bg-red-50 border border-red-100 p-6 rounded-3xl mb-8 w-full">
-                        <View className="flex-row items-start mb-4">
-                            <View className="bg-white p-2 rounded-full mr-4">
+                {showContent && (
+                    <Animated.View entering={FadeInDown.duration(600)} style={styles.warningContainer}>
+                        <View style={styles.warningContent}>
+                            <View style={styles.warningIconWrapper}>
                                 <Ionicons name="warning" size={24} color="#ef4444" />
                             </View>
-                            <View className="flex-1">
-                                <Text className="text-red-900 font-bold text-lg mb-1">
-                                    Attention Needed
-                                </Text>
-                                <Text className="text-red-800/80 leading-relaxed">
+                            <View style={styles.warningTextWrapper}>
+                                <Text style={styles.warningTitle}>Attention Needed</Text>
+                                <Text style={styles.warningBody}>
                                     We've identified 2 critical areas that diverge from standard developmental benchmarks for this age group.
                                 </Text>
                             </View>
                         </View>
-                    </View>
-
-                    <TouchableOpacity
-                        onPress={() => router.push('/(onboarding)/parent/stat-reveal-1')}
-                        className="w-full bg-gray-900 py-5 rounded-full flex-row items-center justify-center"
-                    >
-                        <Text className="text-white text-lg font-bold mr-2">Reveal My Results</Text>
-                        <Ionicons name="arrow-forward" size={20} color="white" />
-                    </TouchableOpacity>
-                </Animated.View>
-            )}
-        </View>
+                    </Animated.View>
+                )}
+            </View>
+        </OnboardingLayout>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '100%',
+        paddingTop: OnboardingTheme.Spacing.xl,
+    },
+    animationContainer: {
+        alignItems: 'center',
+        marginBottom: OnboardingTheme.Spacing.xl * 2,
+    },
+    iconWrapper: {
+        position: 'relative',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: OnboardingTheme.Spacing.lg,
+    },
+    pulseCircle: {
+        position: 'absolute',
+        width: 140,
+        height: 140,
+        borderRadius: 70,
+        backgroundColor: '#f3e8ff', // primary-100
+    },
+    iconCircle: {
+        width: 112, // w-28
+        height: 112,
+        backgroundColor: 'white',
+        borderRadius: 56,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 4,
+        borderColor: '#f3e8ff', // primary-100
+        zIndex: 10,
+    },
+    title: {
+        textAlign: 'center',
+        marginBottom: OnboardingTheme.Spacing.xs,
+    },
+    subtitle: {
+        color: OnboardingTheme.Colors.TextSecondary,
+        fontWeight: '500',
+        letterSpacing: 1.2,
+        textTransform: 'uppercase',
+        fontSize: 12,
+        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+    },
+    warningContainer: {
+        width: '100%',
+        backgroundColor: '#fef2f2', // red-50
+        borderColor: '#fee2e2', // red-100
+        borderWidth: 1,
+        borderRadius: OnboardingTheme.Radius.xl,
+        padding: OnboardingTheme.Spacing.lg,
+    },
+    warningContent: {
+        flexDirection: 'row',
+        alignItems: 'start',
+    },
+    warningIconWrapper: {
+        backgroundColor: 'white',
+        padding: 8,
+        borderRadius: 9999,
+        marginRight: OnboardingTheme.Spacing.md,
+    },
+    warningTextWrapper: {
+        flex: 1,
+    },
+    warningTitle: {
+        color: '#7f1d1d', // red-900
+        fontWeight: 'bold',
+        fontSize: 18,
+        marginBottom: 4,
+        fontFamily: OnboardingTheme.Typography.Title.fontFamily,
+    },
+    warningBody: {
+        color: '#991b1b', // red-800
+        opacity: 0.8,
+        lineHeight: 20,
+        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+    },
+});
