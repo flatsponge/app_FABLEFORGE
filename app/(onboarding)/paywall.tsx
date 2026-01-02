@@ -1,77 +1,80 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import Animated, { FadeIn, SlideInUp } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import OnboardingLayout from '../../components/OnboardingLayout';
+import { OnboardingTitle, OnboardingBody } from '../../components/OnboardingTypography';
+import { OnboardingTheme } from '../../constants/OnboardingTheme';
 
 export default function PaywallScreen() {
   const router = useRouter();
   const [selectedPlan, setSelectedPlan] = useState<'yearly' | 'monthly'>('yearly');
 
   const handlePurchase = () => {
-    router.replace('/');
+    router.replace('/(tabs)');
   };
 
   return (
-    <ScrollView className="flex-1 bg-white" contentContainerStyle={{ paddingBottom: 60 }}>
-      {/* Hero */}
-      <View className="bg-gradient-to-b from-primary-100 to-white pt-16 pb-12 px-6 items-center">
-        <View className="bg-white p-4 rounded-3xl mb-6">
-          <Ionicons name="rocket" size={56} color="#9333ea" />
+    <OnboardingLayout
+        progress={1.0}
+        onNext={handlePurchase}
+        nextLabel="Start 7-Day Free Trial"
+        isScrollable={true}
+    >
+      <View style={styles.container}>
+        {/* Hero */}
+        <View style={styles.heroSection}>
+          <View style={styles.heroIconWrapper}>
+            <Ionicons name="rocket" size={56} color={OnboardingTheme.Colors.Primary} />
+          </View>
+          <OnboardingTitle style={styles.heroTitle}>Unlock Their Full Potential</OnboardingTitle>
+          <OnboardingBody style={styles.heroSubtitle}>
+            Turn daily struggles into magical lessons.
+          </OnboardingBody>
         </View>
-        <Text className="text-3xl font-bold text-gray-900 text-center mb-2">
-          Unlock Their Full Potential
-        </Text>
-        <Text className="text-lg text-gray-500 text-center">
-          Turn daily struggles into magical lessons.
-        </Text>
-      </View>
 
-      <View className="px-6">
-        {/* Blinkist Timeline */}
-        <Animated.View entering={FadeIn.delay(200).duration(500)} className="bg-gray-50 rounded-3xl p-6 mb-8 border border-gray-100">
-          <Text className="text-lg font-bold text-gray-900 mb-6 text-center">
-            How Your Free Trial Works
-          </Text>
+        {/* Timeline */}
+        <Animated.View entering={FadeIn.delay(200)} style={styles.timelineCard}>
+          <Text style={styles.timelineTitle}>How Your Free Trial Works</Text>
 
-          <View className="relative">
-            {/* Timeline Line */}
-            <View className="absolute left-6 top-8 bottom-8 w-0.5 bg-gray-200" />
+          <View style={styles.timelineWrapper}>
+            <View style={styles.timelineLine} />
 
             {/* Day 1 */}
-            <View className="flex-row items-start mb-6">
-              <View className="w-12 h-12 rounded-full bg-primary-500 items-center justify-center z-10">
+            <View style={styles.timelineItem}>
+              <View style={styles.timelineDotPrimary}>
                 <Ionicons name="lock-open" size={20} color="white" />
               </View>
-              <View className="ml-4 flex-1 pt-2">
-                <Text className="font-bold text-gray-900">Today</Text>
-                <Text className="text-gray-500 text-sm">
+              <View style={styles.timelineContent}>
+                <Text style={styles.timelineLabel}>Today</Text>
+                <Text style={styles.timelineDescription}>
                   Instant access to unlimited AI stories & avatar customization.
                 </Text>
               </View>
             </View>
 
             {/* Day 5 */}
-            <View className="flex-row items-start mb-6">
-              <View className="w-12 h-12 rounded-full bg-orange-400 items-center justify-center z-10">
+            <View style={styles.timelineItem}>
+              <View style={styles.timelineDotOrange}>
                 <Ionicons name="notifications" size={20} color="white" />
               </View>
-              <View className="ml-4 flex-1 pt-2">
-                <Text className="font-bold text-gray-900">Day 5</Text>
-                <Text className="text-gray-500 text-sm">
+              <View style={styles.timelineContent}>
+                <Text style={styles.timelineLabel}>Day 5</Text>
+                <Text style={styles.timelineDescription}>
                   We'll send you a reminder email before your trial ends.
                 </Text>
               </View>
             </View>
 
             {/* Day 7 */}
-            <View className="flex-row items-start">
-              <View className="w-12 h-12 rounded-full bg-green-500 items-center justify-center z-10">
+            <View style={styles.timelineItem}>
+              <View style={styles.timelineDotGreen}>
                 <Ionicons name="star" size={20} color="white" />
               </View>
-              <View className="ml-4 flex-1 pt-2">
-                <Text className="font-bold text-gray-900">Day 7</Text>
-                <Text className="text-gray-500 text-sm">
+              <View style={styles.timelineContent}>
+                <Text style={styles.timelineLabel}>Day 7</Text>
+                <Text style={styles.timelineDescription}>
                   Premium membership begins. Cancel anytime before this.
                 </Text>
               </View>
@@ -80,8 +83,8 @@ export default function PaywallScreen() {
         </Animated.View>
 
         {/* Features */}
-        <Animated.View entering={FadeIn.delay(300).duration(500)} className="mb-8">
-          <Text className="text-lg font-bold text-gray-900 mb-4">What You Get</Text>
+        <Animated.View entering={FadeIn.delay(300)} style={styles.featuresSection}>
+          <Text style={styles.sectionTitle}>What You Get</Text>
           {[
             { icon: 'book', text: 'Unlimited AI-Generated Stories' },
             { icon: 'analytics', text: 'Moral Growth Dashboard' },
@@ -89,42 +92,42 @@ export default function PaywallScreen() {
             { icon: 'document-text', text: 'Weekly Parent Reports' },
             { icon: 'gift', text: 'Bonus: "The Tantrum Tamer" Guide' },
           ].map((item, i) => (
-            <View key={i} className="flex-row items-center mb-3">
-              <View className="w-10 h-10 rounded-full bg-primary-50 items-center justify-center mr-3">
-                <Ionicons name={item.icon as any} size={20} color="#9333ea" />
+            <View key={i} style={styles.featureItem}>
+              <View style={styles.featureIconWrapper}>
+                <Ionicons name={item.icon as any} size={20} color={OnboardingTheme.Colors.Primary} />
               </View>
-              <Text className="text-gray-800 font-medium flex-1">{item.text}</Text>
-              <Ionicons name="checkmark-circle" size={20} color="#10b981" />
+              <Text style={styles.featureText}>{item.text}</Text>
+              <Ionicons name="checkmark-circle" size={20} color={OnboardingTheme.Colors.Success} />
             </View>
           ))}
         </Animated.View>
 
         {/* Pricing Cards */}
-        <Animated.View entering={FadeIn.delay(400).duration(500)} className="mb-6">
+        <Animated.View entering={FadeIn.delay(400)} style={styles.pricingSection}>
           {/* Yearly */}
           <TouchableOpacity
             onPress={() => setSelectedPlan('yearly')}
-            className={`mb-4 p-5 rounded-2xl border-2 relative ${selectedPlan === 'yearly'
-                ? 'border-primary-500 bg-primary-50'
-                : 'border-gray-200 bg-white'
-              }`}
+            style={[
+                styles.planCard,
+                selectedPlan === 'yearly' ? styles.planCardSelected : styles.planCardUnselected
+            ]}
           >
-            <View className="absolute -top-3 right-4 bg-green-500 px-3 py-1 rounded-full">
-              <Text className="text-white text-xs font-bold">SAVE 60%</Text>
+            <View style={styles.saveBadge}>
+              <Text style={styles.saveBadgeText}>SAVE 60%</Text>
             </View>
-            <View className="flex-row justify-between items-center">
+            <View style={styles.planHeader}>
               <View>
-                <Text className="text-lg font-bold text-gray-900">Yearly</Text>
-                <Text className="text-gray-500 text-sm">Billed annually</Text>
+                <Text style={styles.planTitle}>Yearly</Text>
+                <Text style={styles.planSubtitle}>Billed annually</Text>
               </View>
-              <View className="items-end">
-                <Text className="text-2xl font-bold text-gray-900">$59.99</Text>
-                <Text className="text-primary-600 text-sm font-medium">$4.99/mo</Text>
+              <View style={styles.planPriceWrapper}>
+                <Text style={styles.planPrice}>$59.99</Text>
+                <Text style={styles.planPriceMonthly}>$4.99/mo</Text>
               </View>
             </View>
             {selectedPlan === 'yearly' && (
-              <View className="absolute top-5 left-4">
-                <Ionicons name="checkmark-circle" size={24} color="#9333ea" />
+              <View style={styles.selectionCheck}>
+                <Ionicons name="checkmark-circle" size={24} color={OnboardingTheme.Colors.Primary} />
               </View>
             )}
           </TouchableOpacity>
@@ -132,64 +135,320 @@ export default function PaywallScreen() {
           {/* Monthly */}
           <TouchableOpacity
             onPress={() => setSelectedPlan('monthly')}
-            className={`p-5 rounded-2xl border-2 ${selectedPlan === 'monthly'
-                ? 'border-primary-500 bg-primary-50'
-                : 'border-gray-200 bg-white'
-              }`}
+            style={[
+                styles.planCard,
+                selectedPlan === 'monthly' ? styles.planCardSelected : styles.planCardUnselected
+            ]}
           >
-            <View className="flex-row justify-between items-center">
+            <View style={styles.planHeader}>
               <View>
-                <Text className="text-lg font-bold text-gray-900">Monthly</Text>
-                <Text className="text-gray-500 text-sm">Billed monthly</Text>
+                <Text style={styles.planTitle}>Monthly</Text>
+                <Text style={styles.planSubtitle}>Billed monthly</Text>
               </View>
-              <View className="items-end">
-                <Text className="text-2xl font-bold text-gray-900">$12.99</Text>
-                <Text className="text-gray-400 text-sm">/month</Text>
+              <View style={styles.planPriceWrapper}>
+                <Text style={styles.planPrice}>$12.99</Text>
+                <Text style={styles.planPriceMonthlySecondary}>/month</Text>
               </View>
             </View>
             {selectedPlan === 'monthly' && (
-              <View className="absolute top-5 left-4">
-                <Ionicons name="checkmark-circle" size={24} color="#9333ea" />
+              <View style={styles.selectionCheck}>
+                <Ionicons name="checkmark-circle" size={24} color={OnboardingTheme.Colors.Primary} />
               </View>
             )}
           </TouchableOpacity>
         </Animated.View>
 
         {/* Guarantee */}
-        <View className="bg-green-50 p-4 rounded-2xl flex-row items-center mb-8 border border-green-100">
-          <Ionicons name="shield-checkmark" size={28} color="#10b981" />
-          <View className="ml-3 flex-1">
-            <Text className="text-green-800 font-bold">30-Day Money-Back Guarantee</Text>
-            <Text className="text-green-700 text-sm">No questions asked. Full refund if you're not satisfied.</Text>
+        <View style={styles.guaranteeCard}>
+          <Ionicons name="shield-checkmark" size={28} color={OnboardingTheme.Colors.Success} />
+          <View style={styles.guaranteeContent}>
+            <Text style={styles.guaranteeTitle}>30-Day Money-Back Guarantee</Text>
+            <Text style={styles.guaranteeDescription}>No questions asked. Full refund if you're not satisfied.</Text>
           </View>
         </View>
 
-        {/* CTA */}
-        <TouchableOpacity
-          onPress={handlePurchase}
-          className="bg-primary-600 py-5 rounded-full items-center mb-4"
-        >
-          <Text className="text-white text-lg font-bold">Start 7-Day Free Trial</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={handlePurchase}>
-          <Text className="text-center text-gray-400 text-sm">
-            No thanks, maybe later
-          </Text>
+        <TouchableOpacity onPress={handlePurchase} style={styles.laterButton}>
+          <Text style={styles.laterButtonText}>No thanks, maybe later</Text>
         </TouchableOpacity>
 
         {/* Social Proof */}
-        <View className="mt-8 mb-4 items-center">
-          <Text className="text-gray-400 text-xs mb-2">TRUSTED BY</Text>
-          <Text className="text-gray-900 font-bold text-lg">50,000+ Parents</Text>
-          <View className="flex-row mt-2">
+        <View style={styles.socialProof}>
+          <Text style={styles.socialProofLabel}>TRUSTED BY</Text>
+          <Text style={styles.socialProofTitle}>50,000+ Parents</Text>
+          <View style={styles.starsRow}>
             {[1, 2, 3, 4, 5].map((i) => (
               <Ionicons key={i} name="star" size={16} color="#facc15" />
             ))}
-            <Text className="text-gray-500 text-sm ml-2">4.9 Rating</Text>
+            <Text style={styles.ratingText}>4.9 Rating</Text>
           </View>
         </View>
       </View>
-    </ScrollView>
+    </OnboardingLayout>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    width: '100%',
+    paddingVertical: OnboardingTheme.Spacing.lg,
+  },
+  heroSection: {
+    alignItems: 'center',
+    marginBottom: OnboardingTheme.Spacing.xl,
+  },
+  heroIconWrapper: {
+    backgroundColor: '#f3e8ff', // primary-50
+    padding: 16,
+    borderRadius: 24,
+    marginBottom: OnboardingTheme.Spacing.md,
+  },
+  heroTitle: {
+    textAlign: 'center',
+    marginBottom: OnboardingTheme.Spacing.xs,
+  },
+  heroSubtitle: {
+    textAlign: 'center',
+    color: OnboardingTheme.Colors.TextSecondary,
+  },
+  timelineCard: {
+    backgroundColor: '#f9fafb', // gray-50
+    borderRadius: OnboardingTheme.Radius.xl,
+    padding: OnboardingTheme.Spacing.lg,
+    marginBottom: OnboardingTheme.Spacing.xl,
+    borderWidth: 1,
+    borderColor: OnboardingTheme.Colors.Border,
+  },
+  timelineTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: OnboardingTheme.Colors.Text,
+    marginBottom: OnboardingTheme.Spacing.lg,
+    textAlign: 'center',
+    fontFamily: OnboardingTheme.Typography.Title.fontFamily,
+  },
+  timelineWrapper: {
+    position: 'relative',
+  },
+  timelineLine: {
+    position: 'absolute',
+    left: 24,
+    top: 32,
+    bottom: 32,
+    width: 2,
+    backgroundColor: '#e5e7eb', // gray-200
+  },
+  timelineItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: OnboardingTheme.Spacing.lg,
+  },
+  timelineDotPrimary: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: OnboardingTheme.Colors.Primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+  timelineDotOrange: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#fb923c', // orange-400
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+  timelineDotGreen: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: OnboardingTheme.Colors.Success,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+  timelineContent: {
+    marginLeft: OnboardingTheme.Spacing.md,
+    flex: 1,
+    paddingTop: 4,
+  },
+  timelineLabel: {
+    fontWeight: 'bold',
+    color: OnboardingTheme.Colors.Text,
+    fontSize: 16,
+    fontFamily: OnboardingTheme.Typography.Title.fontFamily,
+  },
+  timelineDescription: {
+    color: OnboardingTheme.Colors.TextSecondary,
+    fontSize: 14,
+    lineHeight: 20,
+    fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+  },
+  featuresSection: {
+    marginBottom: OnboardingTheme.Spacing.xl,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: OnboardingTheme.Colors.Text,
+    marginBottom: OnboardingTheme.Spacing.md,
+    fontFamily: OnboardingTheme.Typography.Title.fontFamily,
+  },
+  featureItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: OnboardingTheme.Spacing.sm,
+  },
+  featureIconWrapper: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f3e8ff', // primary-50
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: OnboardingTheme.Spacing.sm,
+  },
+  featureText: {
+    color: '#374151', // gray-800
+    fontWeight: '500',
+    flex: 1,
+    fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+  },
+  pricingSection: {
+    marginBottom: OnboardingTheme.Spacing.lg,
+  },
+  planCard: {
+    padding: OnboardingTheme.Spacing.lg,
+    borderRadius: OnboardingTheme.Radius.xl,
+    borderWidth: 2,
+    marginBottom: OnboardingTheme.Spacing.md,
+    position: 'relative',
+  },
+  planCardSelected: {
+    borderColor: OnboardingTheme.Colors.Primary,
+    backgroundColor: '#f3e8ff', // primary-50
+  },
+  planCardUnselected: {
+    borderColor: OnboardingTheme.Colors.Border,
+    backgroundColor: 'white',
+  },
+  saveBadge: {
+    position: 'absolute',
+    top: -12,
+    right: 16,
+    backgroundColor: OnboardingTheme.Colors.Success,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 9999,
+  },
+  saveBadgeText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  planHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  planTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: OnboardingTheme.Colors.Text,
+    fontFamily: OnboardingTheme.Typography.Title.fontFamily,
+  },
+  planSubtitle: {
+    fontSize: 12,
+    color: OnboardingTheme.Colors.TextSecondary,
+    fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+  },
+  planPriceWrapper: {
+    alignItems: 'flex-end',
+  },
+  planPrice: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: OnboardingTheme.Colors.Text,
+    fontFamily: OnboardingTheme.Typography.Title.fontFamily,
+  },
+  planPriceMonthly: {
+    fontSize: 14,
+    color: OnboardingTheme.Colors.Primary,
+    fontWeight: '600',
+  },
+  planPriceMonthlySecondary: {
+    fontSize: 14,
+    color: OnboardingTheme.Colors.TextSecondary,
+  },
+  selectionCheck: {
+    position: 'absolute',
+    top: 20,
+    left: 16,
+  },
+  guaranteeCard: {
+    backgroundColor: '#f0fdf4', // green-50
+    padding: OnboardingTheme.Spacing.md,
+    borderRadius: OnboardingTheme.Radius.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: OnboardingTheme.Spacing.xl,
+    borderWidth: 1,
+    borderColor: '#dcfce7', // green-100
+  },
+  guaranteeContent: {
+    marginLeft: OnboardingTheme.Spacing.sm,
+    flex: 1,
+  },
+  guaranteeTitle: {
+    color: '#166534', // green-800
+    fontWeight: 'bold',
+    fontSize: 14,
+    fontFamily: OnboardingTheme.Typography.Title.fontFamily,
+  },
+  guaranteeDescription: {
+    color: '#15803d', // green-700
+    fontSize: 12,
+    fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+  },
+  laterButton: {
+    padding: OnboardingTheme.Spacing.md,
+    marginBottom: OnboardingTheme.Spacing.lg,
+  },
+  laterButtonText: {
+    textAlign: 'center',
+    color: OnboardingTheme.Colors.TextSecondary,
+    fontSize: 14,
+    fontWeight: '500',
+    fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+  },
+  socialProof: {
+    alignItems: 'center',
+    marginBottom: OnboardingTheme.Spacing.xl,
+  },
+  socialProofLabel: {
+    color: OnboardingTheme.Colors.TextSecondary,
+    fontSize: 10,
+    fontWeight: 'bold',
+    letterSpacing: 1.2,
+    marginBottom: 8,
+  },
+  socialProofTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: OnboardingTheme.Colors.Text,
+    fontFamily: OnboardingTheme.Typography.Title.fontFamily,
+  },
+  starsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  ratingText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: OnboardingTheme.Colors.TextSecondary,
+    fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+  },
+});
