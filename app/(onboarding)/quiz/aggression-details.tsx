@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
-import { View } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { OnboardingScreen } from '../../../components/OnboardingScreen';
-import { SelectionCard } from '../../../components/SelectionCard';
+import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
+import OnboardingLayout from '../../../components/OnboardingLayout';
+import { OnboardingTitle, OnboardingBody, OnboardingSubtitle } from '../../../components/OnboardingTypography';
+import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
+import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
 const TARGETS = [
     { id: 'sibling', title: 'Siblings', icon: 'people' },
@@ -26,24 +29,57 @@ export default function AggressionDetailsScreen() {
     };
 
     return (
-        <OnboardingScreen
-            title="Who is this aggression usually directed toward?"
-            subtitle="Understanding the trigger helps us script the solution."
-            currentStep={4}
-            totalSteps={12}
+        <OnboardingLayout
+            progress={0.55}
+            showNextButton={false}
         >
-            <View className="pb-8">
-                {TARGETS.map((target, index) => (
-                    <SelectionCard
-                        key={target.id}
-                        index={index}
-                        title={target.title}
-                        icon={target.icon as any}
-                        selected={selected === target.id}
-                        onPress={() => handleSelect(target.id)}
-                    />
-                ))}
+            <View style={styles.contentContainer}>
+                <OnboardingSubtitle>Step 10</OnboardingSubtitle>
+                <OnboardingTitle>Who is this aggression usually directed toward?</OnboardingTitle>
+                <OnboardingBody>
+                    Understanding the trigger helps us script the solution.
+                </OnboardingBody>
+
+                <View style={styles.optionsContainer}>
+                    {TARGETS.map((target) => (
+                        <OnboardingOptionCard
+                            key={target.id}
+                            title={target.title}
+                            selected={selected === target.id}
+                            onPress={() => handleSelect(target.id)}
+                            icon={
+                                <View style={[styles.iconContainer, selected === target.id && styles.iconContainerSelected]}>
+                                    <Ionicons
+                                        name={target.icon as any}
+                                        size={24}
+                                        color={selected === target.id ? OnboardingTheme.Colors.Primary : '#6b7280'}
+                                    />
+                                </View>
+                            }
+                        />
+                    ))}
+                </View>
             </View>
-        </OnboardingScreen>
+        </OnboardingLayout>
     );
 }
+
+const styles = StyleSheet.create({
+    contentContainer: {
+        width: '100%',
+    },
+    optionsContainer: {
+        marginTop: OnboardingTheme.Spacing.xl,
+    },
+    iconContainer: {
+        width: 48,
+        height: 48,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#f9fafb', // gray-50
+    },
+    iconContainerSelected: {
+        backgroundColor: '#f3e8ff', // primary-100 (approx)
+    },
+});
