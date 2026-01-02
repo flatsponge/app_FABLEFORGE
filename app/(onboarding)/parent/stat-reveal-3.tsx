@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { FadeIn, ZoomIn, FadeInUp, Easing } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
+import OnboardingLayout from '../../../components/OnboardingLayout';
+import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
+import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
 export default function StatReveal3Screen() {
     const router = useRouter();
@@ -34,57 +37,171 @@ export default function StatReveal3Screen() {
         citation: "The neural circuitry for emotional regulation and social behavior is significantly established during the first seven years."
     };
 
+    const handleNext = () => {
+        router.push('/(onboarding)/parent/stat-reveal-4');
+    };
+
     return (
-        <View className="flex-1 bg-white items-center justify-center px-6">
-            <Animated.View entering={FadeIn.delay(200)} className="items-center w-full mb-10">
-                <View className="bg-amber-50 px-4 py-1.5 rounded-full mb-8 border border-amber-100 flex-row items-center">
-                    <Ionicons name="school" size={16} color="#d97706" style={{ marginRight: 8 }} />
-                    <Text className="text-amber-700 uppercase tracking-widest text-[11px] font-bold">
-                        Clinical Research
-                    </Text>
-                </View>
+        <OnboardingLayout
+            progress={1.0}
+            showNextButton={showCitation}
+            onNext={handleNext}
+            nextLabel="What this means for you"
+        >
+            <View style={styles.container}>
+                <Animated.View entering={FadeIn.delay(200)} style={styles.headerContainer}>
+                    <View style={styles.badge}>
+                        <Ionicons name="school" size={16} color="#d97706" style={styles.badgeIcon} />
+                        <Text style={styles.badgeText}>Clinical Research</Text>
+                    </View>
 
-                <Text className="text-3xl text-gray-900 font-serif text-center leading-relaxed">
-                    {content.titlePart1}{'\n'}
-                    <Text className="text-amber-600 font-bold italic">{content.titleHighlight}</Text>{'\n'}
-                    {content.titlePart2}
-                </Text>
-            </Animated.View>
+                    <OnboardingTitle style={styles.title}>
+                        {content.titlePart1}{' '}
+                        <Text style={styles.titleHighlight}>{content.titleHighlight}</Text>
+                        {'\n'}{content.titlePart2}
+                    </OnboardingTitle>
+                </Animated.View>
 
-            {/* The big stat visualization */}
-            <Animated.View entering={ZoomIn.duration(600)} className="items-center justify-center bg-white rounded-full w-64 h-64 border-[6px] border-amber-100 mb-10 relative">
-                <Text className="text-8xl font-black text-amber-500 z-10">{content.stat}</Text>
-                <Text className="text-gray-400 text-xs font-bold uppercase tracking-widest mt-2 px-3 py-1 rounded-full text-center">
-                    {content.statLabel}
-                </Text>
-            </Animated.View>
+                {/* The big stat visualization */}
+                <Animated.View entering={ZoomIn.duration(600)} style={styles.statWrapper}>
+                    <Text style={styles.statValue}>{content.stat}</Text>
+                    <Text style={styles.statLabel}>{content.statLabel}</Text>
+                </Animated.View>
 
-            {showCitation && (
-                <Animated.View entering={FadeInUp.duration(600).easing(Easing.out(Easing.cubic))} className="w-full">
-                    <View className="bg-gray-50 p-6 rounded-2xl border-l-4 border-amber-500 mb-8">
-                        <Text className="text-gray-600 italic mb-4 leading-relaxed font-medium">
+                {showCitation && (
+                    <Animated.View entering={FadeInUp.duration(600)} style={styles.citationCard}>
+                        <Text style={styles.citationText}>
                             "{content.citation}"
                         </Text>
-                        <View className="flex-row items-center">
-                            <View className="w-10 h-10 bg-white rounded-full items-center justify-center mr-3 border border-gray-100">
+                        <View style={styles.sourceContainer}>
+                            <View style={styles.sourceIconWrapper}>
                                 <Ionicons name="library" size={18} color="#78350f" />
                             </View>
                             <View>
-                                <Text className="text-gray-900 font-bold text-sm">Harvard University</Text>
-                                <Text className="text-gray-500 text-xs">Center on the Developing Child</Text>
+                                <Text style={styles.sourceTitle}>Harvard University</Text>
+                                <Text style={styles.sourceSubtitle}>Center on the Developing Child</Text>
                             </View>
                         </View>
-                    </View>
-
-                    <TouchableOpacity
-                        onPress={() => router.push('/(onboarding)/parent/stat-reveal-4')}
-                        className="w-full bg-gray-900 py-4 rounded-full flex-row items-center justify-center"
-                    >
-                        <Text className="text-white text-lg font-bold mr-2">What this means for you</Text>
-                        <Ionicons name="arrow-forward" size={20} color="white" />
-                    </TouchableOpacity>
-                </Animated.View>
-            )}
-        </View>
+                    </Animated.View>
+                )}
+            </View>
+        </OnboardingLayout>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        alignItems: 'center',
+        width: '100%',
+    },
+    headerContainer: {
+        alignItems: 'center',
+        marginBottom: OnboardingTheme.Spacing.lg,
+    },
+    badge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#fffbeb', // amber-50
+        paddingHorizontal: 16,
+        paddingVertical: 6,
+        borderRadius: 9999,
+        borderWidth: 1,
+        borderColor: '#fef3c7', // amber-100
+        marginBottom: OnboardingTheme.Spacing.md,
+    },
+    badgeIcon: {
+        marginRight: 8,
+    },
+    badgeText: {
+        color: '#b45309', // amber-700
+        textTransform: 'uppercase',
+        letterSpacing: 1.2,
+        fontSize: 11,
+        fontWeight: 'bold',
+        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+    },
+    title: {
+        textAlign: 'center',
+        lineHeight: 36,
+    },
+    titleHighlight: {
+        color: '#d97706', // amber-600
+        fontWeight: 'bold',
+        fontStyle: 'italic',
+    },
+    statWrapper: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'white',
+        borderRadius: 9999,
+        width: 256, // w-64
+        height: 256,
+        borderWidth: 6,
+        borderColor: '#fffbeb', // amber-50
+        marginBottom: OnboardingTheme.Spacing.xl,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
+        elevation: 3,
+    },
+    statValue: {
+        fontSize: 80,
+        fontWeight: '900',
+        color: '#f59e0b', // amber-500
+        fontFamily: OnboardingTheme.Typography.Title.fontFamily,
+    },
+    statLabel: {
+        color: OnboardingTheme.Colors.TextSecondary,
+        fontSize: 10,
+        fontWeight: 'bold',
+        textTransform: 'uppercase',
+        letterSpacing: 1.5,
+        marginTop: 8,
+        paddingHorizontal: 12,
+        textAlign: 'center',
+        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+    },
+    citationCard: {
+        width: '100%',
+        backgroundColor: '#f9fafb', // gray-50
+        padding: OnboardingTheme.Spacing.lg,
+        borderRadius: OnboardingTheme.Radius.xl,
+        borderLeftWidth: 4,
+        borderLeftColor: '#f59e0b', // amber-500
+    },
+    citationText: {
+        color: OnboardingTheme.Colors.TextSecondary,
+        fontStyle: 'italic',
+        marginBottom: OnboardingTheme.Spacing.md,
+        lineHeight: 22,
+        fontWeight: '500',
+        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+    },
+    sourceContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    sourceIconWrapper: {
+        width: 40,
+        height: 40,
+        backgroundColor: 'white',
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: OnboardingTheme.Spacing.sm,
+        borderWidth: 1,
+        borderColor: '#f3f4f6', // gray-100
+    },
+    sourceTitle: {
+        color: OnboardingTheme.Colors.Text,
+        fontWeight: 'bold',
+        fontSize: 14,
+        fontFamily: OnboardingTheme.Typography.Title.fontFamily,
+    },
+    sourceSubtitle: {
+        color: OnboardingTheme.Colors.TextSecondary,
+        fontSize: 12,
+        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+    },
+});
