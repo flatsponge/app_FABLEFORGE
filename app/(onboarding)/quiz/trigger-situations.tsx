@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeIn, SlideInUp } from 'react-native-reanimated';
+import { useOnboarding } from '../../../contexts/OnboardingContext';
+import OnboardingLayout from '../../../components/OnboardingLayout';
+import { OnboardingTitle, OnboardingBody, OnboardingSubtitle } from '../../../components/OnboardingTypography';
+import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
+import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
 const SITUATIONS = [
     { id: 'bedtime', label: 'Bedtime resistance', emoji: '🌙' },
@@ -17,6 +20,7 @@ const SITUATIONS = [
 
 export default function TriggerSituationsScreen() {
     const router = useRouter();
+    const { updateData } = useOnboarding();
     const [selected, setSelected] = useState<string[]>([]);
 
     const toggleSelection = (id: string) => {
@@ -30,67 +34,63 @@ export default function TriggerSituationsScreen() {
     const canProceed = selected.length >= 1;
 
     const handleNext = () => {
-        router.push('/(onboarding)/quiz/struggle-areas');
+        if (canProceed) {
+            // updateData({ triggerSituations: selected }); // Update context if available
+            router.push('/(onboarding)/quiz/struggle-areas');
+        }
     };
 
     return (
-        <View className="flex-1 bg-[#FDFBF7]">
+        <OnboardingLayout
+            progress={0.65}
+            onNext={handleNext}
+            nextLabel="Continue"
+        >
             <ScrollView
-                className="flex-1 px-6 pt-12"
-                contentContainerStyle={{ paddingBottom: 120 }}
                 showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scrollContent}
             >
-                {/* Progress */}
-                <View className="h-1.5 bg-gray-200 rounded-full mb-8 overflow-hidden">
-                    <View className="h-full bg-primary-500" style={{ width: '33%' }} />
+                <OnboardingSubtitle>Step 12</OnboardingSubtitle>
+                <OnboardingTitle>What situations trigger the most conflict?</OnboardingTitle>
+                <OnboardingBody>
+                    Select all that apply. We'll create stories that address these moments.
+                </OnboardingBody>
+                <View style={styles.selectionCounter}>
+                    <OnboardingBody style={styles.counterText}>
+                        {selected.length} selected
+                    </OnboardingBody>
                 </View>
 
-                <Animated.View entering={FadeIn.delay(100)}>
-                    <Text className="text-3xl font-bold text-gray-900 mb-2">
-                        What situations trigger the most conflict?
-                    </Text>
-                    <Text className="text-lg text-gray-500 mb-8">
-                        Select all that apply. We'll create stories that address these moments.
-                    </Text>
-                </Animated.View>
-
-                <View className="flex-row flex-wrap gap-3">
-                    {SITUATIONS.map((situation, index) => (
-                        <Animated.View
+                <View style={styles.optionsContainer}>
+                    {SITUATIONS.map((situation) => (
+                        <OnboardingOptionCard
                             key={situation.id}
-                            entering={FadeIn.duration(300)}
-                        >
-                            <TouchableOpacity
-                                onPress={() => toggleSelection(situation.id)}
-                                className={`px-4 py-3 rounded-full border-2 flex-row items-center ${selected.includes(situation.id)
-                                    ? 'bg-primary-500 border-primary-500'
-                                    : 'bg-white border-gray-200'
-                                    }`}
-                            >
-                                <Text className="text-lg mr-2">{situation.emoji}</Text>
-                                <Text className={`font-semibold ${selected.includes(situation.id) ? 'text-white' : 'text-gray-700'
-                                    }`}>
-                                    {situation.label}
-                                </Text>
-                            </TouchableOpacity>
-                        </Animated.View>
+                            title={situation.label}
+                            selected={selected.includes(situation.id)}
+                            onPress={() => toggleSelection(situation.id)}
+                            icon={<View><OnboardingBody style={{ fontSize: 24 }}>{situation.emoji}</OnboardingBody></View>}
+                        />
                     ))}
                 </View>
             </ScrollView>
-
-            {/* Fixed CTA */}
-            <View className="absolute bottom-0 left-0 right-0 p-6 bg-[#FDFBF7]">
-                <TouchableOpacity
-                    onPress={handleNext}
-                    disabled={!canProceed}
-                    className={`py-5 rounded-full items-center ${canProceed ? 'bg-primary-600' : 'bg-gray-200'
-                        }`}
-                >
-                    <Text className={`text-lg font-bold ${canProceed ? 'text-white' : 'text-gray-400'}`}>
-                        Continue
-                    </Text>
-                </TouchableOpacity>
-            </View>
-        </View>
+        </OnboardingLayout>
     );
 }
+
+const styles = StyleSheet.create({
+    scrollContent: {
+        paddingBottom: OnboardingTheme.Spacing.xl,
+    },
+    selectionCounter: {
+        marginTop: OnboardingTheme.Spacing.xs,
+        marginBottom: OnboardingTheme.Spacing.md,
+    },
+    counterText: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: OnboardingTheme.Colors.Accent,
+    },
+    optionsContainer: {
+        marginTop: OnboardingTheme.Spacing.md,
+    },
+});
