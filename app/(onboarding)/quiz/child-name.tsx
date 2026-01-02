@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, TextInput, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import Animated, { FadeIn, SlideInUp } from 'react-native-reanimated';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
+import OnboardingLayout from '../../../components/OnboardingLayout';
+import { OnboardingTitle, OnboardingBody, OnboardingSubtitle } from '../../../components/OnboardingTypography';
+import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
 export default function ChildNameScreen() {
     const router = useRouter();
@@ -19,49 +21,50 @@ export default function ChildNameScreen() {
     };
 
     return (
-        <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            className="flex-1 bg-[#FDFBF7]"
+        <OnboardingLayout
+            progress={0.1}
+            onNext={handleNext}
+            nextLabel="Continue"
         >
-            <View className="flex-1 px-6 pt-16 pb-8">
-                <Animated.View entering={FadeIn.delay(100)}>
-                    <Text className="text-3xl font-bold text-gray-900 mb-2">
-                        What's your child's name?
-                    </Text>
-                    <Text className="text-lg text-gray-500 mb-8">
-                        We'll personalize every story just for them.
-                    </Text>
-                </Animated.View>
+            <View style={styles.contentContainer}>
+                <OnboardingSubtitle>Step 1</OnboardingSubtitle>
+                <OnboardingTitle>What's your child's name?</OnboardingTitle>
+                <OnboardingBody>
+                    We'll personalize every story just for them.
+                </OnboardingBody>
 
-                <Animated.View entering={FadeIn.duration(300)} className="mb-8">
-                    <Text className="text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Child's Name</Text>
+                <View style={styles.inputContainer}>
                     <TextInput
                         value={childName}
                         onChangeText={setChildName}
                         placeholder="e.g., Emma"
-                        placeholderTextColor="#9ca3af"
-                        className="bg-white border-2 border-gray-100 rounded-2xl px-5 py-4 text-xl text-gray-900"
+                        placeholderTextColor={OnboardingTheme.Colors.TextSecondary}
+                        style={styles.input}
                         autoCapitalize="words"
                         autoCorrect={false}
                         autoFocus
                     />
-                </Animated.View>
-
-                <View className="flex-1" />
-
-                <Animated.View entering={FadeIn.duration(300)}>
-                    <TouchableOpacity
-                        onPress={handleNext}
-                        disabled={!canProceed}
-                        className={`py-5 rounded-full items-center ${canProceed ? 'bg-primary-600' : 'bg-gray-200'
-                            }`}
-                    >
-                        <Text className={`text-lg font-bold ${canProceed ? 'text-white' : 'text-gray-400'}`}>
-                            Continue
-                        </Text>
-                    </TouchableOpacity>
-                </Animated.View>
+                </View>
             </View>
-        </KeyboardAvoidingView>
+        </OnboardingLayout>
     );
 }
+
+const styles = StyleSheet.create({
+    contentContainer: {
+        width: '100%',
+    },
+    inputContainer: {
+        marginTop: OnboardingTheme.Spacing.xl,
+    },
+    input: {
+        backgroundColor: OnboardingTheme.Colors.White,
+        borderWidth: 2,
+        borderColor: OnboardingTheme.Colors.Border,
+        borderRadius: 16,
+        paddingHorizontal: OnboardingTheme.Spacing.lg,
+        paddingVertical: OnboardingTheme.Spacing.md,
+        fontSize: 20,
+        color: OnboardingTheme.Colors.Text,
+    },
+});
