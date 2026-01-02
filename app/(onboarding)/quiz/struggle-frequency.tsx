@@ -24,7 +24,7 @@ export default function StruggleFrequencyScreen() {
         setSelected(id);
         // updateData({ struggleFrequency: id }); // Update context if available
         setTimeout(() => {
-            router.push('/(onboarding)/quiz/parent-guilt');
+            router.push('/(onboarding)/quiz/moral-baseline');
         }, 300);
     };
 
