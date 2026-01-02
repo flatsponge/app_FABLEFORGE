@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import Animated, { FadeIn, SlideInUp } from 'react-native-reanimated';
+import { useOnboarding } from '../../../contexts/OnboardingContext';
+import OnboardingLayout from '../../../components/OnboardingLayout';
+import { OnboardingTitle, OnboardingBody, OnboardingSubtitle } from '../../../components/OnboardingTypography';
+import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
+import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
 const CHALLENGES = [
     { id: 'time', label: 'Not enough time', emoji: '⏰' },
@@ -16,6 +20,7 @@ const CHALLENGES = [
 
 export default function ParentChallengesScreen() {
     const router = useRouter();
+    const { updateData } = useOnboarding();
     const [selected, setSelected] = useState<string[]>([]);
 
     const toggleSelection = (id: string) => {
@@ -29,59 +34,63 @@ export default function ParentChallengesScreen() {
     const canProceed = selected.length >= 1;
 
     const handleNext = () => {
-        router.push('/(onboarding)/quiz/diagnosis');
+        if (canProceed) {
+            // updateData({ parentChallenges: selected }); // Update context if available
+            router.push('/(onboarding)/quiz/diagnosis');
+        }
     };
 
     return (
-        <View className="flex-1 bg-[#FDFBF7]">
-            <ScrollView className="flex-1 px-6 pt-12" contentContainerStyle={{ paddingBottom: 120 }}>
-                <View className="h-1.5 bg-gray-200 rounded-full mb-8 overflow-hidden">
-                    <View className="h-full bg-primary-500" style={{ width: '55%' }} />
+        <OnboardingLayout
+            progress={0.45}
+            onNext={handleNext}
+            nextLabel="Continue"
+        >
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scrollContent}
+            >
+                <OnboardingSubtitle>Step 8</OnboardingSubtitle>
+                <OnboardingTitle>What's your biggest parenting challenge right now?</OnboardingTitle>
+                <OnboardingBody>
+                    Pick up to 3 that resonate with you.
+                </OnboardingBody>
+                <View style={styles.selectionCounter}>
+                    <OnboardingBody style={styles.counterText}>
+                        {selected.length}/3 selected
+                    </OnboardingBody>
                 </View>
 
-                <Animated.View entering={FadeIn.delay(100)}>
-                    <Text className="text-3xl font-bold text-gray-900 mb-2">
-                        What's your biggest parenting challenge right now?
-                    </Text>
-                    <Text className="text-lg text-gray-500 mb-2">
-                        Pick up to 3 that resonate with you.
-                    </Text>
-                    <Text className="text-sm text-primary-600 font-medium mb-8">
-                        {selected.length}/3 selected
-                    </Text>
-                </Animated.View>
-
-                <View className="flex-row flex-wrap gap-3">
-                    {CHALLENGES.map((challenge, index) => (
-                        <Animated.View key={challenge.id} entering={FadeIn.duration(300)}>
-                            <TouchableOpacity
-                                onPress={() => toggleSelection(challenge.id)}
-                                className={`px-4 py-3 rounded-2xl border-2 flex-row items-center ${selected.includes(challenge.id)
-                                    ? 'bg-primary-500 border-primary-500'
-                                    : 'bg-white border-gray-200'
-                                    }`}
-                            >
-                                <Text className="text-xl mr-2">{challenge.emoji}</Text>
-                                <Text className={`font-semibold ${selected.includes(challenge.id) ? 'text-white' : 'text-gray-700'}`}>
-                                    {challenge.label}
-                                </Text>
-                            </TouchableOpacity>
-                        </Animated.View>
+                <View style={styles.optionsContainer}>
+                    {CHALLENGES.map((challenge) => (
+                        <OnboardingOptionCard
+                            key={challenge.id}
+                            title={challenge.label}
+                            selected={selected.includes(challenge.id)}
+                            onPress={() => toggleSelection(challenge.id)}
+                            icon={<View><OnboardingBody style={{ fontSize: 24 }}>{challenge.emoji}</OnboardingBody></View>}
+                        />
                     ))}
                 </View>
             </ScrollView>
-
-            <View className="absolute bottom-0 left-0 right-0 p-6 bg-[#FDFBF7]">
-                <TouchableOpacity
-                    onPress={handleNext}
-                    disabled={!canProceed}
-                    className={`py-5 rounded-full items-center ${canProceed ? 'bg-primary-600' : 'bg-gray-200'}`}
-                >
-                    <Text className={`text-lg font-bold ${canProceed ? 'text-white' : 'text-gray-400'}`}>
-                        Continue
-                    </Text>
-                </TouchableOpacity>
-            </View>
-        </View>
+        </OnboardingLayout>
     );
 }
+
+const styles = StyleSheet.create({
+    scrollContent: {
+        paddingBottom: OnboardingTheme.Spacing.xl,
+    },
+    selectionCounter: {
+        marginTop: OnboardingTheme.Spacing.xs,
+        marginBottom: OnboardingTheme.Spacing.md,
+    },
+    counterText: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: OnboardingTheme.Colors.Accent,
+    },
+    optionsContainer: {
+        marginTop: OnboardingTheme.Spacing.md,
+    },
+});
