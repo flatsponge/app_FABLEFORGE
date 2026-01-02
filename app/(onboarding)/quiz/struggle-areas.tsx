@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeIn, SlideInUp } from 'react-native-reanimated';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
+import OnboardingLayout from '../../../components/OnboardingLayout';
+import { OnboardingTitle, OnboardingBody, OnboardingSubtitle } from '../../../components/OnboardingTypography';
+import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
+import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
 const STRUGGLE_AREAS = [
     { id: 'sharing', label: 'Sharing toys & belongings', emoji: '🧸', skill: 'empathy' },
@@ -32,77 +34,63 @@ export default function StruggleAreasScreen() {
     const canProceed = selected.length >= 1;
 
     const handleNext = () => {
-        // Store selected struggle areas for personalization
-        router.push('/(onboarding)/quiz/moral-baseline');
+        if (canProceed) {
+            // updateData({ struggleAreas: selected }); // Update context if available
+            router.push('/(onboarding)/quiz/struggle-frequency');
+        }
     };
 
     return (
-        <View className="flex-1 bg-[#FDFBF7]">
+        <OnboardingLayout
+            progress={0.7}
+            onNext={handleNext}
+            nextLabel="Continue"
+        >
             <ScrollView
-                className="flex-1 px-6 pt-12"
-                contentContainerStyle={{ paddingBottom: 120 }}
                 showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scrollContent}
             >
-                {/* Progress */}
-                <View className="h-1.5 bg-gray-200 rounded-full mb-8 overflow-hidden">
-                    <View className="h-full bg-primary-500" style={{ width: '50%' }} />
+                <OnboardingSubtitle>Step 13</OnboardingSubtitle>
+                <OnboardingTitle>Where does your child struggle most?</OnboardingTitle>
+                <OnboardingBody>
+                    Select up to 3 areas where you'd like to see improvement.
+                </OnboardingBody>
+                <View style={styles.selectionCounter}>
+                    <OnboardingBody style={styles.counterText}>
+                        {selected.length}/3 selected
+                    </OnboardingBody>
                 </View>
 
-                <Animated.View entering={FadeIn.delay(100)}>
-                    <Text className="text-3xl font-bold text-gray-900 mb-2">
-                        Where does your child struggle most?
-                    </Text>
-                    <Text className="text-lg text-gray-500 mb-2">
-                        Select up to 3 areas where you'd like to see improvement.
-                    </Text>
-                    <Text className="text-sm text-primary-600 font-medium mb-8">
-                        {selected.length}/3 selected
-                    </Text>
-                </Animated.View>
-
-                <View className="flex-row flex-wrap gap-3">
-                    {STRUGGLE_AREAS.map((area, index) => (
-                        <Animated.View
+                <View style={styles.optionsContainer}>
+                    {STRUGGLE_AREAS.map((area) => (
+                        <OnboardingOptionCard
                             key={area.id}
-                            entering={FadeIn.duration(300)}
-                            className="w-[48%]"
-                        >
-                            <TouchableOpacity
-                                onPress={() => toggleSelection(area.id)}
-                                className={`p-4 rounded-2xl border-2 ${selected.includes(area.id)
-                                    ? 'bg-primary-50 border-primary-500'
-                                    : 'bg-white border-gray-100'
-                                    }`}
-                            >
-                                <Text className="text-3xl mb-2">{area.emoji}</Text>
-                                <Text className={`text-sm font-semibold ${selected.includes(area.id) ? 'text-primary-900' : 'text-gray-800'
-                                    }`}>
-                                    {area.label}
-                                </Text>
-                                {selected.includes(area.id) && (
-                                    <View className="absolute top-2 right-2 bg-primary-500 rounded-full p-1">
-                                        <Ionicons name="checkmark" size={12} color="white" />
-                                    </View>
-                                )}
-                            </TouchableOpacity>
-                        </Animated.View>
+                            title={area.label}
+                            selected={selected.includes(area.id)}
+                            onPress={() => toggleSelection(area.id)}
+                            icon={<View><OnboardingBody style={{ fontSize: 24 }}>{area.emoji}</OnboardingBody></View>}
+                        />
                     ))}
                 </View>
             </ScrollView>
-
-            {/* Fixed CTA */}
-            <View className="absolute bottom-0 left-0 right-0 p-6 bg-[#FDFBF7]">
-                <TouchableOpacity
-                    onPress={handleNext}
-                    disabled={!canProceed}
-                    className={`py-5 rounded-full items-center ${canProceed ? 'bg-primary-600' : 'bg-gray-200'
-                        }`}
-                >
-                    <Text className={`text-lg font-bold ${canProceed ? 'text-white' : 'text-gray-400'}`}>
-                        Continue
-                    </Text>
-                </TouchableOpacity>
-            </View>
-        </View>
+        </OnboardingLayout>
     );
 }
+
+const styles = StyleSheet.create({
+    scrollContent: {
+        paddingBottom: OnboardingTheme.Spacing.xl,
+    },
+    selectionCounter: {
+        marginTop: OnboardingTheme.Spacing.xs,
+        marginBottom: OnboardingTheme.Spacing.md,
+    },
+    counterText: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: OnboardingTheme.Colors.Accent,
+    },
+    optionsContainer: {
+        marginTop: OnboardingTheme.Spacing.md,
+    },
+});
