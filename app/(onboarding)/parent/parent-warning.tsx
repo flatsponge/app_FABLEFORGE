@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { FadeIn, FadeInUp, ZoomIn, Easing } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
+import OnboardingLayout from '../../../components/OnboardingLayout';
+import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
+import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
 export default function ParentWarningScreen() {
     const router = useRouter();
@@ -13,53 +16,132 @@ export default function ParentWarningScreen() {
         return () => clearTimeout(timer);
     }, []);
 
+    const handleNext = () => {
+        router.push('/(onboarding)/parent/trajectory');
+    };
+
     return (
-        <View className="flex-1 bg-white items-center justify-center px-6">
+        <OnboardingLayout
+            progress={1.0}
+            showNextButton={showStat}
+            onNext={handleNext}
+            nextLabel="See The Path Forward"
+        >
+            <View style={styles.container}>
+                <Animated.View entering={FadeIn.delay(200)} style={styles.header}>
+                    <View style={styles.iconWrapper}>
+                        <Ionicons name="heart-half" size={40} color="#ea580c" />
+                    </View>
 
-            <Animated.View entering={FadeIn.delay(200)} className="items-center w-full mb-10">
-                <View className="bg-orange-50 p-4 rounded-full mb-6 relative">
-                    <View className="absolute inset-0 bg-orange-100 rounded-full animate-ping" />
-                    <Ionicons name="heart-half" size={40} color="#ea580c" />
-                </View>
+                    <Text style={styles.badgeText}>Parental Well-being</Text>
+                    <OnboardingTitle style={styles.title}>The Hidden Cost</OnboardingTitle>
+                </Animated.View>
 
-                <Text className="text-gray-400 font-bold tracking-widest uppercase text-xs mb-3">
-                    Parental Well-being
-                </Text>
-                <Text className="text-3xl text-gray-900 font-serif text-center font-bold leading-tight">
-                    The Hidden Cost
-                </Text>
-            </Animated.View>
-
-            <Animated.View entering={ZoomIn.delay(400).duration(600)} className="w-full bg-orange-50 border border-orange-100 p-8 rounded-3xl mb-8 items-center">
-
-                <Text className="text-center text-gray-800 text-lg leading-relaxed font-medium">
-                    Chronic parenting stress increases the risk of cardiovascular issues by
-                </Text>
-
-                <Text className="text-6xl font-black text-orange-600 my-6">40%</Text>
-
-                <View className="h-px w-full bg-orange-200 my-2" />
-
-                <Text className="text-center text-gray-500 text-sm mt-4 font-medium italic">
-                    "You cannot pour from an empty cup."
-                </Text>
-            </Animated.View>
-
-            {showStat && (
-                <Animated.View entering={FadeInUp.duration(600).easing(Easing.out(Easing.cubic))} className="w-full">
-                    <Text className="text-gray-600 text-center mb-8 px-4 leading-relaxed">
-                        Addressing your child's behavior isn't just about them—it's about reclaiming your <Text className="font-bold text-gray-900">peace of mind</Text>.
+                <Animated.View entering={ZoomIn.delay(400).duration(600)} style={styles.statCard}>
+                    <Text style={styles.statDescription}>
+                        Chronic parenting stress increases the risk of cardiovascular issues by
                     </Text>
 
-                    <TouchableOpacity
-                        onPress={() => router.push('/(onboarding)/parent/trajectory')}
-                        className="w-full bg-gray-900 py-4 rounded-full flex-row items-center justify-center"
-                    >
-                        <Text className="text-white text-lg font-bold mr-2">See The Path Forward</Text>
-                        <Ionicons name="arrow-forward" size={20} color="white" />
-                    </TouchableOpacity>
+                    <Text style={styles.statValue}>40%</Text>
+
+                    <View style={styles.divider} />
+
+                    <Text style={styles.quote}>
+                        "You cannot pour from an empty cup."
+                    </Text>
                 </Animated.View>
-            )}
-        </View>
+
+                {showStat && (
+                    <Animated.View entering={FadeInUp.duration(600)} style={styles.contextWrapper}>
+                        <Text style={styles.contextText}>
+                            Addressing your child's behavior isn't just about them—it's about reclaiming your <Text style={styles.contextBold}>peace of mind</Text>.
+                        </Text>
+                    </Animated.View>
+                )}
+            </View>
+        </OnboardingLayout>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        width: '100%',
+        alignItems: 'center',
+    },
+    header: {
+        alignItems: 'center',
+        marginBottom: OnboardingTheme.Spacing.lg,
+    },
+    iconWrapper: {
+        backgroundColor: '#fff7ed', // orange-50
+        padding: 16,
+        borderRadius: 9999,
+        marginBottom: OnboardingTheme.Spacing.md,
+    },
+    badgeText: {
+        color: OnboardingTheme.Colors.TextSecondary,
+        textTransform: 'uppercase',
+        letterSpacing: 1.2,
+        fontSize: 10,
+        fontWeight: 'bold',
+        marginBottom: 8,
+        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+    },
+    title: {
+        textAlign: 'center',
+    },
+    statCard: {
+        width: '100%',
+        backgroundColor: '#fff7ed', // orange-50
+        borderColor: '#ffedd5', // orange-100
+        borderWidth: 1,
+        borderRadius: OnboardingTheme.Radius.xl,
+        padding: OnboardingTheme.Spacing.xl,
+        alignItems: 'center',
+        marginBottom: OnboardingTheme.Spacing.lg,
+    },
+    statDescription: {
+        textAlign: 'center',
+        color: '#9a3412', // orange-800
+        fontSize: 18,
+        fontWeight: '500',
+        lineHeight: 26,
+        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+    },
+    statValue: {
+        fontSize: 64,
+        fontWeight: '900',
+        color: '#ea580c', // orange-600
+        marginVertical: OnboardingTheme.Spacing.md,
+        fontFamily: OnboardingTheme.Typography.Title.fontFamily,
+    },
+    divider: {
+        height: 1,
+        width: '100%',
+        backgroundColor: '#fed7aa', // orange-200
+        marginVertical: 8,
+    },
+    quote: {
+        textAlign: 'center',
+        color: '#9a3412',
+        opacity: 0.6,
+        fontSize: 14,
+        marginTop: 16,
+        fontStyle: 'italic',
+        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+    },
+    contextWrapper: {
+        width: '100%',
+        paddingHorizontal: OnboardingTheme.Spacing.md,
+    },
+    contextText: {
+        color: OnboardingTheme.Colors.TextSecondary,
+        textAlign: 'center',
+        lineHeight: 22,
+        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+    },
+    contextBold: {
+        fontWeight: 'bold',
+        color: OnboardingTheme.Colors.Text,
+    },
+});
