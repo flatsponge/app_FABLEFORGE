@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { useAnimatedStyle, withTiming, useSharedValue } from 'react-native-reanimated';
@@ -19,6 +19,7 @@ interface OnboardingLayoutProps {
   progressBarColor?: string;
   progressBarTrackColor?: string;
   backButtonColor?: string;
+  isScrollable?: boolean;
 }
 
 export default function OnboardingLayout({
@@ -33,6 +34,7 @@ export default function OnboardingLayout({
   progressBarColor = OnboardingTheme.Colors.Primary,
   progressBarTrackColor = '#E5E7EB',
   backButtonColor = OnboardingTheme.Colors.Text,
+  isScrollable = false,
 }: OnboardingLayoutProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -59,6 +61,14 @@ export default function OnboardingLayout({
     }
   };
 
+  const ContentWrapper = isScrollable ? ScrollView : View;
+  const contentWrapperProps = isScrollable 
+    ? { 
+        showsVerticalScrollIndicator: false,
+        contentContainerStyle: styles.scrollContentContainer 
+      } 
+    : { style: styles.content };
+
   return (
     <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom, backgroundColor }]}>
       {/* Header */}
@@ -81,9 +91,15 @@ export default function OnboardingLayout({
       </View>
 
       {/* Content */}
-      <View style={styles.content}>
-        {children}
-      </View>
+      {isScrollable ? (
+          <ScrollView {...contentWrapperProps}>
+              {children}
+          </ScrollView>
+      ) : (
+          <View style={styles.content}>
+              {children}
+          </View>
+      )}
 
       {/* Footer */}
       {showNextButton && (
@@ -132,6 +148,10 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: OnboardingTheme.Spacing.lg,
     justifyContent: 'center', // Vertically center content by default
+  },
+  scrollContentContainer: {
+      paddingHorizontal: OnboardingTheme.Spacing.lg,
+      paddingBottom: OnboardingTheme.Spacing.xl,
   },
   footer: {
     paddingHorizontal: OnboardingTheme.Spacing.lg,

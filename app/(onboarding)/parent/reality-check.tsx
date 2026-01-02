@@ -1,16 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
+import { View, StyleSheet, Text, Dimensions, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Svg, Path, Circle, Line, Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
-import Animated, { FadeIn, FadeInDown, SlideInUp } from 'react-native-reanimated';
+import { Svg, Path, Circle, Line, Defs, LinearGradient, Stop } from 'react-native-svg';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
+import OnboardingLayout from '../../../components/OnboardingLayout';
+import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
+import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
 const { width } = Dimensions.get('window');
 
 // Skills data matching the stats page - showing concerning levels
 const SKILLS_ANALYSIS = [
-    { id: 'patience', name: 'Patience', score: 22, benchmark: 70, icon: '⏳', color: '#ef4444', status: 'critical' },
-    { id: 'responsibility', name: 'Responsibility', score: 18, benchmark: 65, icon: '📋', color: '#ef4444', status: 'critical' },
+    { id: 'patience', name: 'Patience', score: 22, benchmark: 70, icon: '⏳', color: OnboardingTheme.Colors.Error, status: 'critical' },
+    { id: 'responsibility', name: 'Responsibility', score: 18, benchmark: 65, icon: '📋', color: OnboardingTheme.Colors.Error, status: 'critical' },
     { id: 'honesty', name: 'Honesty', score: 31, benchmark: 75, icon: '💬', color: '#f97316', status: 'needs_work' },
     { id: 'empathy', name: 'Empathy', score: 45, benchmark: 80, icon: '❤️', color: '#f97316', status: 'needs_work' },
     { id: 'teamwork', name: 'Teamwork', score: 52, benchmark: 72, icon: '👫', color: '#eab308', status: 'developing' },
@@ -35,24 +38,22 @@ const AnimatedProgressBar = ({ score, benchmark, color, delay }: { score: number
 
     return (
         <View>
-            <View className="h-4 bg-gray-100 rounded-full overflow-hidden relative">
+            <View style={styles.barBackground}>
                 <View
-                    className="h-full rounded-full transition-all duration-1000"
-                    style={{ width: `${animatedWidth}%`, backgroundColor: color }}
+                    style={[styles.barFill, { width: `${animatedWidth}%`, backgroundColor: color }]} 
                 />
                 {/* Benchmark marker */}
                 <View
-                    className="absolute top-0 bottom-0 w-1 bg-green-500"
-                    style={{ left: `${benchmark}%` }}
+                    style={[styles.benchmarkMarker, { left: `${benchmark}%` }]} 
                 />
             </View>
-            <View className="flex-row justify-between mt-1">
-                <Text className="text-xs text-gray-400">Your child: {score}%</Text>
-                <Text className="text-xs text-green-600 font-medium">Target: {benchmark}%</Text>
+            <View style={styles.barLabels}>
+                <Text style={styles.barLabelText}>Your child: {score}%</Text>
+                <Text style={styles.benchmarkLabelText}>Target: {benchmark}%</Text>
             </View>
             {gap > 30 && (
-                <View className="bg-red-50 px-2 py-1 rounded mt-2">
-                    <Text className="text-red-600 text-xs font-medium">⚠️ {gap}% below age benchmark</Text>
+                <View style={styles.gapWarning}>
+                    <Text style={styles.gapWarningText}>⚠️ {gap}% below age benchmark</Text>
                 </View>
             )}
         </View>
@@ -85,78 +86,80 @@ export default function RealityCheckScreen() {
     const criticalCount = SKILLS_ANALYSIS.filter(s => s.status === 'critical').length;
     const needsWorkCount = SKILLS_ANALYSIS.filter(s => s.status === 'needs_work').length;
 
+    const handleNext = () => {
+        router.push('/(onboarding)/paywall');
+    };
+
     return (
-        <ScrollView
-            className="flex-1 bg-white"
-            contentContainerStyle={{ paddingBottom: 60 }}
-            showsVerticalScrollIndicator={false}
+        <OnboardingLayout
+            progress={1.0}
+            onNext={handleNext}
+            nextLabel="Start My Child's Transformation"
+            isScrollable={true}
         >
-            {/* Critical Header */}
-            <View className="bg-red-500 pt-16 pb-10 px-6">
-                <Animated.View entering={FadeIn.delay(200)} className="items-center">
-                    <View className="bg-white p-4 rounded-full mb-4">
-                        <Ionicons name="alert-circle" size={48} color="#ef4444" />
+            <View style={styles.container}>
+                {/* Critical Header */}
+                <Animated.View entering={FadeIn.delay(200)} style={styles.headerCard}>
+                    <View style={styles.headerIconWrapper}>
+                        <Ionicons name="alert-circle" size={48} color={OnboardingTheme.Colors.Error} />
                     </View>
-                    <Text className="text-3xl font-bold text-center text-white mb-2">
-                        Important Discovery
-                    </Text>
-                    <Text className="text-lg text-center text-red-100">
+                    <Text style={styles.headerTitle}>Important Discovery</Text>
+                    <Text style={styles.headerSubtitle}>
                         Your assessment revealed {criticalCount} critical areas
                     </Text>
                 </Animated.View>
-            </View>
 
-            <View className="px-6 -mt-6">
                 {/* Summary Card */}
-                <Animated.View entering={FadeIn.delay(300).duration(600)} className="bg-white rounded-3xl p-6 border border-gray-100 mb-6">
-                    <View className="flex-row justify-between mb-4">
-                        <View className="items-center flex-1">
-                            <Text className="text-4xl font-black text-red-500">{criticalCount}</Text>
-                            <Text className="text-xs text-gray-500 text-center">Critical{'\n'}Areas</Text>
+                <Animated.View entering={FadeIn.delay(300).duration(600)} style={styles.summaryCard}>
+                    <View style={styles.summaryStatsRow}>
+                        <View style={styles.summaryStatItem}>
+                            <Text style={styles.summaryStatValueCritical}>{criticalCount}</Text>
+                            <Text style={styles.summaryStatLabel}>Critical{'
+'}Areas</Text>
                         </View>
-                        <View className="w-px bg-gray-200" />
-                        <View className="items-center flex-1">
-                            <Text className="text-4xl font-black text-orange-500">{needsWorkCount}</Text>
-                            <Text className="text-xs text-gray-500 text-center">Needs{'\n'}Attention</Text>
+                        <View style={styles.summaryDivider} />
+                        <View style={styles.summaryStatItem}>
+                            <Text style={styles.summaryStatValueWarning}>{needsWorkCount}</Text>
+                            <Text style={styles.summaryStatLabel}>Needs{'
+'}Attention</Text>
                         </View>
-                        <View className="w-px bg-gray-200" />
-                        <View className="items-center flex-1">
-                            <Text className="text-4xl font-black text-gray-400">32%</Text>
-                            <Text className="text-xs text-gray-500 text-center">Overall{'\n'}Score</Text>
+                        <View style={styles.summaryDivider} />
+                        <View style={styles.summaryStatItem}>
+                            <Text style={styles.summaryStatValueGray}>32%</Text>
+                            <Text style={styles.summaryStatLabel}>Overall{'
+'}Score</Text>
                         </View>
                     </View>
-                    <View className="bg-red-50 p-3 rounded-xl">
-                        <Text className="text-red-700 text-sm text-center font-medium">
+                    <View style={styles.summaryBadge}>
+                        <Text style={styles.summaryBadgeText}>
                             Below average for age group. Early intervention recommended.
                         </Text>
                     </View>
                 </Animated.View>
 
                 {/* Skills Assessment */}
-                <Animated.View entering={FadeIn.delay(500).duration(600)} className="mb-8">
-                    <Text className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">
-                        Detailed Skill Assessment
-                    </Text>
+                <Animated.View entering={FadeIn.delay(500).duration(600)} style={styles.section}>
+                    <Text style={styles.sectionTitle}>Detailed Skill Assessment</Text>
 
                     {SKILLS_ANALYSIS.map((skill, index) => (
                         <Animated.View
                             key={skill.id}
                             entering={FadeInDown.delay(600 + index * 100)}
-                            className="mb-5 bg-gray-50 p-4 rounded-2xl"
+                            style={styles.skillItem}
                         >
-                            <View className="flex-row items-center justify-between mb-3">
-                                <View className="flex-row items-center">
-                                    <Text className="text-2xl mr-3">{skill.icon}</Text>
-                                    <Text className="font-bold text-gray-800 text-lg">{skill.name}</Text>
+                            <View style={styles.skillHeader}>
+                                <View style={styles.skillTitleWrapper}>
+                                    <Text style={styles.skillIcon}>{skill.icon}</Text>
+                                    <Text style={styles.skillName}>{skill.name}</Text>
                                 </View>
                                 {skill.status === 'critical' && (
-                                    <View className="bg-red-500 px-3 py-1 rounded-full">
-                                        <Text className="text-white text-xs font-bold">CRITICAL</Text>
+                                    <View style={styles.criticalBadge}>
+                                        <Text style={styles.criticalBadgeText}>CRITICAL</Text>
                                     </View>
                                 )}
                                 {skill.status === 'needs_work' && (
-                                    <View className="bg-orange-500 px-3 py-1 rounded-full">
-                                        <Text className="text-white text-xs font-bold">AT RISK</Text>
+                                    <View style={styles.warningBadge}>
+                                        <Text style={styles.warningBadgeText}>AT RISK</Text>
                                     </View>
                                 )}
                             </View>
@@ -171,20 +174,20 @@ export default function RealityCheckScreen() {
                 </Animated.View>
 
                 {/* Trajectory Graph */}
-                <Animated.View entering={FadeIn.delay(1000).duration(600)} className="bg-gray-900 rounded-3xl p-6 mb-8">
-                    <Text className="font-bold text-white mb-1 text-lg">Behavioral Trajectory</Text>
-                    <Text className="text-sm text-gray-400 mb-6">Projected development over next 12 months</Text>
+                <Animated.View entering={FadeIn.delay(1000).duration(600)} style={styles.graphCard}>
+                    <Text style={styles.graphTitle}>Behavioral Trajectory</Text>
+                    <Text style={styles.graphSubtitle}>Projected development over next 12 months</Text>
 
-                    <View className="relative">
+                    <View style={styles.graphWrapper}>
                         <Svg height={graphHeight} width={graphWidth}>
                             <Defs>
                                 <LinearGradient id="gradRed" x1="0" y1="0" x2="0" y2="1">
-                                    <Stop offset="0%" stopColor="#ef4444" stopOpacity={0.4} />
-                                    <Stop offset="100%" stopColor="#ef4444" stopOpacity={0} />
+                                    <Stop offset="0%" stopColor={OnboardingTheme.Colors.Error} stopOpacity={0.4} />
+                                    <Stop offset="100%" stopColor={OnboardingTheme.Colors.Error} stopOpacity={0} />
                                 </LinearGradient>
                                 <LinearGradient id="gradGreen" x1="0" y1="0" x2="0" y2="1">
-                                    <Stop offset="0%" stopColor="#22c55e" stopOpacity={0.4} />
-                                    <Stop offset="100%" stopColor="#22c55e" stopOpacity={0} />
+                                    <Stop offset="0%" stopColor={OnboardingTheme.Colors.Success} stopOpacity={0.4} />
+                                    <Stop offset="100%" stopColor={OnboardingTheme.Colors.Success} stopOpacity={0} />
                                 </LinearGradient>
                             </Defs>
 
@@ -198,48 +201,42 @@ export default function RealityCheckScreen() {
                             <Path d={`${pathWith} L ${graphWidth} ${graphHeight} L 0 ${graphHeight} Z`} fill="url(#gradGreen)" />
 
                             {/* Without intervention (red, declining) */}
-                            <Path d={pathWithout} stroke="#ef4444" strokeWidth="3" fill="none" strokeLinecap="round" />
-                            <Circle cx={graphWidth} cy="145" r="8" fill="#ef4444" />
+                            <Path d={pathWithout} stroke={OnboardingTheme.Colors.Error} strokeWidth="3" fill="none" strokeLinecap="round" />
+                            <Circle cx={graphWidth} cy="145" r="8" fill={OnboardingTheme.Colors.Error} />
 
                             {/* With intervention (green, improving) */}
-                            <Path d={pathWith} stroke="#22c55e" strokeWidth="3" fill="none" strokeLinecap="round" />
-                            <Circle cx={graphWidth} cy="8" r="8" fill="#22c55e" />
+                            <Path d={pathWith} stroke={OnboardingTheme.Colors.Success} strokeWidth="3" fill="none" strokeLinecap="round" />
+                            <Circle cx={graphWidth} cy="8" r="8" fill={OnboardingTheme.Colors.Success} />
                         </Svg>
 
                         {/* Labels */}
-                        <View className="absolute top-0 right-0">
-                            <View className="bg-green-500 px-3 py-1.5 rounded-lg">
-                                <Text className="text-white text-xs font-bold">With Storytime</Text>
-                            </View>
+                        <View style={styles.graphLabelGreen}>
+                            <Text style={styles.graphLabelText}>With Storytime</Text>
                         </View>
-                        <View className="absolute bottom-4 right-0">
-                            <View className="bg-red-500 px-3 py-1.5 rounded-lg">
-                                <Text className="text-white text-xs font-bold">Status Quo</Text>
-                            </View>
+                        <View style={styles.graphLabelRed}>
+                            <Text style={styles.graphLabelText}>Status Quo</Text>
                         </View>
                     </View>
 
-                    <View className="flex-row justify-between mt-4 px-1">
-                        <Text className="text-xs text-gray-500">Today</Text>
-                        <Text className="text-xs text-gray-500">3 Mo</Text>
-                        <Text className="text-xs text-gray-500">6 Mo</Text>
-                        <Text className="text-xs text-gray-500">12 Mo</Text>
+                    <View style={styles.graphTimeLabels}>
+                        <Text style={styles.timeLabel}>Today</Text>
+                        <Text style={styles.timeLabel}>3 Mo</Text>
+                        <Text style={styles.timeLabel}>6 Mo</Text>
+                        <Text style={styles.timeLabel}>12 Mo</Text>
                     </View>
                 </Animated.View>
 
                 {/* Alarming Research Stats */}
                 {showStats && (
-                    <Animated.View entering={FadeIn} className="mb-8">
-                        <Text className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">
-                            Research Says...
-                        </Text>
+                    <Animated.View entering={FadeIn} style={styles.section}>
+                        <Text style={styles.sectionTitle}>Research Says...</Text>
                         {ALARMING_STATS.map((item, index) => (
-                            <View key={index} className="bg-amber-50 border border-amber-200 p-4 rounded-2xl mb-3">
-                                <View className="flex-row items-center">
-                                    <Text className="text-3xl font-black text-amber-600 mr-4">{item.stat}</Text>
-                                    <View className="flex-1">
-                                        <Text className="text-gray-800 font-medium">{item.description}</Text>
-                                        <Text className="text-xs text-gray-500 mt-1">{item.source}</Text>
+                            <View key={index} style={styles.researchCard}>
+                                <View style={styles.researchContent}>
+                                    <Text style={styles.researchStat}>{item.stat}</Text>
+                                    <View style={styles.researchTextWrapper}>
+                                        <Text style={styles.researchDescription}>{item.description}</Text>
+                                        <Text style={styles.researchSource}>{item.source}</Text>
                                     </View>
                                 </View>
                             </View>
@@ -249,18 +246,18 @@ export default function RealityCheckScreen() {
 
                 {/* Urgent Warning Box */}
                 {showWarning && (
-                    <Animated.View entering={FadeIn} className="bg-red-600 p-6 rounded-3xl mb-8">
-                        <View className="flex-row items-start">
-                            <View className="bg-white rounded-full p-2 mr-4">
+                    <Animated.View entering={FadeIn} style={styles.urgentWarningCard}>
+                        <View style={styles.urgentWarningHeader}>
+                            <View style={styles.urgentWarningIconWrapper}>
                                 <Ionicons name="warning" size={24} color="#dc2626" />
                             </View>
-                            <View className="flex-1">
-                                <Text className="font-bold text-white text-lg mb-2">Time-Sensitive Window</Text>
-                                <Text className="text-red-100 leading-relaxed mb-4">
-                                    Your child's <Text className="font-bold text-white">Patience</Text> score of 22% and <Text className="font-bold text-white">Responsibility</Text> score of 18% are in the critical range.
+                            <View style={styles.urgentWarningContent}>
+                                <Text style={styles.urgentWarningTitle}>Time-Sensitive Window</Text>
+                                <Text style={styles.urgentWarningBody}>
+                                    Your child's <Text style={styles.boldWhite}>Patience</Text> score of 22% and <Text style={styles.boldWhite}>Responsibility</Text> score of 18% are in the critical range.
                                 </Text>
-                                <Text className="text-white leading-relaxed">
-                                    Research from Harvard's Center on the Developing Child shows that the neural pathways for these skills are <Text className="font-bold underline">75% formed by age 7</Text>. After this window closes, behavioral change requires 4x more effort.
+                                <Text style={styles.urgentWarningBody}>
+                                    Research from Harvard's Center on the Developing Child shows that the neural pathways for these skills are <Text style={styles.underlinedWhite}>75% formed by age 7</Text>. After this window closes, behavioral change requires 4x more effort.
                                 </Text>
                             </View>
                         </View>
@@ -268,46 +265,433 @@ export default function RealityCheckScreen() {
                 )}
 
                 {/* Success Stories */}
-                <Animated.View entering={FadeIn.delay(1500).duration(600)} className="bg-green-50 border border-green-200 p-6 rounded-3xl mb-8">
-                    <View className="flex-row items-center mb-4">
+                <Animated.View entering={FadeIn.delay(1500).duration(600)} style={styles.successCard}>
+                    <View style={styles.successHeader}>
                         <Ionicons name="star" size={24} color="#16a34a" />
-                        <Text className="font-bold text-green-800 ml-2 text-lg">Parent Success Stories</Text>
+                        <Text style={styles.successTitle}>Parent Success Stories</Text>
                     </View>
-                    <Text className="text-green-800 italic mb-3">
+                    <Text style={styles.successQuote}>
                         "After just 2 weeks of bedtime stories, my son started sharing toys without being asked. His teacher noticed the change too."
                     </Text>
-                    <Text className="text-green-600 font-medium text-sm">— Sarah M., mom of 5-year-old</Text>
+                    <Text style={styles.successAuthor}>— Sarah M., mom of 5-year-old</Text>
 
-                    <View className="h-px bg-green-200 my-4" />
+                    <View style={styles.successDivider} />
 
-                    <View className="flex-row justify-between">
-                        <View className="items-center">
-                            <Text className="text-2xl font-black text-green-600">94%</Text>
-                            <Text className="text-xs text-green-700">See improvement</Text>
+                    <View style={styles.successStatsRow}>
+                        <View style={styles.successStatItem}>
+                            <Text style={styles.successStatValue}>94%</Text>
+                            <Text style={styles.successStatLabel}>See improvement</Text>
                         </View>
-                        <View className="items-center">
-                            <Text className="text-2xl font-black text-green-600">14 days</Text>
-                            <Text className="text-xs text-green-700">Avg. time to results</Text>
+                        <View style={styles.successStatItem}>
+                            <Text style={styles.successStatValue}>14 days</Text>
+                            <Text style={styles.successStatLabel}>Avg. time to results</Text>
                         </View>
-                        <View className="items-center">
-                            <Text className="text-2xl font-black text-green-600">50K+</Text>
-                            <Text className="text-xs text-green-700">Happy families</Text>
+                        <View style={styles.successStatItem}>
+                            <Text style={styles.successStatValue}>50K+</Text>
+                            <Text style={styles.successStatLabel}>Happy families</Text>
                         </View>
                     </View>
                 </Animated.View>
 
-                {/* CTA */}
-                <TouchableOpacity
-                    onPress={() => router.push('/(onboarding)/paywall')}
-                    className="bg-primary-600 py-5 rounded-full items-center mb-3"
-                >
-                    <Text className="text-white text-lg font-bold">Start My Child's Transformation</Text>
-                </TouchableOpacity>
-
-                <Text className="text-center text-gray-400 text-sm mb-6">
-                    7-day free trial • Cancel anytime
-                </Text>
+                <Text style={styles.trialText}>7-day free trial • Cancel anytime</Text>
             </View>
-        </ScrollView>
+        </OnboardingLayout>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        width: '100%',
+        paddingVertical: OnboardingTheme.Spacing.lg,
+    },
+    headerCard: {
+        alignItems: 'center',
+        backgroundColor: '#fef2f2', // red-50
+        borderRadius: OnboardingTheme.Radius.xl,
+        padding: OnboardingTheme.Spacing.xl,
+        marginBottom: OnboardingTheme.Spacing.lg,
+        borderWidth: 1,
+        borderColor: '#fee2e2', // red-100
+    },
+    headerIconWrapper: {
+        backgroundColor: 'white',
+        padding: 16,
+        borderRadius: 9999,
+        marginBottom: OnboardingTheme.Spacing.md,
+    },
+    headerTitle: {
+        fontSize: 28,
+        fontWeight: 'bold',
+        color: OnboardingTheme.Colors.Error,
+        textAlign: 'center',
+        fontFamily: OnboardingTheme.Typography.Title.fontFamily,
+    },
+    headerSubtitle: {
+        fontSize: 16,
+        color: '#991b1b', // red-800
+        textAlign: 'center',
+        opacity: 0.8,
+        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+    },
+    summaryCard: {
+        backgroundColor: 'white',
+        borderRadius: OnboardingTheme.Radius.xl,
+        padding: OnboardingTheme.Spacing.lg,
+        borderWidth: 1,
+        borderColor: OnboardingTheme.Colors.Border,
+        marginBottom: OnboardingTheme.Spacing.lg,
+    },
+    summaryStatsRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: OnboardingTheme.Spacing.lg,
+    },
+    summaryStatItem: {
+        alignItems: 'center',
+        flex: 1,
+    },
+    summaryStatValueCritical: {
+        fontSize: 32,
+        fontWeight: '900',
+        color: OnboardingTheme.Colors.Error,
+        fontFamily: OnboardingTheme.Typography.Title.fontFamily,
+    },
+    summaryStatValueWarning: {
+        fontSize: 32,
+        fontWeight: '900',
+        color: '#f97316', // orange-500
+        fontFamily: OnboardingTheme.Typography.Title.fontFamily,
+    },
+    summaryStatValueGray: {
+        fontSize: 32,
+        fontWeight: '900',
+        color: OnboardingTheme.Colors.TextSecondary,
+        fontFamily: OnboardingTheme.Typography.Title.fontFamily,
+    },
+    summaryStatLabel: {
+        fontSize: 10,
+        color: OnboardingTheme.Colors.TextSecondary,
+        textAlign: 'center',
+        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+    },
+    summaryDivider: {
+        width: 1,
+        backgroundColor: OnboardingTheme.Colors.Border,
+    },
+    summaryBadge: {
+        backgroundColor: '#fef2f2',
+        padding: 12,
+        borderRadius: OnboardingTheme.Radius.md,
+    },
+    summaryBadgeText: {
+        color: '#991b1b',
+        fontSize: 12,
+        textAlign: 'center',
+        fontWeight: '500',
+        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+    },
+    section: {
+        marginBottom: OnboardingTheme.Spacing.xl,
+    },
+    sectionTitle: {
+        fontSize: 12,
+        fontWeight: 'bold',
+        color: OnboardingTheme.Colors.TextSecondary,
+        textTransform: 'uppercase',
+        letterSpacing: 1.2,
+        marginBottom: OnboardingTheme.Spacing.md,
+        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+    },
+    skillItem: {
+        backgroundColor: '#f9fafb', // gray-50
+        padding: OnboardingTheme.Spacing.md,
+        borderRadius: OnboardingTheme.Radius.lg,
+        marginBottom: OnboardingTheme.Spacing.md,
+    },
+    skillHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: OnboardingTheme.Spacing.sm,
+    },
+    skillTitleWrapper: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    skillIcon: {
+        fontSize: 24,
+        marginRight: 12,
+    },
+    skillName: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: OnboardingTheme.Colors.Text,
+        fontFamily: OnboardingTheme.Typography.Title.fontFamily,
+    },
+    criticalBadge: {
+        backgroundColor: OnboardingTheme.Colors.Error,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 9999,
+    },
+    criticalBadgeText: {
+        color: 'white',
+        fontSize: 10,
+        fontWeight: 'bold',
+    },
+    warningBadge: {
+        backgroundColor: '#f97316',
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 9999,
+    },
+    warningBadgeText: {
+        color: 'white',
+        fontSize: 10,
+        fontWeight: 'bold',
+    },
+    barBackground: {
+        height: 12,
+        backgroundColor: '#e5e7eb',
+        borderRadius: 9999,
+        position: 'relative',
+        overflow: 'hidden',
+    },
+    barFill: {
+        height: '100%',
+        borderRadius: 9999,
+    },
+    benchmarkMarker: {
+        position: 'absolute',
+        top: 0,
+        bottom: 0,
+        width: 2,
+        backgroundColor: OnboardingTheme.Colors.Success,
+        zIndex: 10,
+    },
+    barLabels: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 4,
+    },
+    barLabelText: {
+        fontSize: 10,
+        color: OnboardingTheme.Colors.TextSecondary,
+        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+    },
+    benchmarkLabelText: {
+        fontSize: 10,
+        color: OnboardingTheme.Colors.Success,
+        fontWeight: '500',
+        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+    },
+    gapWarning: {
+        backgroundColor: '#fef2f2',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 4,
+        marginTop: 8,
+        alignSelf: 'flex-start',
+    },
+    gapWarningText: {
+        color: OnboardingTheme.Colors.Error,
+        fontSize: 10,
+        fontWeight: '500',
+    },
+    graphCard: {
+        backgroundColor: '#111827', // gray-900
+        borderRadius: OnboardingTheme.Radius.xl,
+        padding: OnboardingTheme.Spacing.lg,
+        marginBottom: OnboardingTheme.Spacing.xl,
+    },
+    graphTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: 'white',
+        marginBottom: 4,
+        fontFamily: OnboardingTheme.Typography.Title.fontFamily,
+    },
+    graphSubtitle: {
+        fontSize: 14,
+        color: '#9ca3af', // gray-400
+        marginBottom: OnboardingTheme.Spacing.lg,
+        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+    },
+    graphWrapper: {
+        position: 'relative',
+    },
+    graphLabelGreen: {
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        backgroundColor: OnboardingTheme.Colors.Success,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 8,
+    },
+    graphLabelRed: {
+        position: 'absolute',
+        bottom: 16,
+        right: 0,
+        backgroundColor: OnboardingTheme.Colors.Error,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 8,
+    },
+    graphLabelText: {
+        color: 'white',
+        fontSize: 10,
+        fontWeight: 'bold',
+    },
+    graphTimeLabels: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 12,
+        paddingHorizontal: 4,
+    },
+    timeLabel: {
+        fontSize: 10,
+        color: '#6b7280', // gray-500
+    },
+    researchCard: {
+        backgroundColor: '#fffbeb', // amber-50
+        borderColor: '#fef3c7', // amber-100
+        borderWidth: 1,
+        borderRadius: OnboardingTheme.Radius.lg,
+        padding: OnboardingTheme.Spacing.md,
+        marginBottom: OnboardingTheme.Spacing.sm,
+    },
+    researchContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    researchStat: {
+        fontSize: 32,
+        fontWeight: '900',
+        color: '#d97706', // amber-600
+        marginRight: 16,
+        width: 80,
+    },
+    researchTextWrapper: {
+        flex: 1,
+    },
+    researchDescription: {
+        color: '#374151', // gray-800
+        fontWeight: '500',
+        fontSize: 14,
+        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+    },
+    researchSource: {
+        color: '#6b7280', // gray-500
+        fontSize: 10,
+        marginTop: 4,
+        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+    },
+    urgentWarningCard: {
+        backgroundColor: OnboardingTheme.Colors.Error,
+        borderRadius: OnboardingTheme.Radius.xl,
+        padding: OnboardingTheme.Spacing.lg,
+        marginBottom: OnboardingTheme.Spacing.xl,
+    },
+    urgentWarningHeader: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+    },
+    urgentWarningIconWrapper: {
+        backgroundColor: 'white',
+        borderRadius: 9999,
+        padding: 8,
+        marginRight: OnboardingTheme.Spacing.md,
+    },
+    urgentWarningContent: {
+        flex: 1,
+    },
+    urgentWarningTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: 'white',
+        marginBottom: 8,
+        fontFamily: OnboardingTheme.Typography.Title.fontFamily,
+    },
+    urgentWarningBody: {
+        color: 'rgba(255, 255, 255, 0.9)',
+        lineHeight: 22,
+        marginBottom: 12,
+        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+    },
+    boldWhite: {
+        fontWeight: 'bold',
+        color: 'white',
+    },
+    underlinedWhite: {
+        fontWeight: 'bold',
+        color: 'white',
+        textDecorationLine: 'underline',
+    },
+    successCard: {
+        backgroundColor: '#f0fdf4', // green-50
+        borderColor: '#dcfce7', // green-100
+        borderWidth: 1,
+        borderRadius: OnboardingTheme.Radius.xl,
+        padding: OnboardingTheme.Spacing.lg,
+        marginBottom: OnboardingTheme.Spacing.lg,
+    },
+    successHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: OnboardingTheme.Spacing.md,
+    },
+    successTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#166534', // green-800
+        marginLeft: 8,
+        fontFamily: OnboardingTheme.Typography.Title.fontFamily,
+    },
+    successQuote: {
+        color: '#166534',
+        fontStyle: 'italic',
+        lineHeight: 24,
+        fontSize: 16,
+        marginBottom: 8,
+        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+    },
+    successAuthor: {
+        color: '#16a34a',
+        fontSize: 14,
+        fontWeight: '500',
+        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+    },
+    successDivider: {
+        height: 1,
+        backgroundColor: '#dcfce7',
+        marginVertical: 16,
+    },
+    successStatsRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    successStatItem: {
+        alignItems: 'center',
+        flex: 1,
+    },
+    successStatValue: {
+        fontSize: 24,
+        fontWeight: '900',
+        color: '#16a34a',
+        fontFamily: OnboardingTheme.Typography.Title.fontFamily,
+    },
+    successStatLabel: {
+        fontSize: 10,
+        color: '#15803d',
+        textAlign: 'center',
+        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+    },
+    trialText: {
+        textAlign: 'center',
+        color: OnboardingTheme.Colors.TextSecondary,
+        fontSize: 14,
+        marginBottom: OnboardingTheme.Spacing.lg,
+        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+    },
+});
