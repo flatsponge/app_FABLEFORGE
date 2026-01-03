@@ -1,16 +1,29 @@
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Text, Dimensions } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, StyleSheet, Text, Dimensions, Image } from 'react-native';
 import { useRouter } from 'expo-router';
-import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
+import Animated, {
+    FadeIn,
+    FadeInUp,
+    FadeInDown,
+    withTiming,
+    withDelay,
+    useAnimatedStyle,
+    useSharedValue,
+    Easing,
+} from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Defs, LinearGradient as SvgGradient, Stop } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
+import ConfettiCannon from 'react-native-confetti-cannon';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 const GRAPH_WIDTH = width - 80;
 const GRAPH_HEIGHT = 100;
+
+// Avatar URLs using DiceBear API
+const AVATAR_SEEDS = [11, 12, 13, 14];
 
 const MetricsCard = ({ value, label, index }: { value: string, label: string, index: number }) => (
     <Animated.View
@@ -22,9 +35,42 @@ const MetricsCard = ({ value, label, index }: { value: string, label: string, in
     </Animated.View>
 );
 
+// Individual avatar with staggered spring animation
+const AnimatedAvatar = ({ seed, index }: { seed: number, index: number }) => {
+    const scale = useSharedValue(0);
+    const translateX = useSharedValue(-10);
+    const rotate = useSharedValue(-20);
+
+    useEffect(() => {
+        const delay = 1600 + (index * 100);
+        const config = { duration: 400, easing: Easing.out(Easing.cubic) };
+        scale.value = withDelay(delay, withTiming(1, config));
+        translateX.value = withDelay(delay, withTiming(0, config));
+        rotate.value = withDelay(delay, withTiming(0, config));
+    }, []);
+
+    const animatedStyle = useAnimatedStyle(() => ({
+        transform: [
+            { scale: scale.value },
+            { translateX: translateX.value },
+            { rotate: `${rotate.value}deg` },
+        ],
+    }));
+
+    return (
+        <Animated.View style={[styles.avatarContainer, animatedStyle, { zIndex: AVATAR_SEEDS.length - index }]}>
+            <Image
+                source={{ uri: `https://api.dicebear.com/7.x/avataaars/png?seed=${seed}` }}
+                style={styles.avatarImage}
+            />
+        </Animated.View>
+    );
+};
+
 export default function IntroSlide4() {
     const router = useRouter();
     const [showButton, setShowButton] = useState(false);
+    const confettiRef = useRef<ConfettiCannon>(null);
 
     useEffect(() => {
         const timer = setTimeout(() => setShowButton(true), 1500);
@@ -42,6 +88,18 @@ export default function IntroSlide4() {
             showNextButton={showButton}
             showProgressBar={false}
         >
+            {/* Confetti Explosion - fires on mount */}
+            <ConfettiCannon
+                ref={confettiRef}
+                count={80}
+                origin={{ x: width / 2, y: -20 }}
+                autoStart={true}
+                fadeOut={true}
+                fallSpeed={2500}
+                explosionSpeed={350}
+                colors={['#f87171', '#60a5fa', '#4ade80', '#facc15', '#a78bfa']}
+            />
+
             <View style={styles.container}>
                 <Animated.View entering={FadeIn.delay(100).duration(600)} style={styles.header}>
                     <LinearGradient
@@ -52,9 +110,26 @@ export default function IntroSlide4() {
                     >
                         <Text style={styles.badgeText}>QUICK WINS</Text>
                     </LinearGradient>
-                    <Text style={styles.title}>Results in 14 days</Text>
+                    <Text style={styles.title}>
+                        Real change in{'\n'}
+                        <Text style={styles.titleHighlight}>just 2 weeks.</Text>
+                    </Text>
+                    {/* SVG Underline decoration */}
+                    <Svg
+                        width={140}
+                        height={12}
+                        viewBox="0 0 100 10"
+                        style={styles.underlineSvg}
+                    >
+                        <Path
+                            d="M0 5 Q 50 10 100 5"
+                            stroke="#a7f3d0"
+                            strokeWidth="8"
+                            fill="none"
+                        />
+                    </Svg>
                     <Text style={styles.subtitle}>
-                        Most parents see significant behavior shifts within two weeks.
+                        Consistent storytelling rewires behavior faster than constant correction.
                     </Text>
                 </Animated.View>
 
@@ -107,6 +182,18 @@ export default function IntroSlide4() {
                     <Text style={styles.guaranteeText}>Happiness Guarantee Included</Text>
                 </Animated.View>
 
+                {/* Social Proof */}
+                <Animated.View
+                    entering={FadeInDown.delay(1500).duration(500)}
+                    style={styles.socialProof}
+                >
+                    <View style={styles.avatarsStack}>
+                        {AVATAR_SEEDS.map((seed, index) => (
+                            <AnimatedAvatar key={seed} seed={seed} index={index} />
+                        ))}
+                    </View>
+                    <Text style={styles.socialProofText}>Trusted by 50k+ parents</Text>
+                </Animated.View>
             </View>
         </OnboardingLayout>
     );
@@ -139,7 +226,16 @@ const styles = StyleSheet.create({
         fontSize: 32,
         fontWeight: '800',
         color: OnboardingTheme.Colors.Text,
-        marginBottom: 8,
+        marginBottom: 4,
+        textAlign: 'center',
+        lineHeight: 40,
+    },
+    titleHighlight: {
+        color: '#059669', // emerald-600
+    },
+    underlineSvg: {
+        marginTop: -8,
+        marginBottom: 12,
     },
     subtitle: {
         fontSize: 16,
@@ -210,5 +306,43 @@ const styles = StyleSheet.create({
         fontSize: 13,
         color: '#15803d',
         fontWeight: '500',
-    }
+    },
+    // Social Proof Styles
+    socialProof: {
+        marginTop: 32,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        backgroundColor: 'rgba(241, 245, 249, 0.5)',
+        paddingVertical: 10,
+        paddingHorizontal: 16,
+        borderRadius: 9999,
+    },
+    avatarsStack: {
+        flexDirection: 'row',
+    },
+    avatarContainer: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: '#e2e8f0',
+        borderWidth: 2,
+        borderColor: '#fff',
+        marginLeft: -8,
+        overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+        elevation: 1,
+    },
+    avatarImage: {
+        width: '100%',
+        height: '100%',
+    },
+    socialProofText: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: '#64748b',
+    },
 });
