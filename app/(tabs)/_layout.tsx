@@ -1,10 +1,16 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { CustomTabBar } from '@/components/CustomTabBar';
+import { ChildLockProvider, useChildLock } from '@/contexts/ChildLockContext';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 
 function TabBar(props: BottomTabBarProps) {
   const currentRoute = props.state.routes[props.state.index].name;
+  const { isChildLocked, isOnChildHub } = useChildLock();
+
+  // Hide tab bar when locked and on child-hub
+  const shouldHide = isChildLocked && isOnChildHub;
+
   return (
     <CustomTabBar
       activeTab={currentRoute === 'index' ? 'home' : currentRoute}
@@ -13,11 +19,12 @@ function TabBar(props: BottomTabBarProps) {
         props.navigation.navigate(route);
       }}
       onFabPress={() => props.navigation.navigate('create')}
+      hidden={shouldHide}
     />
   );
 }
 
-export default function TabLayout() {
+function TabLayoutContent() {
   return (
     <Tabs
       tabBar={(props) => <TabBar {...props} />}
@@ -31,5 +38,13 @@ export default function TabLayout() {
       <Tabs.Screen name="child-hub" />
       <Tabs.Screen name="settings" />
     </Tabs>
+  );
+}
+
+export default function TabLayout() {
+  return (
+    <ChildLockProvider>
+      <TabLayoutContent />
+    </ChildLockProvider>
   );
 }

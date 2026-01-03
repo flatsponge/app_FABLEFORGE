@@ -178,15 +178,22 @@ interface CustomTabBarProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
   onFabPress: () => void;
+  hidden?: boolean;
 }
 
 export const CustomTabBar: React.FC<CustomTabBarProps> = ({
   activeTab,
   onTabChange,
   onFabPress,
+  hidden = false,
 }) => {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
+
+  // Completely hide the tab bar when locked
+  if (hidden) {
+    return null;
+  }
 
   return (
     <View style={styles.container}>
