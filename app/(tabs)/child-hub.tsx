@@ -1,5 +1,16 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, ScrollView, Pressable, TextInput, Image, StyleSheet, ImageBackground } from 'react-native';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  TextInput,
+  Image,
+  StyleSheet,
+  ImageBackground,
+  useWindowDimensions,
+  LayoutRectangle,
+} from 'react-native';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
 import ChildBackground from '@/childbackground/childbackground1.png';
 import Animated, {
@@ -8,6 +19,11 @@ import Animated, {
   withSpring,
   withTiming,
   interpolate,
+  withDelay,
+  withSequence,
+  Easing,
+  runOnJS,
+  cancelAnimation,
 } from 'react-native-reanimated';
 import {
   Lock,
@@ -198,6 +214,96 @@ const BigActionButton = ({
         {children}
       </Animated.View>
     </Pressable>
+  );
+};
+
+interface WishBottleProps {
+  size: number;
+}
+
+const WishBottle: React.FC<WishBottleProps> = ({ size }) => {
+  const neckWidth = size * 0.42;
+  const neckHeight = size * 0.22;
+  const bodyWidth = size * 0.75;
+  const bodyHeight = size * 0.9;
+  const corkHeight = size * 0.16;
+  const labelWidth = bodyWidth * 0.65;
+  const labelHeight = bodyHeight * 0.35;
+
+  return (
+    <View
+      style={{
+        width: size,
+        height: size * 1.25,
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+      }}
+    >
+      <View
+        style={{
+          position: 'absolute',
+          top: -corkHeight * 0.4,
+          width: neckWidth * 0.8,
+          height: corkHeight,
+          backgroundColor: '#fbbf24',
+          borderRadius: corkHeight * 0.4,
+          borderWidth: 2,
+          borderColor: '#b45309',
+          zIndex: 3,
+        }}
+      />
+      <View
+        style={{
+          width: neckWidth,
+          height: neckHeight,
+          backgroundColor: '#7dd3fc',
+          borderTopLeftRadius: 12,
+          borderTopRightRadius: 12,
+          borderWidth: 2,
+          borderColor: '#0284c7',
+        }}
+      />
+      <View
+        style={{
+          width: bodyWidth,
+          height: bodyHeight,
+          marginTop: -4,
+          backgroundColor: '#bae6fd',
+          borderRadius: bodyWidth * 0.5,
+          borderWidth: 3,
+          borderColor: '#0284c7',
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden',
+        }}
+      >
+        <View
+          style={{
+            position: 'absolute',
+            right: bodyWidth * 0.12,
+            top: bodyHeight * 0.1,
+            width: bodyWidth * 0.18,
+            height: bodyHeight * 0.55,
+            backgroundColor: 'rgba(255, 255, 255, 0.45)',
+            borderRadius: 999,
+          }}
+        />
+        <View
+          style={{
+            width: labelWidth,
+            height: labelHeight,
+            backgroundColor: '#fef3c7',
+            borderRadius: 14,
+            borderWidth: 2,
+            borderColor: '#f59e0b',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Sparkles size={Math.round(size * 0.32)} color="#f59e0b" strokeWidth={3} />
+        </View>
+      </View>
+    </View>
   );
 };
 
@@ -532,13 +638,110 @@ export default function ChildHubScreen() {
   const [wishText, setWishText] = useState('');
   const [avatarConfig, setAvatarConfig] = useState<AvatarConfig>(DEFAULT_AVATAR);
   const [showUnlockHint, setShowUnlockHint] = useState(false);
+  const [isThrowing, setIsThrowing] = useState(false);
+  const [showBottle, setShowBottle] = useState(false);
+
+  const { width: screenWidth } = useWindowDimensions();
+  const bottleSize = useMemo(
+    () => Math.round(Math.max(44, Math.min(72, screenWidth * 0.16))),
+    [screenWidth]
+  );
+  const bottleHeight = useMemo(() => Math.round(bottleSize * 1.25), [bottleSize]);
 
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const sendTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isThrowingRef = useRef(false);
+  const wellRootRef = useRef<View>(null);
+  const throwButtonRef = useRef<View>(null);
+  const wellTargetRef = useRef<View>(null);
+
+  const throwProgress = useSharedValue(0);
+  const bottleStartX = useSharedValue(0);
+  const bottleStartY = useSharedValue(0);
+  const bottleEndX = useSharedValue(0);
+  const bottleEndY = useSharedValue(0);
+  const bottleArc = useSharedValue(100);
+  const bottleDrop = useSharedValue(60);
+  const wellGlow = useSharedValue(0);
+
+  const bottleAnimatedStyle = useAnimatedStyle(() => {
+    const progress = Math.min(1, Math.max(0, throwProgress.value));
+    const x = bottleStartX.value + (bottleEndX.value - bottleStartX.value) * progress;
+    const y = bottleStartY.value + (bottleEndY.value - bottleStartY.value) * progress;
+    const arc = -bottleArc.value * Math.sin(Math.PI * progress);
+    const dropPhase = progress > 0.72 ? (progress - 0.72) / 0.28 : 0;
+    const drop = dropPhase * bottleDrop.value;
+    const spin = interpolate(progress, [0, 1], [-10, 420]);
+    const wiggle = Math.sin(progress * Math.PI * 3) * 6;
+    const scale = 1 - dropPhase * 0.35;
+    const opacity = 1 - dropPhase;
+
+    return {
+      opacity,
+      transform: [
+        { translateX: x },
+        { translateY: y + arc + drop },
+        { rotate: `${spin + wiggle}deg` },
+        { scale },
+      ],
+    };
+  });
+
+  const bottleGlowStyle = useAnimatedStyle(() => {
+    const progress = Math.min(1, Math.max(0, throwProgress.value));
+    const pulse = 0.5 + 0.5 * Math.sin(progress * Math.PI * 2);
+    return {
+      opacity: 0.25 + pulse * 0.25,
+      transform: [{ scale: 0.9 + pulse * 0.15 }],
+    };
+  });
+
+  const wellGlowStyle = useAnimatedStyle(() => ({
+    opacity: wellGlow.value,
+    transform: [{ scale: 0.6 + wellGlow.value * 0.6 }],
+  }));
 
   const currentOutfit = OUTFITS.find(o => o.id === avatarConfig.outfitId) || OUTFITS[0];
   const currentHat = HATS.find(h => h.id === avatarConfig.hatId);
   const currentToy = TOYS.find(t => t.id === avatarConfig.toyId);
+
+  const measureRelative = useCallback(
+    (ref: React.RefObject<View>) =>
+      new Promise<LayoutRectangle | null>(resolve => {
+        const rootNode = wellRootRef.current;
+        const node = ref.current;
+        if (!rootNode || !node) {
+          resolve(null);
+          return;
+        }
+        node.measureLayout(
+          rootNode as any,
+          (x, y, width, height) => resolve({ x, y, width, height }),
+          () => resolve(null)
+        );
+      }),
+    []
+  );
+
+  const scheduleWishReset = useCallback(() => {
+    if (sendTimeoutRef.current) {
+      clearTimeout(sendTimeoutRef.current);
+    }
+    sendTimeoutRef.current = setTimeout(() => {
+      setWishState('idle');
+      setRecordingTime(0);
+      setWishText('');
+    }, 2600);
+  }, []);
+
+  const handleThrowComplete = useCallback(() => {
+    isThrowingRef.current = false;
+    setShowBottle(false);
+    setIsThrowing(false);
+    setWishState('sent');
+    scheduleWishReset();
+  }, [scheduleWishReset]);
 
   const handleLockPressStart = () => {
     if (isLocked) {
@@ -576,18 +779,68 @@ export default function ChildHubScreen() {
     setWishState('review');
   };
 
-  const handleSendWish = () => {
-    setWishState('sent');
-    setTimeout(() => {
-      setWishState('idle');
-      setRecordingTime(0);
-      setWishText('');
-    }, 3000);
+  const handleSendWish = async () => {
+    if (isThrowingRef.current) return;
+    isThrowingRef.current = true;
+    setIsThrowing(true);
+    setShowBottle(false);
+
+    const [buttonLayout, targetLayout] = await Promise.all([
+      measureRelative(throwButtonRef),
+      measureRelative(wellTargetRef),
+    ]);
+
+    if (!buttonLayout || !targetLayout) {
+      isThrowingRef.current = false;
+      setShowBottle(false);
+      setIsThrowing(false);
+      setWishState('sent');
+      scheduleWishReset();
+      return;
+    }
+
+    const startX = buttonLayout.x + buttonLayout.width / 2 - bottleSize / 2;
+    const startY = buttonLayout.y + buttonLayout.height * 0.15 - bottleHeight / 2;
+    const endX = targetLayout.x + targetLayout.width / 2 - bottleSize / 2;
+    const endY = targetLayout.y + targetLayout.height / 2 - bottleHeight / 2;
+    const travel = Math.hypot(endX - startX, endY - startY);
+
+    bottleStartX.value = startX;
+    bottleStartY.value = startY;
+    bottleEndX.value = endX;
+    bottleEndY.value = endY;
+    bottleArc.value = Math.min(180, Math.max(90, travel * 0.35));
+    bottleDrop.value = Math.min(90, Math.max(50, travel * 0.18));
+
+    cancelAnimation(throwProgress);
+    throwProgress.value = 0;
+    wellGlow.value = 0;
+    setShowBottle(true);
+
+    throwProgress.value = withTiming(
+      1,
+      { duration: 1150, easing: Easing.out(Easing.cubic) },
+      finished => {
+        if (finished) {
+          runOnJS(handleThrowComplete)();
+        }
+      }
+    );
+
+    wellGlow.value = withDelay(
+      680,
+      withSequence(
+        withTiming(1, { duration: 180, easing: Easing.out(Easing.quad) }),
+        withTiming(0, { duration: 320, easing: Easing.in(Easing.quad) })
+      )
+    );
   };
 
   useEffect(() => {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
+      if (sendTimeoutRef.current) clearTimeout(sendTimeoutRef.current);
+      cancelAnimation(throwProgress);
     };
   }, []);
 
@@ -807,7 +1060,44 @@ export default function ChildHubScreen() {
       )}
 
       {activeRoom === 'well' && !isLocked && (
-        <View className="flex-1 items-center justify-between relative z-10 pt-8 pb-24 px-4">
+        <View
+          ref={wellRootRef}
+          className="flex-1 items-center justify-between relative z-10 pt-8 pb-24 px-4"
+        >
+          {showBottle && (
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                {
+                  position: 'absolute',
+                  left: 0,
+                  top: 0,
+                  width: bottleSize,
+                  height: bottleHeight,
+                  zIndex: 60,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                },
+                bottleAnimatedStyle,
+              ]}
+            >
+              <Animated.View
+                style={[
+                  {
+                    position: 'absolute',
+                    width: bottleSize * 1.4,
+                    height: bottleSize * 1.4,
+                    borderRadius: bottleSize,
+                    backgroundColor: 'rgba(253, 224, 71, 0.35)',
+                  },
+                  bottleGlowStyle,
+                ]}
+              />
+              <View style={styles.bottleShadow}>
+                <WishBottle size={bottleSize} />
+              </View>
+            </Animated.View>
+          )}
           {wishState !== 'typing' && (
             <View className="bg-white px-8 py-4 rounded-3xl border-b-8 border-slate-200 mb-4 transform -rotate-1">
               <Text className="text-2xl font-black text-slate-700 text-center tracking-tight">
@@ -825,6 +1115,38 @@ export default function ChildHubScreen() {
                 <View className="absolute bottom-0 w-full h-32 bg-slate-300 rounded-[32px] border-4 border-slate-500 z-10 overflow-hidden">
                   <View className="absolute top-4 left-1/2 -translate-x-1/2 w-48 h-12 bg-black/40 rounded-full blur-xl" />
                 </View>
+                <Animated.View
+                  pointerEvents="none"
+                  style={[
+                    {
+                      position: 'absolute',
+                      left: '50%',
+                      top: 96,
+                      width: 96,
+                      height: 24,
+                      marginLeft: -48,
+                      borderRadius: 999,
+                      borderWidth: 3,
+                      borderColor: '#fde047',
+                      backgroundColor: 'rgba(253, 224, 71, 0.2)',
+                      zIndex: 25,
+                    },
+                    wellGlowStyle,
+                  ]}
+                />
+                <View
+                  ref={wellTargetRef}
+                  collapsable={false}
+                  style={{
+                    position: 'absolute',
+                    left: '50%',
+                    top: 96,
+                    width: 16,
+                    height: 16,
+                    marginLeft: -8,
+                    zIndex: 5,
+                  }}
+                />
 
                 {wishState === 'sent' && (
                   <View className="absolute bottom-32 left-1/2 -translate-x-1/2 z-30">
@@ -1006,6 +1328,7 @@ export default function ChildHubScreen() {
                     }}
                     bgColor="#ffffff"
                     borderColor="#cbd5e1"
+                    disabled={isThrowing}
                   >
                     <RotateCcw size={32} color="#64748b" strokeWidth={4} />
                     <Text style={{
@@ -1018,25 +1341,32 @@ export default function ChildHubScreen() {
                       Again
                     </Text>
                   </BigActionButton>
-                  <BigActionButton
-                    onPress={handleSendWish}
-                    bgColor="#10b981"
-                    borderColor="#047857"
-                    flex={2}
-                  >
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                      <Text style={{
-                        color: 'white',
-                        fontWeight: '900',
-                        fontSize: 28,
-                        textTransform: 'uppercase',
-                        letterSpacing: 1,
-                      }}>
-                        Throw It!
-                      </Text>
-                      <Send size={36} color="white" strokeWidth={3} />
-                    </View>
-                  </BigActionButton>
+                  <View ref={throwButtonRef} collapsable={false} style={{ flex: 2 }}>
+                    <BigActionButton
+                      onPress={handleSendWish}
+                      bgColor="#10b981"
+                      borderColor="#047857"
+                      disabled={isThrowing}
+                      flex={1}
+                    >
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                        <Text style={{
+                          color: 'white',
+                          fontWeight: '900',
+                          fontSize: 28,
+                          textTransform: 'uppercase',
+                          letterSpacing: 1,
+                        }}>
+                          {isThrowing ? 'Wheee!' : 'Throw It!'}
+                        </Text>
+                        {isThrowing ? (
+                          <Sparkles size={36} color="white" strokeWidth={3} />
+                        ) : (
+                          <Send size={36} color="white" strokeWidth={3} />
+                        )}
+                      </View>
+                    </BigActionButton>
+                  </View>
                 </View>
               </View>
             )}
@@ -1090,5 +1420,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 12,
     elevation: 10,
+  },
+  bottleShadow: {
+    shadowColor: '#0f172a',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 8,
   },
 });
