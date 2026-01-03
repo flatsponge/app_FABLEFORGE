@@ -1,28 +1,171 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Text, Dimensions } from 'react-native';
+import { View, StyleSheet, Text } from 'react-native';
 import { useRouter } from 'expo-router';
-import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons';
+import Animated, {
+    FadeIn,
+    ZoomIn,
+    useSharedValue,
+    useAnimatedStyle,
+    withRepeat,
+    withSequence,
+    withTiming
+} from 'react-native-reanimated';
+import { Zap, Ear, HeartCrack, XCircle, Clock, Utensils, Volume2, Frown } from 'lucide-react-native';
 import OnboardingLayout from '../../../components/OnboardingLayout';
-import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
-const { width } = Dimensions.get('window');
+const GlitchText = ({ text }: { text: string }) => {
+    const redOffsetX = useSharedValue(0);
+    const redOffsetY = useSharedValue(0);
+    const blueOffsetX = useSharedValue(0);
+    const blueOffsetY = useSharedValue(0);
 
-const PAIN_POINTS = [
-    { id: 'tantrums', icon: 'flash', label: 'Tantrums & meltdowns', delay: 400 },
-    { id: 'listening', icon: 'ear', label: 'Not listening to you', delay: 600 },
-    { id: 'sharing', icon: 'heart-dislike', label: 'Trouble sharing', delay: 800 },
-    { id: 'patience', icon: 'hourglass', label: 'No patience', delay: 1000 },
+    useEffect(() => {
+        redOffsetX.value = withRepeat(
+            withSequence(
+                withTiming(-2, { duration: 100 }),
+                withTiming(2, { duration: 100 }),
+                withTiming(-1, { duration: 100 }),
+                withTiming(0, { duration: 100 })
+            ),
+            -1,
+            true
+        );
+        redOffsetY.value = withRepeat(
+            withSequence(
+                withTiming(1, { duration: 150 }),
+                withTiming(-1, { duration: 150 }),
+                withTiming(0, { duration: 100 })
+            ),
+            -1,
+            true
+        );
+        blueOffsetX.value = withRepeat(
+            withSequence(
+                withTiming(2, { duration: 120 }),
+                withTiming(-2, { duration: 120 }),
+                withTiming(1, { duration: 80 }),
+                withTiming(0, { duration: 80 })
+            ),
+            -1,
+            true
+        );
+        blueOffsetY.value = withRepeat(
+            withSequence(
+                withTiming(-1, { duration: 130 }),
+                withTiming(1, { duration: 130 }),
+                withTiming(0, { duration: 140 })
+            ),
+            -1,
+            true
+        );
+    }, []);
+
+    const redStyle = useAnimatedStyle(() => ({
+        transform: [
+            { translateX: redOffsetX.value },
+            { translateY: redOffsetY.value }
+        ],
+    }));
+
+    const blueStyle = useAnimatedStyle(() => ({
+        transform: [
+            { translateX: blueOffsetX.value },
+            { translateY: blueOffsetY.value }
+        ],
+    }));
+
+    return (
+        <View style={styles.glitchContainer}>
+            <Animated.Text style={[styles.glitchTextRed, redStyle]}>{text}</Animated.Text>
+            <Animated.Text style={[styles.glitchTextBlue, blueStyle]}>{text}</Animated.Text>
+            <Text style={styles.glitchTextMain}>{text}</Text>
+        </View>
+    );
+};
+
+const CHAOS_ELEMENTS = [
+    { id: 'tantrums', Icon: Zap, color: '#f59e0b', label: 'TANTRUMS', rotate: -6 },
+    { id: 'ignoring', Icon: Ear, color: '#3b82f6', label: 'IGNORING', rotate: 5 },
+    { id: 'fighting', Icon: HeartCrack, color: '#f43f5e', label: 'HITTING', rotate: 4 },
+    { id: 'no', Icon: XCircle, color: '#64748b', label: '"NO!"', rotate: -4 },
+    { id: 'bedtime', Icon: Clock, color: '#8b5cf6', label: 'BEDTIME', rotate: 5 },
+    { id: 'picky', Icon: Utensils, color: '#10b981', label: 'PICKY EATER', rotate: -5 },
+    { id: 'screaming', Icon: Volume2, color: '#ef4444', label: 'SCREAMING', rotate: 3 },
+    { id: 'whining', Icon: Frown, color: '#6366f1', label: 'WHINING', rotate: -3 },
 ];
 
 export default function IntroSlide1() {
     const router = useRouter();
     const [showButton, setShowButton] = useState(false);
+    
+    const emojiX = useSharedValue(0);
+    const emojiRotate = useSharedValue(0);
 
     useEffect(() => {
-        const timer = setTimeout(() => setShowButton(true), 1500);
+        const timer = setTimeout(() => setShowButton(true), 1200);
+
+        emojiX.value = withRepeat(
+            withSequence(
+                withTiming(-3, { duration: 50 }),
+                withTiming(3, { duration: 50 }),
+                withTiming(-2, { duration: 50 }),
+                withTiming(2, { duration: 50 }),
+                withTiming(0, { duration: 50 })
+            ),
+            -1,
+            true
+        );
+        emojiRotate.value = withRepeat(
+            withSequence(
+                withTiming(-2, { duration: 80 }),
+                withTiming(2, { duration: 80 }),
+                withTiming(-1, { duration: 80 }),
+                withTiming(0, { duration: 80 })
+            ),
+            -1,
+            true
+        );
+
         return () => clearTimeout(timer);
     }, []);
+
+    const emojiStyle = useAnimatedStyle(() => ({
+        transform: [
+            { translateX: emojiX.value },
+            { rotate: `${emojiRotate.value}deg` }
+        ],
+    }));
+
+    const createFloatStyle = (index: number) => {
+        const floatY = useSharedValue(0);
+        const floatX = useSharedValue(0);
+
+        useEffect(() => {
+            floatY.value = withRepeat(
+                withSequence(
+                    withTiming(-8, { duration: 1500 + index * 200 }),
+                    withTiming(0, { duration: 1500 + index * 200 })
+                ),
+                -1,
+                true
+            );
+            floatX.value = withRepeat(
+                withSequence(
+                    withTiming(3, { duration: 2000 + index * 300 }),
+                    withTiming(-3, { duration: 2000 + index * 300 })
+                ),
+                -1,
+                true
+            );
+        }, []);
+
+        return useAnimatedStyle(() => ({
+            transform: [
+                { translateY: floatY.value },
+                { translateX: floatX.value }
+            ],
+        }));
+    };
 
     const handleNext = () => {
         router.push('/(onboarding)/intro/slide-2');
@@ -31,40 +174,112 @@ export default function IntroSlide1() {
     return (
         <OnboardingLayout
             onNext={handleNext}
-            nextLabel="That's my child"
+            nextLabel="MAKE IT STOP"
             showBack={false}
             showNextButton={showButton}
             showProgressBar={false}
+            backgroundColor="#fff0f0"
         >
             <View style={styles.container}>
-                <Animated.View entering={FadeIn.delay(100).duration(600)} style={styles.headerContainer}>
-                    <View style={styles.emojiContainer}>
-                        <Text style={styles.emoji}>😟</Text>
+                <View style={styles.contentArea}>
+                    <Animated.View entering={FadeIn.delay(100).duration(400)}>
+                        <Animated.Text style={[styles.emoji, emojiStyle]}>
+                            😫
+                        </Animated.Text>
+                    </Animated.View>
+
+                    <Animated.View 
+                        entering={FadeIn.delay(200).duration(500)}
+                        style={styles.titleContainer}
+                    >
+                        <Text style={styles.titleTop}>IS IT ALWAYS</Text>
+                        <GlitchText text="THIS HARD?" />
+                        <Text style={styles.subtitle}>YOU AREN'T FAILING. IT'S RELENTLESS.</Text>
+                    </Animated.View>
+
+                    <View style={styles.chaosContainer}>
+                        <View style={styles.chaosRow}>
+                            {CHAOS_ELEMENTS.slice(0, 2).map((item, index) => {
+                                const floatStyle = createFloatStyle(index);
+                                return (
+                                    <Animated.View
+                                        key={item.id}
+                                        entering={ZoomIn.delay(400 + index * 80).duration(400).springify()}
+                                        style={[
+                                            styles.chaosCard, 
+                                            { transform: [{ rotate: `${item.rotate}deg` }] }
+                                        ]}
+                                    >
+                                        <Animated.View style={[styles.chaosCardInner, floatStyle]}>
+                                            <item.Icon size={18} color={item.color} strokeWidth={2.5} />
+                                            <Text style={styles.chaosLabel}>{item.label}</Text>
+                                        </Animated.View>
+                                    </Animated.View>
+                                );
+                            })}
+                        </View>
+                        <View style={styles.chaosRow}>
+                            {CHAOS_ELEMENTS.slice(2, 4).map((item, index) => {
+                                const floatStyle = createFloatStyle(index + 2);
+                                return (
+                                    <Animated.View
+                                        key={item.id}
+                                        entering={ZoomIn.delay(560 + index * 80).duration(400).springify()}
+                                        style={[
+                                            styles.chaosCard, 
+                                            { transform: [{ rotate: `${item.rotate}deg` }] }
+                                        ]}
+                                    >
+                                        <Animated.View style={[styles.chaosCardInner, floatStyle]}>
+                                            <item.Icon size={18} color={item.color} strokeWidth={2.5} />
+                                            <Text style={styles.chaosLabel}>{item.label}</Text>
+                                        </Animated.View>
+                                    </Animated.View>
+                                );
+                            })}
+                        </View>
+                        <View style={styles.chaosRow}>
+                            {CHAOS_ELEMENTS.slice(4, 6).map((item, index) => {
+                                const floatStyle = createFloatStyle(index + 4);
+                                return (
+                                    <Animated.View
+                                        key={item.id}
+                                        entering={ZoomIn.delay(720 + index * 80).duration(400).springify()}
+                                        style={[
+                                            styles.chaosCard, 
+                                            { transform: [{ rotate: `${item.rotate}deg` }] }
+                                        ]}
+                                    >
+                                        <Animated.View style={[styles.chaosCardInner, floatStyle]}>
+                                            <item.Icon size={18} color={item.color} strokeWidth={2.5} />
+                                            <Text style={styles.chaosLabel}>{item.label}</Text>
+                                        </Animated.View>
+                                    </Animated.View>
+                                );
+                            })}
+                        </View>
+                        <View style={styles.chaosRow}>
+                            {CHAOS_ELEMENTS.slice(6, 8).map((item, index) => {
+                                const floatStyle = createFloatStyle(index + 6);
+                                return (
+                                    <Animated.View
+                                        key={item.id}
+                                        entering={ZoomIn.delay(880 + index * 80).duration(400).springify()}
+                                        style={[
+                                            styles.chaosCard, 
+                                            { transform: [{ rotate: `${item.rotate}deg` }] }
+                                        ]}
+                                    >
+                                        <Animated.View style={[styles.chaosCardInner, floatStyle]}>
+                                            <item.Icon size={18} color={item.color} strokeWidth={2.5} />
+                                            <Text style={styles.chaosLabel}>{item.label}</Text>
+                                        </Animated.View>
+                                    </Animated.View>
+                                );
+                            })}
+                        </View>
                     </View>
-                    <Text style={styles.title}>Does your child struggle with...</Text>
-                </Animated.View>
-
-                <View style={styles.painPointsContainer}>
-                    {PAIN_POINTS.map((point) => (
-                        <Animated.View
-                            key={point.id}
-                            entering={FadeInDown.delay(point.delay).duration(500)}
-                            style={styles.painPointCard}
-                        >
-                            <View style={styles.iconWrapper}>
-                                <Ionicons name={point.icon as any} size={24} color={OnboardingTheme.Colors.Error} />
-                            </View>
-                            <Text style={styles.painPointLabel}>{point.label}</Text>
-                        </Animated.View>
-                    ))}
                 </View>
-
-                <Animated.Text
-                    entering={FadeInUp.delay(1200).duration(500)}
-                    style={styles.subtext}
-                >
-                    You're not alone. Most parents face these challenges.
-                </Animated.Text>
             </View>
         </OnboardingLayout>
     );
@@ -72,64 +287,101 @@ export default function IntroSlide1() {
 
 const styles = StyleSheet.create({
     container: {
+        flex: 1,
         alignItems: 'center',
         width: '100%',
+        position: 'relative',
+        overflow: 'hidden',
     },
-    headerContainer: {
+    contentArea: {
         alignItems: 'center',
-        marginBottom: OnboardingTheme.Spacing.xl,
-    },
-    emojiContainer: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        backgroundColor: '#fef2f2',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: OnboardingTheme.Spacing.lg,
+        zIndex: 10,
+        marginTop: 20,
     },
     emoji: {
-        fontSize: 40,
+        fontSize: 100,
+        marginBottom: 16,
     },
-    title: {
-        fontSize: 28,
-        fontWeight: '800',
-        color: OnboardingTheme.Colors.Text,
+    titleContainer: {
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    titleTop: {
+        fontSize: 36,
+        fontWeight: '900',
+        color: '#0f172a',
         textAlign: 'center',
-        lineHeight: 36,
+        letterSpacing: -1,
     },
-    painPointsContainer: {
+    glitchContainer: {
+        position: 'relative',
+        height: 50,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    glitchTextRed: {
+        position: 'absolute',
+        fontSize: 36,
+        fontWeight: '900',
+        color: '#ef4444',
+        opacity: 0.7,
+        letterSpacing: -1,
+    },
+    glitchTextBlue: {
+        position: 'absolute',
+        fontSize: 36,
+        fontWeight: '900',
+        color: '#3b82f6',
+        opacity: 0.7,
+        letterSpacing: -1,
+    },
+    glitchTextMain: {
+        fontSize: 36,
+        fontWeight: '900',
+        color: '#dc2626',
+        letterSpacing: -1,
+    },
+    subtitle: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: '#475569',
+        textAlign: 'center',
+        marginTop: 12,
+        letterSpacing: 0.5,
+    },
+    chaosContainer: {
         width: '100%',
-        gap: OnboardingTheme.Spacing.md,
+        alignItems: 'center',
+        marginTop: 28,
+        gap: 16,
     },
-    painPointCard: {
+    chaosRow: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        gap: 32,
+    },
+    chaosCard: {
+        marginVertical: 4,
+    },
+    chaosCardInner: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#fef2f2',
-        borderRadius: OnboardingTheme.Radius.xl,
-        padding: OnboardingTheme.Spacing.md,
-        borderWidth: 1,
-        borderColor: '#fee2e2',
+        gap: 8,
+        backgroundColor: '#ffffff',
+        borderWidth: 2,
+        borderColor: '#0f172a',
+        borderRadius: 12,
+        paddingVertical: 10,
+        paddingHorizontal: 14,
+        shadowColor: '#000',
+        shadowOffset: { width: 4, height: 4 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
+        elevation: 5,
     },
-    iconWrapper: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
-        backgroundColor: 'white',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: OnboardingTheme.Spacing.md,
-    },
-    painPointLabel: {
-        fontSize: 18,
-        fontWeight: '600',
-        color: OnboardingTheme.Colors.Text,
-        flex: 1,
-    },
-    subtext: {
-        marginTop: OnboardingTheme.Spacing.xl,
-        fontSize: 16,
-        color: OnboardingTheme.Colors.TextSecondary,
-        textAlign: 'center',
+    chaosLabel: {
+        fontSize: 14,
+        fontWeight: '900',
+        color: '#0f172a',
     },
 });

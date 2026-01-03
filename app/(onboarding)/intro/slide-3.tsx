@@ -1,32 +1,200 @@
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Text, Dimensions } from 'react-native';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { View, Text, findNodeHandle } from 'react-native';
 import { useRouter } from 'expo-router';
-import Animated, { FadeIn, FadeInUp, ZoomIn, SlideInDown } from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons';
+import Animated, {
+    useAnimatedStyle,
+    useSharedValue,
+    withTiming,
+    withRepeat,
+    withSequence,
+    withDelay,
+    FadeInDown,
+    ZoomIn,
+    Easing,
+    interpolateColor,
+    withSpring,
+} from 'react-native-reanimated';
+import { ScanFace, Sparkles, Sprout, BookOpen } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import OnboardingLayout from '../../../components/OnboardingLayout';
-import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
-const { width } = Dimensions.get('window');
+// Constants for the icon box
+const ICON_BOX_SIZE = 56;
+const LENS_PADDING = 4; // Extra padding around the icon box
+const LENS_SIZE = ICON_BOX_SIZE + (LENS_PADDING * 2);
 
-const BENEFITS = [
-    { id: 'personalized', icon: 'sparkles', label: 'Personalized stories for your child' },
-    { id: 'values', icon: 'heart', label: 'Teaches real values through adventure' },
-    { id: 'bedtime', icon: 'moon', label: 'Perfect for bedtime routine' },
+const PROCESS_STEPS = [
+    {
+        id: 'identify',
+        icon: ScanFace,
+        title: 'Identify',
+        desc: 'Pinpoint the behavior.',
+        activeColor: '#2563eb', // blue-600
+    },
+    {
+        id: 'create',
+        icon: Sparkles,
+        title: 'Create',
+        desc: 'AI weaves the story.',
+        activeColor: '#7c3aed', // violet-600
+    },
+    {
+        id: 'grow',
+        icon: Sprout,
+        title: 'Grow',
+        desc: 'Child learns naturally.',
+        activeColor: '#059669', // emerald-600
+    },
 ];
 
-export default function IntroSlide3() {
-    const router = useRouter();
-    const [showContent, setShowContent] = useState(false);
-    const [showButton, setShowButton] = useState(false);
+interface IconPosition {
+    x: number;
+    y: number;
+}
 
-    useEffect(() => {
-        const timer1 = setTimeout(() => setShowContent(true), 800);
-        const timer2 = setTimeout(() => setShowButton(true), 2000);
-        return () => {
-            clearTimeout(timer1);
-            clearTimeout(timer2);
-        };
+export default function Slide3() {
+    const router = useRouter();
+    const [showButton, setShowButton] = useState(false);
+    const [activeStep, setActiveStep] = useState(-1);
+    const [layoutReady, setLayoutReady] = useState(false);
+
+    // Ref for the timeline container (where the lens is positioned)
+    const containerRef = useRef<View>(null);
+
+    // Refs for each icon box
+    const iconRefs = useRef<(View | null)[]>([]);
+
+    // Store measured positions using ref for immediate access
+    const iconPositionsRef = useRef<IconPosition[]>([]);
+    const measuredCount = useRef(0);
+
+    // Hero Animations
+    const heroFloat = useSharedValue(0);
+
+    // Timeline Animation
+    const timelineHeight = useSharedValue(0);
+
+    // Lens position animation
+    const lensX = useSharedValue(0);
+    const lensY = useSharedValue(0);
+    const lensOpacity = useSharedValue(0);
+    const lensColorIndex = useSharedValue(0);
+
+    // Function to animate lens to a specific step
+    const animateLensToStep = useCallback((stepIndex: number) => {
+        const position = iconPositionsRef.current[stepIndex];
+        if (!position) return;
+
+        lensX.value = withSpring(position.x - LENS_PADDING, {
+            damping: 18,
+            stiffness: 100,
+        });
+        lensY.value = withSpring(position.y - LENS_PADDING, {
+            damping: 18,
+            stiffness: 100,
+        });
+        lensColorIndex.value = withTiming(stepIndex, { duration: 300 });
+
+        if (stepIndex === 0) {
+            lensOpacity.value = withTiming(1, { duration: 250 });
+        }
+    }, [lensX, lensY, lensColorIndex, lensOpacity]);
+
+    // Measure all icon positions relative to the container
+    const measurePositions = useCallback(() => {
+        if (!containerRef.current) return;
+
+        const containerNode = findNodeHandle(containerRef.current);
+        if (!containerNode) return;
+
+        measuredCount.current = 0;
+
+        iconRefs.current.forEach((iconRef, index) => {
+            if (iconRef) {
+                iconRef.measureLayout(
+                    containerRef.current as any,
+                    (x, y) => {
+                        iconPositionsRef.current[index] = { x, y };
+                        measuredCount.current++;
+
+                        if (measuredCount.current === PROCESS_STEPS.length) {
+                            setLayoutReady(true);
+                        }
+                    },
+                    () => {
+                        // Fallback: use estimated positions if measureLayout fails
+                        console.warn(`Failed to measure icon ${index}`);
+                    }
+                );
+            }
+        });
     }, []);
+
+    // Set icon ref
+    const setIconRef = useCallback((index: number, ref: View | null) => {
+        iconRefs.current[index] = ref;
+    }, []);
+
+    // Start hero and timeline animations immediately
+    useEffect(() => {
+        heroFloat.value = withRepeat(
+            withSequence(
+                withTiming(-4, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
+                withTiming(4, { duration: 2000, easing: Easing.inOut(Easing.ease) })
+            ),
+            -1,
+            true
+        );
+
+        timelineHeight.value = withDelay(800, withTiming(100, { duration: 2400, easing: Easing.linear }));
+    }, [heroFloat, timelineHeight]);
+
+    // Start step animations ONLY after layout is ready
+    useEffect(() => {
+        if (!layoutReady) return;
+
+        // Start step timers now that we have positions
+        const stepTimers = PROCESS_STEPS.map((_, i) =>
+            setTimeout(() => {
+                setActiveStep(i);
+                animateLensToStep(i);
+            }, 800 + (i * 800))
+        );
+
+        // Reveal button
+        const btnTimer = setTimeout(() => setShowButton(true), 3000);
+
+        return () => {
+            stepTimers.forEach(clearTimeout);
+            clearTimeout(btnTimer);
+        };
+    }, [layoutReady, animateLensToStep]);
+
+    const animatedHeroStyle = useAnimatedStyle(() => ({
+        transform: [{ translateY: heroFloat.value }]
+    }));
+
+    const animatedTimelineStyle = useAnimatedStyle(() => ({
+        height: `${timelineHeight.value}%`
+    }));
+
+    // Lens style - position based on measured coordinates
+    const animatedLensStyle = useAnimatedStyle(() => {
+        const borderColor = interpolateColor(
+            lensColorIndex.value,
+            [0, 1, 2],
+            ['#2563eb', '#7c3aed', '#059669']
+        );
+
+        return {
+            transform: [
+                { translateX: lensX.value },
+                { translateY: lensY.value },
+            ],
+            opacity: lensOpacity.value,
+            borderColor,
+        };
+    });
 
     const handleNext = () => {
         router.push('/(onboarding)/intro/slide-4');
@@ -35,190 +203,191 @@ export default function IntroSlide3() {
     return (
         <OnboardingLayout
             onNext={handleNext}
-            nextLabel="Show me"
+            nextLabel="Show me the magic"
             showNextButton={showButton}
             showProgressBar={false}
         >
-            <View style={styles.container}>
-                {/* Transition text */}
-                <Animated.View entering={FadeIn.delay(100).duration(600)} style={styles.transitionContainer}>
-                    <Text style={styles.transitionText}>But here's the good news...</Text>
-                </Animated.View>
+            {/* Ambient Background Light */}
+            <View className="absolute top-[-20%] left-[-20%] w-[140%] h-[60%] pointer-events-none">
+                <LinearGradient
+                    colors={['rgba(238, 242, 255, 0.8)', 'rgba(255, 255, 255, 1)', 'transparent']}
+                    className="w-full h-full"
+                />
+            </View>
 
-                {/* Logo/App reveal */}
+            <View className="flex-1 items-center w-full relative z-10 pt-4 px-4">
+
+                {/* Hero: Floating Core */}
+                <View className="relative mb-12 mt-4 items-center justify-center">
+                    {/* Back Glow */}
+                    <View className="absolute w-32 h-32 bg-violet-400/20 rounded-full blur-[40px]" />
+
+                    <Animated.View
+                        entering={ZoomIn.duration(800)}
+                        className="relative items-center justify-center"
+                    >
+                        {/* Main Icon Container - Floating Animation */}
+                        <Animated.View
+                            style={[animatedHeroStyle]}
+                            className="w-24 h-24 bg-slate-800 rounded-[28px] items-center justify-center shadow-xl border border-slate-700/50 overflow-hidden"
+                        >
+                            <LinearGradient
+                                colors={['#0f172a', '#1e293b']}
+                                start={{ x: 0, y: 1 }}
+                                end={{ x: 1, y: 0 }}
+                                className="absolute inset-0"
+                            />
+
+                            {/* Inner Gradient Border Effect */}
+                            <View className="absolute inset-[1px] rounded-[27px] border border-white/10 pointer-events-none" />
+
+                            <BookOpen size={40} color="white" strokeWidth={1.5} style={{ opacity: 0.9 }} />
+                        </Animated.View>
+                    </Animated.View>
+                </View>
+
+                {/* Header Text */}
                 <Animated.View
-                    entering={ZoomIn.delay(600).duration(800)}
-                    style={styles.logoContainer}
+                    entering={FadeInDown.delay(300).duration(500)}
+                    className="items-center mb-12 px-6"
                 >
-                    <View style={styles.logoGlow}>
-                        <View style={styles.logo}>
-                            <Text style={styles.logoEmoji}>📖</Text>
-                        </View>
-                    </View>
+                    <Text className="text-3xl font-bold text-slate-900 mb-2 text-center tracking-tight">
+                        Magic in <Text className="text-violet-600">Three Steps</Text>
+                    </Text>
+                    <Text className="text-slate-500 text-[15px] font-medium leading-relaxed text-center">
+                        Complex psychology, simplified into a bedtime story.
+                    </Text>
                 </Animated.View>
 
-                <Animated.Text
-                    entering={FadeIn.delay(1000).duration(500)}
-                    style={styles.appName}
+                {/* Timeline Container */}
+                <View
+                    ref={containerRef}
+                    className="w-full max-w-[320px] relative pl-4"
+                    onLayout={measurePositions}
                 >
-                    Storytime
-                </Animated.Text>
 
-                <Animated.Text
-                    entering={FadeIn.delay(1200).duration(500)}
-                    style={styles.tagline}
-                >
-                    Stories that shape character
-                </Animated.Text>
+                    {/* The Line */}
+                    <View className="absolute left-[39px] top-4 bottom-8 w-[2px] bg-slate-100 rounded-full overflow-hidden">
+                        <Animated.View
+                            style={[animatedTimelineStyle]}
+                            className="w-full"
+                        >
+                            <LinearGradient
+                                colors={['#3b82f6', '#8b5cf6', '#10b981']}
+                                className="w-full h-full"
+                            />
+                        </Animated.View>
+                    </View>
 
-                {/* Benefits */}
-                {showContent && (
-                    <View style={styles.benefitsContainer}>
-                        {BENEFITS.map((benefit, index) => (
-                            <Animated.View
-                                key={benefit.id}
-                                entering={FadeInUp.delay(1400 + index * 150).duration(400)}
-                                style={styles.benefitRow}
-                            >
-                                <View style={styles.checkCircle}>
-                                    <Ionicons name="checkmark" size={16} color="white" />
-                                </View>
-                                <Text style={styles.benefitText}>{benefit.label}</Text>
-                            </Animated.View>
+                    {/* Moving Lens - positioned absolutely, animated to icon positions */}
+                    <Animated.View
+                        style={[
+                            animatedLensStyle,
+                            {
+                                position: 'absolute',
+                                left: 0,
+                                top: 0,
+                                width: LENS_SIZE,
+                                height: LENS_SIZE,
+                                borderRadius: 20,
+                                borderWidth: 2.5,
+                                backgroundColor: 'transparent',
+                                zIndex: 10,
+                                pointerEvents: 'none',
+                            },
+                        ]}
+                    />
+
+                    <View className="gap-y-6">
+                        {PROCESS_STEPS.map((step, index) => (
+                            <StepItem
+                                key={step.id}
+                                step={step}
+                                index={index}
+                                isActive={index <= activeStep}
+                                setIconRef={setIconRef}
+                            />
                         ))}
                     </View>
-                )}
-
-                {/* Social proof */}
-                {showContent && (
-                    <Animated.View
-                        entering={SlideInDown.delay(2000).duration(500)}
-                        style={styles.socialProof}
-                    >
-                        <View style={styles.avatarStack}>
-                            {['👩', '👨', '👩‍🦰', '👨‍🦱'].map((emoji, i) => (
-                                <View key={i} style={[styles.avatar, { left: i * 20 }]}>
-                                    <Text style={styles.avatarEmoji}>{emoji}</Text>
-                                </View>
-                            ))}
-                        </View>
-                        <Text style={styles.socialProofText}>
-                            <Text style={styles.socialProofBold}>50,000+</Text> happy families
-                        </Text>
-                    </Animated.View>
-                )}
+                </View>
             </View>
         </OnboardingLayout>
     );
 }
 
-const styles = StyleSheet.create({
-    container: {
-        alignItems: 'center',
-        width: '100%',
-    },
-    transitionContainer: {
-        marginBottom: OnboardingTheme.Spacing.lg,
-    },
-    transitionText: {
-        fontSize: 18,
-        color: OnboardingTheme.Colors.TextSecondary,
-        textAlign: 'center',
-        fontWeight: '500',
-    },
-    logoContainer: {
-        marginBottom: OnboardingTheme.Spacing.md,
-    },
-    logoGlow: {
-        padding: 8,
-        borderRadius: 100,
-        backgroundColor: 'rgba(34, 197, 94, 0.1)',
-    },
-    logo: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-        backgroundColor: OnboardingTheme.Colors.Success,
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowColor: OnboardingTheme.Colors.Success,
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.4,
-        shadowRadius: 16,
-        elevation: 10,
-    },
-    logoEmoji: {
-        fontSize: 48,
-    },
-    appName: {
-        fontSize: 32,
-        fontWeight: '900',
-        color: OnboardingTheme.Colors.Text,
-        marginBottom: 4,
-    },
-    tagline: {
-        fontSize: 16,
-        color: OnboardingTheme.Colors.TextSecondary,
-        marginBottom: OnboardingTheme.Spacing.xl,
-    },
-    benefitsContainer: {
-        width: '100%',
-        gap: OnboardingTheme.Spacing.sm,
-        marginBottom: OnboardingTheme.Spacing.xl,
-    },
-    benefitRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: OnboardingTheme.Spacing.md,
-    },
-    checkCircle: {
-        width: 28,
-        height: 28,
-        borderRadius: 14,
-        backgroundColor: OnboardingTheme.Colors.Success,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    benefitText: {
-        fontSize: 16,
-        color: OnboardingTheme.Colors.Text,
-        fontWeight: '500',
-    },
-    socialProof: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#f9fafb',
-        paddingHorizontal: OnboardingTheme.Spacing.lg,
-        paddingVertical: OnboardingTheme.Spacing.md,
-        borderRadius: OnboardingTheme.Radius.xl,
-        gap: OnboardingTheme.Spacing.md,
-    },
-    avatarStack: {
-        flexDirection: 'row',
-        width: 90,
-        height: 32,
-        position: 'relative',
-    },
-    avatar: {
-        position: 'absolute',
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        backgroundColor: '#e5e7eb',
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 2,
-        borderColor: 'white',
-    },
-    avatarEmoji: {
-        fontSize: 16,
-    },
-    socialProofText: {
-        fontSize: 14,
-        color: OnboardingTheme.Colors.TextSecondary,
-    },
-    socialProofBold: {
-        fontWeight: 'bold',
-        color: OnboardingTheme.Colors.Text,
-    },
-});
+interface StepItemProps {
+    step: typeof PROCESS_STEPS[0];
+    index: number;
+    isActive: boolean;
+    setIconRef: (index: number, ref: View | null) => void;
+}
+
+function StepItem({ step, index, isActive, setIconRef }: StepItemProps) {
+    const Icon = step.icon;
+
+    return (
+        <Animated.View
+            entering={FadeInDown.delay(200 + (index * 200)).duration(500)}
+            className="relative flex-row items-center"
+            style={{ zIndex: 1 }}
+        >
+            {/* Icon Box - ref used for measuring position */}
+            <View
+                ref={(ref) => setIconRef(index, ref)}
+                className="relative z-10 mr-5"
+            >
+                <View
+                    style={{
+                        width: ICON_BOX_SIZE,
+                        height: ICON_BOX_SIZE,
+                        borderRadius: 16,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderWidth: 1,
+                        backgroundColor: isActive ? '#ffffff' : '#f1f5f9',
+                        borderColor: isActive ? '#e2e8f0' : '#f1f5f9',
+                        transform: [{ scale: isActive ? 1 : 0.9 }],
+                    }}
+                >
+                    <Icon
+                        size={22}
+                        strokeWidth={2}
+                        color={isActive ? step.activeColor : '#94a3b8'}
+                    />
+                </View>
+            </View>
+
+            {/* Text Content */}
+            <View
+                style={{
+                    flex: 1,
+                    paddingVertical: 12,
+                    paddingHorizontal: 16,
+                    borderRadius: 12,
+                    opacity: isActive ? 1 : 0.5,
+                }}
+            >
+                <Text
+                    style={{
+                        fontSize: 17,
+                        fontWeight: '700',
+                        color: isActive ? '#0f172a' : '#94a3b8',
+                        marginBottom: 2,
+                    }}
+                >
+                    {step.title}
+                </Text>
+                <Text
+                    style={{
+                        fontSize: 13,
+                        fontWeight: '500',
+                        color: '#64748b',
+                        lineHeight: 18,
+                    }}
+                >
+                    {step.desc}
+                </Text>
+            </View>
+        </Animated.View>
+    );
+}

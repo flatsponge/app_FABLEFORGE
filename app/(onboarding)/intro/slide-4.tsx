@@ -1,96 +1,112 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, Text, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
-import Animated, { FadeIn, FadeInUp, ZoomIn } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Path, Defs, LinearGradient as SvgGradient, Stop } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
 const { width } = Dimensions.get('window');
+const GRAPH_WIDTH = width - 80;
+const GRAPH_HEIGHT = 100;
 
-const SUCCESS_METRICS = [
-    { id: 'improvement', value: '94%', label: 'see improvement' },
-    { id: 'days', value: '14', label: 'days average' },
-    { id: 'rating', value: '4.9★', label: 'parent rating' },
-];
+const MetricsCard = ({ value, label, index }: { value: string, label: string, index: number }) => (
+    <Animated.View
+        entering={FadeInUp.delay(1200 + index * 200).duration(600)}
+        style={styles.metricCard}
+    >
+        <Text style={styles.metricValue}>{value}</Text>
+        <Text style={styles.metricLabel}>{label}</Text>
+    </Animated.View>
+);
 
 export default function IntroSlide4() {
     const router = useRouter();
-    const [showMetrics, setShowMetrics] = useState(false);
     const [showButton, setShowButton] = useState(false);
 
     useEffect(() => {
-        const timer1 = setTimeout(() => setShowMetrics(true), 800);
-        const timer2 = setTimeout(() => setShowButton(true), 1800);
-        return () => {
-            clearTimeout(timer1);
-            clearTimeout(timer2);
-        };
+        const timer = setTimeout(() => setShowButton(true), 1500);
+        return () => clearTimeout(timer);
     }, []);
 
     const handleNext = () => {
-        // Navigate to main onboarding (goals selection)
         router.replace('/(onboarding)/goals');
     };
 
     return (
         <OnboardingLayout
             onNext={handleNext}
-            nextLabel="Let's get started"
+            nextLabel="Start my 14-day journey"
             showNextButton={showButton}
             showProgressBar={false}
         >
             <View style={styles.container}>
-                {/* Main promise */}
-                <Animated.View entering={FadeIn.delay(100).duration(600)} style={styles.headerContainer}>
-                    <View style={styles.successBadge}>
-                        <Ionicons name="checkmark-circle" size={16} color={OnboardingTheme.Colors.Success} />
-                        <Text style={styles.successBadgeText}>QUICK RESULTS</Text>
-                    </View>
-                    <Text style={styles.title}>See visible changes in just 14 days</Text>
+                <Animated.View entering={FadeIn.delay(100).duration(600)} style={styles.header}>
+                    <LinearGradient
+                        colors={['#dcfce7', '#f0fdf4']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.badge}
+                    >
+                        <Text style={styles.badgeText}>QUICK WINS</Text>
+                    </LinearGradient>
+                    <Text style={styles.title}>Results in 14 days</Text>
                     <Text style={styles.subtitle}>
-                        Parents report calmer bedtimes, better sharing, and improved patience within 2 weeks
+                        Most parents see significant behavior shifts within two weeks.
                     </Text>
                 </Animated.View>
 
-                {/* Guarantee card */}
+                {/* Graph Viz */}
                 <Animated.View
-                    entering={ZoomIn.delay(400).duration(600)}
-                    style={styles.guaranteeCard}
+                    entering={FadeIn.delay(500).duration(1000)}
+                    style={styles.graphContainer}
                 >
-                    <View style={styles.guaranteeIcon}>
-                        <Ionicons name="shield-checkmark" size={32} color={OnboardingTheme.Colors.Success} />
+                    <Svg width={GRAPH_WIDTH} height={GRAPH_HEIGHT}>
+                        <Defs>
+                            <SvgGradient id="grad" x1="0" y1="0" x2="0" y2="1">
+                                <Stop offset="0" stopColor="#22c55e" stopOpacity="0.2" />
+                                <Stop offset="1" stopColor="#22c55e" stopOpacity="0" />
+                            </SvgGradient>
+                        </Defs>
+                        {/* Area */}
+                        <Path
+                            d={`M0,${GRAPH_HEIGHT} Q${GRAPH_WIDTH * 0.4},${GRAPH_HEIGHT} ${GRAPH_WIDTH * 0.6},${GRAPH_HEIGHT * 0.4} T${GRAPH_WIDTH},0 V${GRAPH_HEIGHT} Z`}
+                            fill="url(#grad)"
+                        />
+                        {/* Line */}
+                        <Path
+                            d={`M0,${GRAPH_HEIGHT} Q${GRAPH_WIDTH * 0.4},${GRAPH_HEIGHT} ${GRAPH_WIDTH * 0.6},${GRAPH_HEIGHT * 0.4} T${GRAPH_WIDTH},0`}
+                            fill="none"
+                            stroke="#22c55e"
+                            strokeWidth="4"
+                            strokeLinecap="round"
+                        />
+                    </Svg>
+
+                    {/* Graph Labels */}
+                    <View style={styles.graphLabels}>
+                        <Text style={styles.axisLabel}>Day 1</Text>
+                        <Text style={styles.axisLabel}>Day 7</Text>
+                        <Text style={styles.axisLabelBold}>Day 14</Text>
                     </View>
-                    <Text style={styles.guaranteeTitle}>Our Promise</Text>
-                    <Text style={styles.guaranteeText}>
-                        If you don't see improvement, we'll work with you personally until you do
-                    </Text>
                 </Animated.View>
 
-                {/* Success metrics */}
-                {showMetrics && (
-                    <View style={styles.metricsContainer}>
-                        {SUCCESS_METRICS.map((metric, index) => (
-                            <Animated.View
-                                key={metric.id}
-                                entering={FadeInUp.delay(800 + index * 150).duration(400)}
-                                style={styles.metricItem}
-                            >
-                                <Text style={styles.metricValue}>{metric.value}</Text>
-                                <Text style={styles.metricLabel}>{metric.label}</Text>
-                            </Animated.View>
-                        ))}
-                    </View>
-                )}
+                {/* Metrics */}
+                <View style={styles.metricsRow}>
+                    <MetricsCard value="94%" label="Improvement" index={0} />
+                    <MetricsCard value="4.9★" label="Parent Rating" index={1} />
+                </View>
 
-                {/* Quick setup note */}
                 <Animated.View
-                    entering={FadeIn.delay(1500).duration(400)}
-                    style={styles.setupNote}
+                    entering={FadeIn.delay(1800).duration(600)}
+                    style={styles.guarantee}
                 >
-                    <Ionicons name="time-outline" size={18} color={OnboardingTheme.Colors.TextSecondary} />
-                    <Text style={styles.setupNoteText}>Takes just 2 minutes to personalize</Text>
+                    <Ionicons name="shield-checkmark-outline" size={16} color="#15803d" />
+                    <Text style={styles.guaranteeText}>Happiness Guarantee Included</Text>
                 </Animated.View>
+
             </View>
         </OnboardingLayout>
     );
@@ -101,104 +117,98 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         width: '100%',
     },
-    headerContainer: {
+    header: {
         alignItems: 'center',
-        marginBottom: OnboardingTheme.Spacing.xl,
+        marginBottom: 24,
     },
-    successBadge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#f0fdf4',
+    badge: {
         paddingHorizontal: 12,
         paddingVertical: 6,
-        borderRadius: 9999,
+        borderRadius: 12,
+        marginBottom: 16,
         borderWidth: 1,
-        borderColor: '#dcfce7',
-        marginBottom: OnboardingTheme.Spacing.md,
-        gap: 6,
+        borderColor: '#bbf7d0',
     },
-    successBadgeText: {
-        color: OnboardingTheme.Colors.Success,
+    badgeText: {
         fontSize: 11,
-        fontWeight: 'bold',
+        fontWeight: '800',
+        color: '#15803d',
         letterSpacing: 1,
     },
     title: {
-        fontSize: 28,
+        fontSize: 32,
         fontWeight: '800',
         color: OnboardingTheme.Colors.Text,
-        textAlign: 'center',
-        marginBottom: OnboardingTheme.Spacing.sm,
-        lineHeight: 34,
+        marginBottom: 8,
     },
     subtitle: {
         fontSize: 16,
         color: OnboardingTheme.Colors.TextSecondary,
         textAlign: 'center',
-        lineHeight: 24,
+        paddingHorizontal: 20,
     },
-    guaranteeCard: {
-        width: '100%',
-        backgroundColor: '#f0fdf4',
-        borderRadius: OnboardingTheme.Radius.xl,
-        padding: OnboardingTheme.Spacing.lg,
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: '#dcfce7',
-        marginBottom: OnboardingTheme.Spacing.xl,
-    },
-    guaranteeIcon: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
-        backgroundColor: 'white',
+    graphContainer: {
+        marginVertical: 10,
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: OnboardingTheme.Spacing.md,
     },
-    guaranteeTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#166534',
-        marginBottom: OnboardingTheme.Spacing.xs,
-    },
-    guaranteeText: {
-        fontSize: 14,
-        color: '#15803d',
-        textAlign: 'center',
-        lineHeight: 20,
-    },
-    metricsContainer: {
+    graphLabels: {
         flexDirection: 'row',
-        width: '100%',
+        width: GRAPH_WIDTH,
         justifyContent: 'space-between',
-        marginBottom: OnboardingTheme.Spacing.xl,
+        marginTop: 8,
     },
-    metricItem: {
+    axisLabel: {
+        fontSize: 12,
+        color: '#94a3b8',
+    },
+    axisLabelBold: {
+        fontSize: 12,
+        color: '#22c55e',
+        fontWeight: 'bold',
+    },
+    metricsRow: {
+        flexDirection: 'row',
+        gap: 16,
+        marginTop: 32,
+        width: '100%',
+        paddingHorizontal: 20,
+    },
+    metricCard: {
         flex: 1,
+        backgroundColor: '#fff',
+        padding: 16,
+        borderRadius: 20,
         alignItems: 'center',
-        backgroundColor: '#f9fafb',
-        paddingVertical: OnboardingTheme.Spacing.md,
-        marginHorizontal: 4,
-        borderRadius: OnboardingTheme.Radius.lg,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
+        elevation: 2,
+        borderWidth: 1,
+        borderColor: '#f0fdf4',
     },
     metricValue: {
-        fontSize: 24,
+        fontSize: 28,
         fontWeight: '900',
-        color: OnboardingTheme.Colors.Text,
+        color: '#1f2937',
+        marginBottom: 4,
     },
     metricLabel: {
-        fontSize: 11,
-        color: OnboardingTheme.Colors.TextSecondary,
-        marginTop: 2,
+        fontSize: 13,
+        color: '#6b7280',
+        fontWeight: '600',
     },
-    setupNote: {
+    guarantee: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 6,
+        marginTop: 24,
+        opacity: 0.8,
     },
-    setupNoteText: {
-        fontSize: 14,
-        color: OnboardingTheme.Colors.TextSecondary,
-    },
+    guaranteeText: {
+        fontSize: 13,
+        color: '#15803d',
+        fontWeight: '500',
+    }
 });

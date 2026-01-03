@@ -1,43 +1,144 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Text, Dimensions } from 'react-native';
+import { View, StyleSheet, Text } from 'react-native';
 import { useRouter } from 'expo-router';
-import Animated, { FadeIn, FadeInUp, ZoomIn } from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons';
+import Animated, {
+    FadeIn,
+    withSpring,
+    useSharedValue,
+    useAnimatedStyle,
+    withTiming,
+} from 'react-native-reanimated';
+import Svg, { Path } from 'react-native-svg';
 import OnboardingLayout from '../../../components/OnboardingLayout';
-import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
-const { width } = Dimensions.get('window');
+// Wavy underline component for "more resistance" text
+function WavyUnderline({ width, color = '#F87171' }: { width: number; color?: string }) {
+    const waveHeight = 3;
+    const waveLength = 8;
+    const numWaves = Math.ceil(width / waveLength);
 
+    // Generate a wavy path
+    let pathD = `M 0 ${waveHeight}`;
+    for (let i = 0; i < numWaves; i++) {
+        const x1 = i * waveLength + waveLength / 4;
+        const x2 = i * waveLength + waveLength / 2;
+        const x3 = i * waveLength + (3 * waveLength) / 4;
+        const x4 = (i + 1) * waveLength;
+        pathD += ` Q ${x1} 0, ${x2} ${waveHeight} Q ${x3} ${waveHeight * 2}, ${x4} ${waveHeight}`;
+    }
+
+    return (
+        <Svg width={width} height={waveHeight * 2 + 2} style={styles.wavyUnderline}>
+            <Path d={pathD} stroke={color} strokeWidth={2} fill="none" />
+        </Svg>
+    );
+}
+
+// Frustration card data matching the inspiration design
 const PARENT_FRUSTRATIONS = [
     {
         id: 'repeat',
         emoji: '🔁',
-        title: 'Repeating yourself 10x',
-        subtitle: 'And still being ignored',
-        delay: 300,
+        title: 'Repeating Yourself',
+        subtitle: '"How many times do I have to say it?"',
+        rotation: -4,
+        translateX: -5,
+        delay: 200,
+        backgroundColor: '#EFF6FF', // blue-50
     },
     {
-        id: 'meltdowns',
-        emoji: '😤',
-        title: 'Public meltdowns',
-        subtitle: 'Over the smallest things',
-        delay: 700,
+        id: 'public',
+        emoji: '🫣',
+        title: 'Public Scenes',
+        subtitle: 'The fear of a meltdown at the store.',
+        rotation: 3,
+        translateX: 5,
+        delay: 500,
+        backgroundColor: '#FFF7ED', // orange-50
     },
     {
         id: 'exhausted',
-        emoji: '😴',
-        title: 'Ending the day exhausted',
-        subtitle: 'From constant negotiations',
-        delay: 1100,
+        emoji: '😮‍💨',
+        title: 'Pure Exhaustion',
+        subtitle: 'Ending the day feeling defeated.',
+        rotation: -2,
+        translateX: 0,
+        delay: 800,
+        backgroundColor: '#F8FAFC', // slate-100
     },
 ];
+
+// Individual frustration card with drop animation
+function FrustrationCard({
+    item,
+    index,
+}: {
+    item: typeof PARENT_FRUSTRATIONS[0];
+    index: number;
+}) {
+    const translateY = useSharedValue(-400);
+    const rotate = useSharedValue(item.rotation * 5);
+    const opacity = useSharedValue(0);
+    const translateX = useSharedValue(0);
+    const targetY = index * 115;
+
+    useEffect(() => {
+        const timeout = setTimeout(() => {
+            translateY.value = withSpring(targetY, {
+                stiffness: 120,
+                damping: 14,
+                mass: 1.2,
+            });
+            rotate.value = withSpring(item.rotation, {
+                stiffness: 120,
+                damping: 14,
+            });
+            translateX.value = withSpring(item.translateX, {
+                stiffness: 120,
+                damping: 14,
+            });
+            opacity.value = withTiming(1, { duration: 300 });
+        }, item.delay);
+
+        return () => clearTimeout(timeout);
+    }, []);
+
+    const animatedStyle = useAnimatedStyle(() => ({
+        transform: [
+            { translateY: translateY.value },
+            { translateX: translateX.value },
+            { rotate: `${rotate.value}deg` },
+        ],
+        opacity: opacity.value,
+    }));
+
+    return (
+        <Animated.View
+            style={[
+                styles.cardWrapper,
+                { zIndex: index + 1 },
+                animatedStyle,
+            ]}
+        >
+            <View style={[styles.frustrationCard, { backgroundColor: item.backgroundColor }]}>
+                <View style={styles.emojiContainer}>
+                    <Text style={styles.emoji}>{item.emoji}</Text>
+                </View>
+                <View style={styles.cardContent}>
+                    <Text style={styles.cardTitle}>{item.title}</Text>
+                    <Text style={styles.cardSubtitle}>{item.subtitle}</Text>
+                </View>
+            </View>
+        </Animated.View>
+    );
+}
 
 export default function IntroSlide2() {
     const router = useRouter();
     const [showButton, setShowButton] = useState(false);
 
     useEffect(() => {
-        const timer = setTimeout(() => setShowButton(true), 2000);
+        const timer = setTimeout(() => setShowButton(true), 1800);
         return () => clearTimeout(timer);
     }, []);
 
@@ -48,45 +149,43 @@ export default function IntroSlide2() {
     return (
         <OnboardingLayout
             onNext={handleNext}
-            nextLabel="There has to be a better way"
+            nextLabel="I need a better way"
             showNextButton={showButton}
             showProgressBar={false}
+            backgroundColor="#F8FAFC" // slate-50
         >
             <View style={styles.container}>
-                <Animated.View entering={FadeIn.delay(100).duration(500)} style={styles.headerContainer}>
-                    <Text style={styles.title}>Sound familiar?</Text>
-                    <Text style={styles.subtitle}>These struggles are exhausting</Text>
+                {/* Header with highlighted "CONSTANT BATTLE" text */}
+                <Animated.View
+                    entering={FadeIn.delay(100).duration(600)}
+                    style={styles.headerContainer}
+                >
+                    <Text style={styles.titleText}>
+                        It feels like a
+                    </Text>
+
+                    {/* Highlighted banner text */}
+                    <View style={styles.highlightWrapper}>
+                        <View style={styles.highlightBackground} />
+                        <Text style={styles.highlightText}>CONSTANT BATTLE</Text>
+                    </View>
+
+                    <Text style={styles.descriptionText}>
+                        Traditional discipline often just creates{' '}
+                    </Text>
+                    <View style={styles.resistanceWrapper}>
+                        <Text style={styles.resistanceText}>more resistance</Text>
+                        <WavyUnderline width={130} color="#F87171" />
+                    </View>
+                    <Text style={styles.descriptionText}>.</Text>
                 </Animated.View>
 
-                <View style={styles.frustrationContainer}>
-                    {PARENT_FRUSTRATIONS.map((item) => (
-                        <Animated.View
-                            key={item.id}
-                            entering={FadeInUp.delay(item.delay).duration(500)}
-                            style={styles.frustrationCard}
-                        >
-                            <Animated.Text
-                                entering={ZoomIn.delay(item.delay + 150).duration(300)}
-                                style={styles.emoji}
-                            >
-                                {item.emoji}
-                            </Animated.Text>
-                            <View style={styles.frustrationTextWrapper}>
-                                <Text style={styles.frustrationTitle}>{item.title}</Text>
-                                <Text style={styles.frustrationSubtitle}>{item.subtitle}</Text>
-                            </View>
-                        </Animated.View>
+                {/* Stacked Frustration Cards */}
+                <View style={styles.cardsContainer}>
+                    {PARENT_FRUSTRATIONS.map((item, index) => (
+                        <FrustrationCard key={item.id} item={item} index={index} />
                     ))}
                 </View>
-
-                <Animated.View
-                    entering={FadeIn.delay(1600).duration(500)}
-                    style={styles.reassurance}
-                >
-                    <Text style={styles.reassuranceText}>
-                        It's not your fault. Traditional approaches don't work for every child.
-                    </Text>
-                </Animated.View>
             </View>
         </OnboardingLayout>
     );
@@ -96,62 +195,132 @@ const styles = StyleSheet.create({
     container: {
         alignItems: 'center',
         width: '100%',
+        flex: 1,
     },
     headerContainer: {
         alignItems: 'center',
-        marginBottom: OnboardingTheme.Spacing.xl,
+        marginBottom: 40,
+        marginTop: 16,
     },
-    title: {
+    titleText: {
         fontSize: 28,
+        fontWeight: '900',
+        color: '#1E293B', // slate-800
+        textAlign: 'center',
+        marginBottom: 8,
+    },
+    highlightWrapper: {
+        position: 'relative',
+        paddingHorizontal: 16,
+        paddingVertical: 6,
+        marginVertical: 8,
+        transform: [{ rotate: '-1deg' }],
+    },
+    highlightBackground: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: '#FDE047', // yellow-300
+        borderWidth: 2,
+        borderColor: '#000000',
+        // Shadow for the "pressed" effect
+        shadowColor: '#000000',
+        shadowOffset: { width: 4, height: 4 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
+        elevation: 4,
+    },
+    highlightText: {
+        fontSize: 26,
+        fontWeight: '900',
+        color: '#000000',
+        textAlign: 'center',
+        letterSpacing: 0.5,
+        zIndex: 1,
+    },
+    descriptionText: {
+        fontSize: 17,
+        color: '#64748B', // slate-500
+        textAlign: 'center',
+        lineHeight: 26,
+        marginTop: 16,
+        fontWeight: '500',
+        maxWidth: '90%',
+    },
+    resistanceWrapper: {
+        alignItems: 'center',
+        marginTop: -4,
+    },
+    resistanceText: {
+        fontSize: 17,
         fontWeight: '800',
-        color: OnboardingTheme.Colors.Text,
-        textAlign: 'center',
-        marginBottom: OnboardingTheme.Spacing.xs,
+        color: '#1E293B', // slate-800
     },
-    subtitle: {
-        fontSize: 16,
-        color: OnboardingTheme.Colors.TextSecondary,
-        textAlign: 'center',
+    wavyUnderline: {
+        marginTop: -2,
     },
-    frustrationContainer: {
+    cardsContainer: {
         width: '100%',
-        gap: OnboardingTheme.Spacing.md,
+        height: 420,
+        position: 'relative',
+        alignItems: 'center',
+    },
+    cardWrapper: {
+        position: 'absolute',
+        top: 0,
+        width: '100%',
+        maxWidth: 340,
+        alignSelf: 'center',
     },
     frustrationCard: {
+        borderRadius: 24,
+        padding: 20,
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#f9fafb',
-        borderRadius: OnboardingTheme.Radius.xl,
-        padding: OnboardingTheme.Spacing.md,
+        borderWidth: 2,
+        borderColor: 'rgba(15, 23, 42, 0.05)', // slate-900/5
+        // Shadow matching the inspiration
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: 20 },
+        shadowOpacity: 0.15,
+        shadowRadius: 40,
+        elevation: 8,
+    },
+    emojiContainer: {
+        width: 56,
+        height: 56,
+        borderRadius: 16,
+        backgroundColor: '#FFFFFF',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 16,
         borderWidth: 1,
-        borderColor: OnboardingTheme.Colors.Border,
+        borderColor: '#F1F5F9', // slate-100
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 2,
+        elevation: 1,
     },
     emoji: {
-        fontSize: 36,
-        marginRight: OnboardingTheme.Spacing.md,
+        fontSize: 28,
     },
-    frustrationTextWrapper: {
+    cardContent: {
         flex: 1,
     },
-    frustrationTitle: {
-        fontSize: 17,
+    cardTitle: {
+        fontSize: 18,
         fontWeight: '700',
-        color: OnboardingTheme.Colors.Text,
-        marginBottom: 2,
-    },
-    frustrationSubtitle: {
-        fontSize: 14,
-        color: OnboardingTheme.Colors.TextSecondary,
-    },
-    reassurance: {
-        marginTop: OnboardingTheme.Spacing.xl,
-        paddingHorizontal: OnboardingTheme.Spacing.md,
-    },
-    reassuranceText: {
-        fontSize: 15,
-        color: OnboardingTheme.Colors.TextSecondary,
-        textAlign: 'center',
+        color: '#1E293B', // slate-800
+        marginBottom: 4,
         lineHeight: 22,
-        fontStyle: 'italic',
+    },
+    cardSubtitle: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#64748B', // slate-500
+        lineHeight: 20,
     },
 });
