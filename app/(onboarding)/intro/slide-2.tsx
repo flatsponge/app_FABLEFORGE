@@ -3,10 +3,10 @@ import { View, StyleSheet, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, {
     FadeIn,
-    withSpring,
     useSharedValue,
     useAnimatedStyle,
     withTiming,
+    Easing,
 } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
 import OnboardingLayout from '../../../components/OnboardingLayout';
@@ -83,20 +83,12 @@ function FrustrationCard({
     const targetY = index * 115;
 
     useEffect(() => {
+        const easeConfig = { duration: 600, easing: Easing.out(Easing.cubic) };
+
         const timeout = setTimeout(() => {
-            translateY.value = withSpring(targetY, {
-                stiffness: 120,
-                damping: 14,
-                mass: 1.2,
-            });
-            rotate.value = withSpring(item.rotation, {
-                stiffness: 120,
-                damping: 14,
-            });
-            translateX.value = withSpring(item.translateX, {
-                stiffness: 120,
-                damping: 14,
-            });
+            translateY.value = withTiming(targetY, easeConfig);
+            rotate.value = withTiming(item.rotation, easeConfig);
+            translateX.value = withTiming(item.translateX, easeConfig);
             opacity.value = withTiming(1, { duration: 300 });
         }, item.delay);
 
@@ -203,17 +195,18 @@ const styles = StyleSheet.create({
         marginTop: 16,
     },
     titleText: {
-        fontSize: 28,
+        fontSize: 36,
         fontWeight: '900',
         color: '#1E293B', // slate-800
         textAlign: 'center',
-        marginBottom: 8,
+        marginBottom: 4,
+        letterSpacing: -1,
     },
     highlightWrapper: {
         position: 'relative',
-        paddingHorizontal: 16,
-        paddingVertical: 6,
-        marginVertical: 8,
+        paddingHorizontal: 20,
+        paddingVertical: 8,
+        marginVertical: 4,
         transform: [{ rotate: '-1deg' }],
     },
     highlightBackground: {
@@ -223,21 +216,21 @@ const styles = StyleSheet.create({
         right: 0,
         bottom: 0,
         backgroundColor: '#FDE047', // yellow-300
-        borderWidth: 2,
+        borderWidth: 3,
         borderColor: '#000000',
         // Shadow for the "pressed" effect
         shadowColor: '#000000',
-        shadowOffset: { width: 4, height: 4 },
+        shadowOffset: { width: 6, height: 6 },
         shadowOpacity: 1,
         shadowRadius: 0,
-        elevation: 4,
+        elevation: 6,
     },
     highlightText: {
-        fontSize: 26,
+        fontSize: 42,
         fontWeight: '900',
         color: '#000000',
         textAlign: 'center',
-        letterSpacing: 0.5,
+        letterSpacing: -1,
         zIndex: 1,
     },
     descriptionText: {

@@ -223,15 +223,18 @@ const styles = StyleSheet.create({
         letterSpacing: 1,
     },
     title: {
-        fontSize: 32,
-        fontWeight: '800',
+        fontSize: 36,
+        fontWeight: '900',
         color: OnboardingTheme.Colors.Text,
-        marginBottom: 4,
+        marginBottom: 2,
         textAlign: 'center',
-        lineHeight: 40,
+        lineHeight: 42,
+        letterSpacing: -1,
     },
     titleHighlight: {
+        fontSize: 48,
         color: '#059669', // emerald-600
+        lineHeight: 56,
     },
     underlineSvg: {
         marginTop: -8,

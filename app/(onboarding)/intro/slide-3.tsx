@@ -1,20 +1,17 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { View, Text, findNodeHandle } from 'react-native';
+import { View, Text, findNodeHandle, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, {
     useAnimatedStyle,
     useSharedValue,
     withTiming,
-    withRepeat,
-    withSequence,
     withDelay,
     FadeInDown,
-    ZoomIn,
     Easing,
     interpolateColor,
     withSpring,
 } from 'react-native-reanimated';
-import { ScanFace, Sparkles, Sprout, BookOpen } from 'lucide-react-native';
+import { ScanFace, Sparkles, Sprout } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 
@@ -27,22 +24,22 @@ const PROCESS_STEPS = [
     {
         id: 'identify',
         icon: ScanFace,
-        title: 'Identify',
-        desc: 'Pinpoint the behavior.',
+        title: 'Pinpoint',
+        desc: 'Select the behavior.',
         activeColor: '#2563eb', // blue-600
     },
     {
         id: 'create',
         icon: Sparkles,
-        title: 'Create',
-        desc: 'AI weaves the story.',
+        title: 'Generate',
+        desc: 'Get a magic story.',
         activeColor: '#7c3aed', // violet-600
     },
     {
         id: 'grow',
         icon: Sprout,
-        title: 'Grow',
-        desc: 'Child learns naturally.',
+        title: 'Transform',
+        desc: 'Watch habits change.',
         activeColor: '#059669', // emerald-600
     },
 ];
@@ -67,9 +64,6 @@ export default function Slide3() {
     // Store measured positions using ref for immediate access
     const iconPositionsRef = useRef<IconPosition[]>([]);
     const measuredCount = useRef(0);
-
-    // Hero Animations
-    const heroFloat = useSharedValue(0);
 
     // Timeline Animation
     const timelineHeight = useSharedValue(0);
@@ -135,19 +129,10 @@ export default function Slide3() {
         iconRefs.current[index] = ref;
     }, []);
 
-    // Start hero and timeline animations immediately
+    // Start timeline animation immediately
     useEffect(() => {
-        heroFloat.value = withRepeat(
-            withSequence(
-                withTiming(-4, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
-                withTiming(4, { duration: 2000, easing: Easing.inOut(Easing.ease) })
-            ),
-            -1,
-            true
-        );
-
         timelineHeight.value = withDelay(800, withTiming(100, { duration: 2400, easing: Easing.linear }));
-    }, [heroFloat, timelineHeight]);
+    }, [timelineHeight]);
 
     // Start step animations ONLY after layout is ready
     useEffect(() => {
@@ -170,9 +155,7 @@ export default function Slide3() {
         };
     }, [layoutReady, animateLensToStep]);
 
-    const animatedHeroStyle = useAnimatedStyle(() => ({
-        transform: [{ translateY: heroFloat.value }]
-    }));
+
 
     const animatedTimelineStyle = useAnimatedStyle(() => ({
         height: `${timelineHeight.value}%`
@@ -217,45 +200,29 @@ export default function Slide3() {
 
             <View className="flex-1 items-center w-full relative z-10 pt-4 px-4">
 
-                {/* Hero: Floating Core */}
-                <View className="relative mb-12 mt-4 items-center justify-center">
-                    {/* Back Glow */}
-                    <View className="absolute w-32 h-32 bg-violet-400/20 rounded-full blur-[40px]" />
-
-                    <Animated.View
-                        entering={ZoomIn.duration(800)}
-                        className="relative items-center justify-center"
-                    >
-                        {/* Main Icon Container - Floating Animation */}
-                        <Animated.View
-                            style={[animatedHeroStyle]}
-                            className="w-24 h-24 bg-slate-800 rounded-[28px] items-center justify-center shadow-xl border border-slate-700/50 overflow-hidden"
-                        >
-                            <LinearGradient
-                                colors={['#0f172a', '#1e293b']}
-                                start={{ x: 0, y: 1 }}
-                                end={{ x: 1, y: 0 }}
-                                className="absolute inset-0"
-                            />
-
-                            {/* Inner Gradient Border Effect */}
-                            <View className="absolute inset-[1px] rounded-[27px] border border-white/10 pointer-events-none" />
-
-                            <BookOpen size={40} color="white" strokeWidth={1.5} style={{ opacity: 0.9 }} />
-                        </Animated.View>
-                    </Animated.View>
-                </View>
-
                 {/* Header Text */}
                 <Animated.View
                     entering={FadeInDown.delay(300).duration(500)}
-                    className="items-center mb-12 px-6"
+                    className="items-center mb-10 px-4 mt-8 w-full"
                 >
-                    <Text className="text-3xl font-bold text-slate-900 mb-2 text-center tracking-tight">
-                        Magic in <Text className="text-violet-600">Three Steps</Text>
+                    <Text className="text-4xl font-black text-slate-900 text-center tracking-tight">
+                        Peace in just
                     </Text>
-                    <Text className="text-slate-500 text-[15px] font-medium leading-relaxed text-center">
-                        Complex psychology, simplified into a bedtime story.
+
+                    {/* Chapter Title Style */}
+                    <View className="flex-row items-center justify-center w-full max-w-[340px] mt-1">
+                        <View className="h-[2px] flex-1 bg-violet-200 rounded-full" />
+                        <View className="mx-3 flex-row items-center">
+                            <Text className="text-5xl font-black text-violet-600 tracking-tighter">
+                                3 STEPS
+                            </Text>
+                            <Sparkles size={32} color="#7c3aed" fill="#ddd6fe" style={{ marginLeft: 8 }} />
+                        </View>
+                        <View className="h-[2px] flex-1 bg-violet-200 rounded-full" />
+                    </View>
+
+                    <Text className="text-slate-500 text-[16px] font-medium leading-relaxed text-center mt-8 max-w-[90%]">
+                        Advanced psychology, hidden in a bedtime story.
                     </Text>
                 </Animated.View>
 
@@ -391,3 +358,5 @@ function StepItem({ step, index, isActive, setIconRef }: StepItemProps) {
         </Animated.View>
     );
 }
+
+const styles = StyleSheet.create({});
