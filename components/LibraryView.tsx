@@ -7,7 +7,7 @@ import Animated, {
   withTiming,
   Easing,
 } from 'react-native-reanimated';
-import { Search, Heart, Clock, Sparkles, Loader2, Hourglass } from 'lucide-react-native';
+import { Search, ThumbsUp, Clock, Sparkles, Loader2, Hourglass } from 'lucide-react-native';
 import { BOOKS } from '@/constants/data';
 import { BookCard } from './BookCard';
 import { Book } from '@/types';
@@ -55,9 +55,8 @@ const SpinningLoader = () => {
 
 const QueuedBookCard = ({ book }: { book: QueuedBook }) => (
   <View
-    className={`w-full aspect-[4/5] rounded-[32px] p-5 border-2 border-dashed border-purple-200/60 justify-between overflow-hidden ${
-      book.progress > 0 ? 'bg-orange-50/30' : 'bg-purple-50/30'
-    }`}
+    className={`w-full aspect-[4/5] rounded-[32px] p-5 border-2 border-dashed border-purple-200/60 justify-between overflow-hidden ${book.progress > 0 ? 'bg-orange-50/30' : 'bg-purple-50/30'
+      }`}
   >
     <View className="flex-row justify-between items-start">
       <View className="p-2 bg-white rounded-full border border-slate-100">
@@ -76,9 +75,8 @@ const QueuedBookCard = ({ book }: { book: QueuedBook }) => (
       <View className="flex-row items-center gap-1.5">
         <View className="relative w-2 h-2">
           <View
-            className={`w-2 h-2 rounded-full ${
-              book.progress > 0 ? 'bg-purple-500' : 'bg-slate-300'
-            }`}
+            className={`w-2 h-2 rounded-full ${book.progress > 0 ? 'bg-purple-500' : 'bg-slate-300'
+              }`}
           />
         </View>
         <Text className="text-xs font-bold text-purple-500 uppercase tracking-wide" numberOfLines={1}>
@@ -113,7 +111,7 @@ const getRecencyScore = (dateStr: string) => {
 const FILTERS: { id: FilterType; label: string; icon?: typeof Sparkles }[] = [
   { id: 'all', label: 'All Books' },
   { id: 'newest', label: 'Newest', icon: Sparkles },
-  { id: 'favorites', label: 'Favorites', icon: Heart },
+  { id: 'favorites', label: 'Favorites', icon: ThumbsUp },
   { id: 'unfinished', label: 'Continue', icon: Clock },
 ];
 
@@ -128,7 +126,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onBookClick, isHome = 
 
     if (!matchesSearch) return false;
 
-    if (filter === 'favorites') return book.isLiked;
+    if (filter === 'favorites') return book.userRating === 'up';
     if (filter === 'unfinished') return book.progress > 0 && book.progress < 100;
     return true;
   });
@@ -182,11 +180,10 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onBookClick, isHome = 
               <Pressable
                 key={f.id}
                 onPress={() => setFilter(f.id)}
-                className={`flex-row items-center gap-1.5 px-4 py-2.5 rounded-full border ${
-                  isActive
+                className={`flex-row items-center gap-1.5 px-4 py-2.5 rounded-full border ${isActive
                     ? 'bg-slate-800 border-slate-800'
                     : 'bg-white border-slate-200'
-                } active:scale-95`}
+                  } active:scale-95`}
               >
                 {Icon && (
                   <Icon
@@ -195,9 +192,8 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onBookClick, isHome = 
                   />
                 )}
                 <Text
-                  className={`text-xs font-bold ${
-                    isActive ? 'text-white' : 'text-slate-500'
-                  }`}
+                  className={`text-xs font-bold ${isActive ? 'text-white' : 'text-slate-500'
+                    }`}
                 >
                   {f.label}
                 </Text>

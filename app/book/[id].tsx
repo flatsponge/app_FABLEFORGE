@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable, Image, StyleSheet } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ChevronLeft, Star, Play, Baby, Glasses, Clock, Heart, Zap, Sparkles } from 'lucide-react-native';
+import { ChevronLeft, Play, Baby, Glasses, Clock, Zap, Sparkles, ThumbsUp, ThumbsDown } from 'lucide-react-native';
 import { BOOKS } from '@/constants/data';
 import { ReadingMode } from '@/types';
 
 const getDifficultyStyle = (level: string) => {
-  switch(level) {
+  switch (level) {
     case 'Beginner': return { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-100' };
     case 'Intermediate': return { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-100' };
     case 'Advanced': return { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-100' };
@@ -17,10 +17,17 @@ const getDifficultyStyle = (level: string) => {
 export default function BookDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const [isLiked, setIsLiked] = useState(false);
-  
   const book = BOOKS.find(b => b.id === Number(id));
-  
+  const [userRating, setUserRating] = useState<'up' | 'down' | null>(book?.userRating || null);
+
+  const handleRating = (rating: 'up' | 'down') => {
+    if (userRating === rating) {
+      setUserRating(null);
+    } else {
+      setUserRating(rating);
+    }
+  };
+
   if (!book) {
     return (
       <View className="flex-1 bg-background items-center justify-center">
@@ -42,61 +49,86 @@ export default function BookDetailsScreen() {
   return (
     <View className="flex-1 bg-background">
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        <View className="relative h-[400px]">
-          <Image 
+        {/* Hero Section with integrated title and metadata */}
+        <View className="relative h-[420px]">
+          <Image
             source={{ uri: book.coverImage }}
             style={StyleSheet.absoluteFill}
             resizeMode="cover"
           />
-          <View className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-black/40" />
-          
-          <View className="absolute top-14 left-0 right-0 px-6 flex-row justify-between">
-            <Pressable 
+          {/* Gradient overlay for text readability */}
+          <View className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/30" />
+
+          {/* Back button */}
+          <View className="absolute top-14 left-0 right-0 px-6">
+            <Pressable
               onPress={handleBack}
-              className="w-11 h-11 rounded-full bg-black/20 items-center justify-center active:scale-95"
+              className="w-11 h-11 rounded-full bg-black/30 items-center justify-center active:scale-95"
             >
               <ChevronLeft size={24} color="white" />
             </Pressable>
-            <Pressable 
-              onPress={() => setIsLiked(!isLiked)}
-              className={`w-11 h-11 rounded-full items-center justify-center active:scale-95 ${
-                isLiked ? 'bg-white' : 'bg-black/20'
-              }`}
-            >
-              <Heart 
-                size={20} 
-                color={isLiked ? '#f43f5e' : 'white'} 
-                fill={isLiked ? '#f43f5e' : 'none'}
-              />
-            </Pressable>
           </View>
-        </View>
 
-        <View className="px-8 -mt-24 pb-12">
-          <View className="items-center mb-10">
-            <Text className="text-4xl font-extrabold text-slate-800 mb-2 text-center leading-tight">
+          {/* Title and metadata overlaid on hero */}
+          <View className="absolute bottom-0 left-0 right-0 px-6 pb-6">
+            <Text className="text-3xl font-extrabold text-white mb-3 leading-tight">
               {book.title}
             </Text>
-            <Text className="text-slate-500 font-bold text-lg mb-6">by {book.author}</Text>
-            
-            <View className="flex-row flex-wrap items-center justify-center gap-3">
-              <View className="flex-row items-center gap-2 bg-white px-4 py-2 rounded-2xl border border-slate-100 shadow-sm">
-                <Star size={16} color="#facc15" fill="#facc15" />
-                <Text className="text-slate-700 font-bold text-sm">{book.rating}</Text>
+            <View className="flex-row items-center gap-2">
+              <View className="flex-row items-center gap-1.5 bg-white/20 px-3 py-1.5 rounded-full">
+                <Clock size={14} color="white" />
+                <Text className="text-white font-bold text-xs">{book.duration}</Text>
               </View>
-              <View className="flex-row items-center gap-2 bg-white px-4 py-2 rounded-2xl border border-slate-100 shadow-sm">
-                <Clock size={16} color="#94a3b8" />
-                <Text className="text-slate-700 font-bold text-sm">{book.duration}</Text>
-              </View>
-              <View className={`flex-row items-center gap-2 px-4 py-2 rounded-2xl border shadow-sm ${diffStyle.bg} ${diffStyle.border}`}>
-                <Zap size={16} color={diffStyle.text.includes('emerald') ? '#047857' : diffStyle.text.includes('amber') ? '#b45309' : '#be123c'} />
-                <Text className={`font-bold text-sm ${diffStyle.text}`}>{book.vocabularyLevel}</Text>
+              <View className={`flex-row items-center gap-1.5 px-3 py-1.5 rounded-full ${book.vocabularyLevel === 'Beginner' ? 'bg-emerald-500/80' :
+                book.vocabularyLevel === 'Intermediate' ? 'bg-amber-500/80' : 'bg-rose-500/80'
+                }`}>
+                <Zap size={14} color="white" />
+                <Text className="text-white font-bold text-xs">{book.vocabularyLevel}</Text>
               </View>
             </View>
           </View>
+        </View>
 
-          <View className="mb-10 bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-            <View className="flex-row items-center gap-2 mb-3">
+        <View className="px-6 py-5">
+          {/* Rating Control - smaller and more subtle */}
+          <View className="flex-row items-center justify-center gap-3 mb-5">
+            <Pressable
+              onPress={() => handleRating('up')}
+              className={`flex-row items-center gap-2 px-5 py-2.5 rounded-full border active:scale-95 ${userRating === 'up'
+                ? 'bg-green-50 border-green-400'
+                : 'bg-slate-50 border-slate-200'
+                }`}
+            >
+              <ThumbsUp
+                size={16}
+                color={userRating === 'up' ? '#22c55e' : '#94a3b8'}
+                fill={userRating === 'up' ? '#22c55e' : 'none'}
+              />
+              <Text className={`font-semibold text-sm ${userRating === 'up' ? 'text-green-600' : 'text-slate-500'}`}>
+                I like it
+              </Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => handleRating('down')}
+              className={`flex-row items-center gap-2 px-5 py-2.5 rounded-full border active:scale-95 ${userRating === 'down'
+                ? 'bg-red-50 border-red-400'
+                : 'bg-slate-50 border-slate-200'
+                }`}
+            >
+              <ThumbsDown
+                size={16}
+                color={userRating === 'down' ? '#ef4444' : '#94a3b8'}
+                fill={userRating === 'down' ? '#ef4444' : 'none'}
+              />
+              <Text className={`font-semibold text-sm ${userRating === 'down' ? 'text-red-600' : 'text-slate-500'}`}>
+                Not for me
+              </Text>
+            </Pressable>
+          </View>
+
+          <View className="mb-6 bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
+            <View className="flex-row items-center gap-2 mb-2">
               <Sparkles size={12} color="#9333ea" />
               <Text className="text-xs font-black text-slate-900 uppercase tracking-widest">Story Synopsis</Text>
             </View>
@@ -105,12 +137,10 @@ export default function BookDetailsScreen() {
             </Text>
           </View>
 
-          <View className="gap-4">
-            <Text className="text-xs font-black text-slate-400 uppercase tracking-widest text-center mb-4">
-              Start Reading
-            </Text>
-            
-            <Pressable 
+          <View className="gap-3">
+
+
+            <Pressable
               onPress={() => handleSelectMode('autoplay')}
               className="p-1 rounded-3xl bg-slate-900 shadow-xl active:scale-[0.98]"
             >
@@ -126,7 +156,7 @@ export default function BookDetailsScreen() {
             </Pressable>
 
             <View className="flex-row gap-4">
-              <Pressable 
+              <Pressable
                 onPress={() => handleSelectMode('child')}
                 className="flex-1 p-5 rounded-3xl bg-white border border-slate-200 items-center justify-center gap-3 active:scale-95 shadow-sm"
               >
@@ -136,7 +166,7 @@ export default function BookDetailsScreen() {
                 <Text className="font-bold text-slate-800 text-sm">Read Myself</Text>
               </Pressable>
 
-              <Pressable 
+              <Pressable
                 onPress={() => handleSelectMode('parent')}
                 className="flex-1 p-5 rounded-3xl bg-white border border-slate-200 items-center justify-center gap-3 active:scale-95 shadow-sm"
               >

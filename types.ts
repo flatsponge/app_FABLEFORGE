@@ -14,11 +14,10 @@ export interface Book {
   color: string;
   coverImage: string;
   iconName: string;
-  rating: number;
   duration: string;
   description: string;
   vocabularyLevel: 'Beginner' | 'Intermediate' | 'Advanced';
-  isLiked: boolean;
+  userRating: 'up' | 'down' | null;
   generatedDate: string;
 }
 
