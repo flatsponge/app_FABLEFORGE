@@ -1,6 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
-import Animated, { useSharedValue, useAnimatedScrollHandler } from 'react-native-reanimated';
+import Animated, {
+  useSharedValue,
+  useAnimatedScrollHandler,
+  useAnimatedProps,
+  withTiming,
+  Easing,
+  interpolateColor,
+  useDerivedValue
+} from 'react-native-reanimated';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
 import {
   Heart,
@@ -23,6 +31,8 @@ import {
 } from 'lucide-react-native';
 import Svg, { Circle, Path, Line, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { LucideIcon } from 'lucide-react-native';
+
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 interface SubSkill {
   name: string;
@@ -672,6 +682,113 @@ const DetailView = ({ skill, onBack }: { skill: Skill; onBack: () => void }) => 
   );
 };
 
+// Helper to calculate total growth score
+const calculateTotalScore = (skills: Skill[]) => {
+  const total = skills.reduce((sum, skill) => sum + skill.progress, 0);
+  return Math.round(total / skills.length);
+};
+
+const getMotivationalMessage = (score: number) => {
+  if (score >= 80) return "You're a Superstar! 🌟";
+  if (score >= 60) return "Excellent Progress! 🚀";
+  if (score >= 40) return "Great Start! 🌱";
+  return "Keep Growing! ✨";
+};
+
+const GrowthScoreWidget = () => {
+  const totalScore = calculateTotalScore(SKILLS_DATA);
+  const size = 200;
+  const strokeWidth = 20;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+
+  const progress = useSharedValue(0);
+
+  useEffect(() => {
+    progress.value = withTiming(totalScore / 100, {
+      duration: 1500,
+      easing: Easing.out(Easing.exp),
+    });
+  }, [totalScore]);
+
+  const animatedProps = useAnimatedProps(() => {
+    const strokeDashoffset = circumference * (1 - progress.value);
+    return {
+      strokeDashoffset,
+    };
+  });
+
+  return (
+    <View className="items-center justify-center mb-10 mt-4">
+      <View className="relative shadow-xl shadow-indigo-200/50 rounded-full" style={{ width: size, height: size }}>
+        {/* Background Circle */}
+        <Svg width={size} height={size} style={{ transform: [{ rotate: '-90deg' }] }}>
+          {/* Track */}
+          <Circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            stroke="#f1f5f9"
+            strokeWidth={strokeWidth}
+            strokeLinecap="round"
+          />
+
+          {/* Progress Circle with Gradient */}
+          <Defs>
+            <LinearGradient id="scoreGradient" x1="0" y1="0" x2="1" y2="1">
+              <Stop offset="0%" stopColor="#6366f1" />
+              <Stop offset="50%" stopColor="#8b5cf6" />
+              <Stop offset="100%" stopColor="#ec4899" />
+            </LinearGradient>
+            <LinearGradient id="glowGradient" x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0%" stopColor="#818cf8" stopOpacity={0.2} />
+              <Stop offset="100%" stopColor="#c084fc" stopOpacity={0} />
+            </LinearGradient>
+          </Defs>
+
+          {/* The Animated Progress Circle */}
+          <AnimatedCircle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            stroke="url(#scoreGradient)"
+            strokeWidth={strokeWidth}
+            strokeDasharray={`${circumference} ${circumference}`}
+            animatedProps={animatedProps}
+            strokeLinecap="round"
+          />
+        </Svg>
+
+        {/* Inner Content */}
+        <View className="absolute inset-0 items-center justify-center">
+          <View className="items-center justify-center">
+            <Text className="text-6xl font-black text-slate-800 tracking-tighter leading-none mt-2">
+              {totalScore}
+            </Text>
+            <Text className="text-3xl font-bold text-slate-300 -mt-2">%</Text>
+          </View>
+          <View className="bg-indigo-50 px-3 py-1 rounded-full mt-2 border border-indigo-100">
+            <Text className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">
+              Total Growth
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      <View className="mt-6 items-center">
+        <Text className="text-lg font-bold text-slate-800 mb-1">
+          {getMotivationalMessage(totalScore)}
+        </Text>
+        <Text className="text-slate-400 text-xs font-medium text-center max-w-[220px] leading-5">
+          Combine all core values to unlock your child's full potential
+        </Text>
+      </View>
+    </View>
+  );
+};
+
 export default function StatsScreen() {
   const [selectedSkillId, setSelectedSkillId] = useState<string | null>(null);
   const selectedSkill = SKILLS_DATA.find(s => s.id === selectedSkillId);
@@ -690,28 +807,24 @@ export default function StatsScreen() {
       <View className="absolute top-0 left-0 right-0 z-10">
         <UnifiedHeader title="Growth" scrollY={scrollY} />
       </View>
-      
-      <Animated.ScrollView 
-        className="flex-1" 
+
+      <Animated.ScrollView
+        className="flex-1"
         contentContainerStyle={{ paddingBottom: 100 }}
         onScroll={scrollHandler}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
       >
-        <View className="pt-28 px-6 pb-2">
+        <View className="pt-28 px-6 pb-6">
           <Text className="text-4xl font-bold text-slate-900 dark:text-white tracking-tight">
             Growth
           </Text>
         </View>
 
-        <View className="px-6 py-4">
-          <Text className="text-sm font-medium text-slate-500 text-center">
-            Impact from 12 books read
-          </Text>
-        </View>
-
         <View className="px-6">
           <ReadingStreakWidget />
+
+          <GrowthScoreWidget />
 
           <View className="mb-8">
             <View className="flex-row items-center gap-2 mb-5 px-1">

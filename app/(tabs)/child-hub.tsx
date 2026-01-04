@@ -47,84 +47,47 @@ const DEFAULT_AVATAR: AvatarConfig = {
   toyId: 'none',
 };
 
-// Animated bottle component that throws into the well
-// The bottle starts small near the button and arcs up into the well center
 const AnimatedBottle = ({ onComplete, onLanded }: { onComplete: () => void; onLanded: () => void }) => {
-  // Animation values for the throw trajectory
-  const progress = useSharedValue(0);
-  const opacity = useSharedValue(0);
-  const scale = useSharedValue(0.6);
+  const translateY = useSharedValue(0);
+  const opacity = useSharedValue(1);
+  const scale = useSharedValue(1);
   const rotate = useSharedValue(0);
 
   useEffect(() => {
-    // Fade in quickly
-    opacity.value = withTiming(1, { duration: 150 });
+    const duration = 800;
     
-    // Main throw animation - smooth arc from bottom to center of well
-    // Total duration: 800ms for the throw
-    progress.value = withTiming(1, {
-      duration: 800,
-      easing: Easing.out(Easing.cubic),
+    translateY.value = withTiming(-180, {
+      duration,
+      easing: Easing.out(Easing.quad),
     });
 
-    // Scale: Start medium (0.6), grow slightly during flight (0.8), then shrink as it enters well
-    scale.value = withSequence(
-      withTiming(0.85, { duration: 400, easing: Easing.out(Easing.quad) }),
-      withTiming(0.2, { duration: 400, easing: Easing.in(Easing.cubic) })
-    );
-
-    // Gentle rotation - just a subtle tumble
-    rotate.value = withTiming(360, {
-      duration: 800,
-      easing: Easing.out(Easing.cubic),
+    scale.value = withTiming(0.25, {
+      duration,
+      easing: Easing.in(Easing.quad),
     });
 
-    // Trigger glitter when bottle reaches well center (around 600ms)
-    setTimeout(() => {
-      runOnJS(onLanded)();
-    }, 600);
+    rotate.value = withTiming(120, {
+      duration,
+      easing: Easing.out(Easing.quad),
+    });
 
-    // Fade out and complete at the end
-    setTimeout(() => {
-      opacity.value = withTiming(0, {
-        duration: 200,
-        easing: Easing.in(Easing.quad),
-      }, (finished) => {
-        if (finished) {
-          runOnJS(onComplete)();
-        }
-      });
-    }, 700);
+    opacity.value = withTiming(0, {
+      duration,
+      easing: Easing.in(Easing.quad),
+    });
+
+    setTimeout(() => runOnJS(onLanded)(), 500);
+    setTimeout(() => runOnJS(onComplete)(), duration + 50);
   }, []);
 
-  const animatedStyle = useAnimatedStyle(() => {
-    // Create an arc trajectory:
-    // Start: bottom center of well container (y: 200, x: 0)
-    // End: center of well (y: 100, x: 0) with slight wobble
-    
-    // Y position: arc from bottom (200) up through peak then down to center (100)
-    // Using a parabolic curve for natural arc
-    const startY = 180; // Near bottom of 280px container
-    const peakY = 60;   // Peak of the arc
-    const endY = 110;   // Center of well (slightly above middle)
-    
-    // Parabolic interpolation for Y (goes up then settles)
-    const t = progress.value;
-    const arcY = startY + (peakY - startY) * (2 * t - t * t) + (endY - peakY) * t * t;
-    
-    // Slight X wobble for natural feel
-    const wobbleX = Math.sin(t * Math.PI * 2) * 15 * (1 - t);
-
-    return {
-      transform: [
-        { translateY: arcY - 180 }, // Offset from starting position
-        { translateX: wobbleX },
-        { rotate: `${rotate.value}deg` },
-        { scale: scale.value },
-      ],
-      opacity: opacity.value,
-    };
-  });
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateY: translateY.value },
+      { rotate: `${rotate.value}deg` },
+      { scale: scale.value },
+    ],
+    opacity: opacity.value,
+  }));
 
   return (
     <Animated.View
@@ -132,17 +95,16 @@ const AnimatedBottle = ({ onComplete, onLanded }: { onComplete: () => void; onLa
         animatedStyle,
         {
           position: 'absolute',
-          bottom: 0,
-          alignSelf: 'center',
+          bottom: -40,
           left: '50%',
-          marginLeft: -40, // Half of 80px width
+          marginLeft: -60,
           zIndex: 25,
         },
       ]}
     >
       <Image
         source={require('@/assets/childview/ui/bottlewell.png')}
-        style={{ width: 80, height: 80 }}
+        style={{ width: 120, height: 120 }}
         resizeMode="contain"
       />
     </Animated.View>
@@ -150,7 +112,7 @@ const AnimatedBottle = ({ onComplete, onLanded }: { onComplete: () => void; onLa
 };
 
 const GlitterBurst = () => {
-  const particles = Array.from({ length: 8 }, (_, i) => ({
+  const particles = Array.from({ length: 10 }, (_, i) => ({
     translateX: useSharedValue(0),
     translateY: useSharedValue(0),
     opacity: useSharedValue(1),
@@ -159,17 +121,17 @@ const GlitterBurst = () => {
 
   useEffect(() => {
     particles.forEach((p, i) => {
-      const angle = (i * 45) * (Math.PI / 180);
-      const dist = 30 + Math.random() * 20;
+      const angle = (i * 36) * (Math.PI / 180);
+      const dist = 40 + Math.random() * 30;
       
-      p.scale.value = withSpring(1, { damping: 10, stiffness: 300 });
-      p.translateX.value = withTiming(Math.cos(angle) * dist, { duration: 500, easing: Easing.out(Easing.cubic) });
-      p.translateY.value = withTiming(Math.sin(angle) * dist - 10, { duration: 500, easing: Easing.out(Easing.cubic) });
-      p.opacity.value = withTiming(0, { duration: 400, easing: Easing.out(Easing.quad) });
+      p.scale.value = withSpring(1.2, { damping: 8, stiffness: 300 });
+      p.translateX.value = withTiming(Math.cos(angle) * dist, { duration: 600, easing: Easing.out(Easing.cubic) });
+      p.translateY.value = withTiming(Math.sin(angle) * dist - 15, { duration: 600, easing: Easing.out(Easing.cubic) });
+      p.opacity.value = withTiming(0, { duration: 500, easing: Easing.out(Easing.quad) });
     });
   }, []);
 
-  const colors = ['#fde047', '#fbbf24', '#fef3c7', '#fcd34d', '#ffffff', '#a78bfa', '#c4b5fd', '#e879f9'];
+  const colors = ['#fde047', '#fbbf24', '#fef3c7', '#fcd34d', '#ffffff', '#a78bfa', '#c4b5fd', '#e879f9', '#fde047', '#ffffff'];
 
   return (
     <>
@@ -188,7 +150,7 @@ const GlitterBurst = () => {
             key={i}
             style={[style, { position: 'absolute' }]}
           >
-            <Sparkles size={14 + (i % 3) * 4} color={colors[i]} fill={colors[i]} />
+            <Sparkles size={28 + (i % 3) * 8} color={colors[i]} fill={colors[i]} />
           </Animated.View>
         );
       })}
@@ -1032,9 +994,6 @@ export default function ChildHubScreen() {
                     resizeMode="contain"
                   />
 
-
-
-                  {/* Animated bottle */}
                   {showBottleAnimation && (
                     <AnimatedBottle
                       onComplete={handleBottleAnimationComplete}
@@ -1045,10 +1004,9 @@ export default function ChildHubScreen() {
                   {showGlitter && (
                     <View style={{ 
                       position: 'absolute', 
-                      top: '40%', 
+                      top: '15%', 
                       left: '50%', 
                       marginLeft: -10,
-                      marginTop: -10,
                       zIndex: 30 
                     }}>
                       <GlitterBurst />
