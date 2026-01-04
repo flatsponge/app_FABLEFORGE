@@ -17,18 +17,18 @@ export const FeaturedCard: React.FC<FeaturedCardProps> = ({ onRead }) => {
         <Text className="text-lg font-bold text-slate-700">Continue Reading</Text>
       </View>
 
-      <Pressable 
+      <Pressable
         onPress={() => onRead && onRead(featuredBook)}
         className="bg-white p-3 rounded-3xl border border-slate-100 shadow-sm flex-row gap-5 active:scale-[0.99]"
       >
         <View className="relative w-28 aspect-[3/4] rounded-2xl overflow-hidden">
-          <Image 
-            source={{ uri: featuredBook.coverImage }} 
+          <Image
+            source={{ uri: featuredBook.coverImage }}
             className="w-full h-full"
             resizeMode="cover"
           />
           <View className="absolute inset-0 bg-black/10" />
-          
+
           <View className="absolute inset-0 items-center justify-center">
             <View className="w-12 h-12 bg-white/90 rounded-full items-center justify-center shadow-lg">
               <Play size={20} color="#9333ea" fill="#9333ea" />
@@ -37,7 +37,7 @@ export const FeaturedCard: React.FC<FeaturedCardProps> = ({ onRead }) => {
         </View>
 
         <View className="flex-1 py-1 pr-2 justify-center">
-          
+
           <View className="flex-row items-center gap-2 mb-2">
             <View className="bg-purple-50 px-2 py-1 rounded-lg border border-purple-100">
               <Text className="text-purple-600 text-[10px] font-black uppercase tracking-wide">
@@ -49,13 +49,11 @@ export const FeaturedCard: React.FC<FeaturedCardProps> = ({ onRead }) => {
               <Text className="text-[10px] font-bold text-slate-400">12m left</Text>
             </View>
           </View>
-          
+
           <Text className="text-lg font-extrabold text-slate-800 leading-tight mb-1">
             {featuredBook.title}
           </Text>
-          <Text className="text-xs font-bold text-slate-400 mb-5">
-            by {featuredBook.author}
-          </Text>
+
 
           <View className="w-full">
             <View className="flex-row justify-between items-end mb-1.5">

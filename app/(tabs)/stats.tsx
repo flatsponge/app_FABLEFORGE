@@ -10,6 +10,7 @@ import Animated, {
   useDerivedValue
 } from 'react-native-reanimated';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
+import { GrowthScoreArc } from '@/components/GrowthScoreArc';
 import {
   Heart,
   Shield,
@@ -33,6 +34,7 @@ import Svg, { Circle, Path, Line, Defs, LinearGradient, Stop } from 'react-nativ
 import { LucideIcon } from 'lucide-react-native';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+const AnimatedPath = Animated.createAnimatedComponent(Path);
 
 interface SubSkill {
   name: string;
@@ -697,94 +699,10 @@ const getMotivationalMessage = (score: number) => {
 
 const GrowthScoreWidget = () => {
   const totalScore = calculateTotalScore(SKILLS_DATA);
-  const size = 200;
-  const strokeWidth = 20;
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-
-  const progress = useSharedValue(0);
-
-  useEffect(() => {
-    progress.value = withTiming(totalScore / 100, {
-      duration: 1500,
-      easing: Easing.out(Easing.exp),
-    });
-  }, [totalScore]);
-
-  const animatedProps = useAnimatedProps(() => {
-    const strokeDashoffset = circumference * (1 - progress.value);
-    return {
-      strokeDashoffset,
-    };
-  });
 
   return (
-    <View className="items-center justify-center mb-10 mt-4">
-      <View className="relative shadow-xl shadow-indigo-200/50 rounded-full" style={{ width: size, height: size }}>
-        {/* Background Circle */}
-        <Svg width={size} height={size} style={{ transform: [{ rotate: '-90deg' }] }}>
-          {/* Track */}
-          <Circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            fill="none"
-            stroke="#f1f5f9"
-            strokeWidth={strokeWidth}
-            strokeLinecap="round"
-          />
-
-          {/* Progress Circle with Gradient */}
-          <Defs>
-            <LinearGradient id="scoreGradient" x1="0" y1="0" x2="1" y2="1">
-              <Stop offset="0%" stopColor="#6366f1" />
-              <Stop offset="50%" stopColor="#8b5cf6" />
-              <Stop offset="100%" stopColor="#ec4899" />
-            </LinearGradient>
-            <LinearGradient id="glowGradient" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0%" stopColor="#818cf8" stopOpacity={0.2} />
-              <Stop offset="100%" stopColor="#c084fc" stopOpacity={0} />
-            </LinearGradient>
-          </Defs>
-
-          {/* The Animated Progress Circle */}
-          <AnimatedCircle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            fill="none"
-            stroke="url(#scoreGradient)"
-            strokeWidth={strokeWidth}
-            strokeDasharray={`${circumference} ${circumference}`}
-            animatedProps={animatedProps}
-            strokeLinecap="round"
-          />
-        </Svg>
-
-        {/* Inner Content */}
-        <View className="absolute inset-0 items-center justify-center">
-          <View className="items-center justify-center">
-            <Text className="text-6xl font-black text-slate-800 tracking-tighter leading-none mt-2">
-              {totalScore}
-            </Text>
-            <Text className="text-3xl font-bold text-slate-300 -mt-2">%</Text>
-          </View>
-          <View className="bg-indigo-50 px-3 py-1 rounded-full mt-2 border border-indigo-100">
-            <Text className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">
-              Total Growth
-            </Text>
-          </View>
-        </View>
-      </View>
-
-      <View className="mt-6 items-center">
-        <Text className="text-lg font-bold text-slate-800 mb-1">
-          {getMotivationalMessage(totalScore)}
-        </Text>
-        <Text className="text-slate-400 text-xs font-medium text-center max-w-[220px] leading-5">
-          Combine all core values to unlock your child's full potential
-        </Text>
-      </View>
+    <View className="mb-12 mt-6">
+      <GrowthScoreArc score={totalScore} size={240} showMotivation={true} />
     </View>
   );
 };

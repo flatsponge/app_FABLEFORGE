@@ -11,7 +11,7 @@ export const BOOKS: Book[] = [
   {
     id: 1,
     title: "The Sleepy Moon",
-    author: "AI Storyteller",
+    author: "",
     progress: 45,
     color: "from-indigo-400 to-purple-500",
     coverImage: "https://images.unsplash.com/photo-1494022299300-899b96e49893?auto=format&fit=crop&w=600&q=80",
@@ -25,7 +25,7 @@ export const BOOKS: Book[] = [
   {
     id: 2,
     title: "Dino's Big Roar",
-    author: "AI Storyteller",
+    author: "",
     progress: 0,
     color: "from-green-400 to-teal-500",
     coverImage: "https://images.unsplash.com/photo-1552345391-7f999676e6d1?auto=format&fit=crop&w=600&q=80",
@@ -39,7 +39,7 @@ export const BOOKS: Book[] = [
   {
     id: 3,
     title: "Princess & Pea",
-    author: "AI Storyteller",
+    author: "",
     progress: 10,
     color: "from-pink-400 to-rose-500",
     coverImage: "https://images.unsplash.com/photo-1595168863620-f46399a6e12e?auto=format&fit=crop&w=600&q=80",
@@ -53,7 +53,7 @@ export const BOOKS: Book[] = [
   {
     id: 4,
     title: "Rocket Zoom",
-    author: "AI Storyteller",
+    author: "",
     progress: 0,
     color: "from-blue-400 to-cyan-500",
     coverImage: "https://images.unsplash.com/photo-1517976487492-5750f3195933?auto=format&fit=crop&w=600&q=80",
@@ -67,7 +67,7 @@ export const BOOKS: Book[] = [
   {
     id: 5,
     title: "The Magic Forest",
-    author: "AI Storyteller",
+    author: "",
     progress: 60,
     color: "from-orange-300 via-rose-300 to-purple-300",
     coverImage: "https://images.unsplash.com/photo-1448375240586-dfd8d395ea6c?auto=format&fit=crop&w=600&q=80",
@@ -81,7 +81,7 @@ export const BOOKS: Book[] = [
   {
     id: 6,
     title: "The Shy Ghost",
-    author: "AI Storyteller",
+    author: "",
     progress: 0,
     color: "from-slate-400 to-slate-600",
     coverImage: "https://images.unsplash.com/photo-1623945193498-89c564347712?auto=format&fit=crop&w=600&q=80",
