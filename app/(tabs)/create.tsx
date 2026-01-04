@@ -14,12 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import {
   ChevronLeft,
   Mic,
-  PenTool,
-  Smile,
   Zap,
-  Trees,
-  GraduationCap,
-  Plus,
   BookOpen,
   Sparkles,
   RotateCcw,
@@ -46,18 +41,18 @@ import {
   X,
   Clock,
   MessageCircle,
-  Play,
   Calendar,
   Crown,
   BatteryCharging,
   Infinity,
-  Cloud,
-  Star,
   Activity,
+  ChevronDown,
+  Lock,
 } from 'lucide-react-native';
 import { LucideIcon } from 'lucide-react-native';
-import { PRESET_LOCATIONS, FRIENDS, VOICE_PRESETS } from '@/constants/data';
+import { PRESET_LOCATIONS, FRIENDS, VOICE_PRESETS, WISHES } from '@/constants/data';
 import { StoryControls, StoryLength, StoryDifficulty, StoryTime } from '@/components/StoryControls';
+import { Wish } from '@/types';
 
 const MAX_CRYSTALS = 160;
 const REGEN_TIME_SECONDS = 1800;
@@ -108,9 +103,8 @@ const AnimatedGradientBorder = ({ children }: { children: React.ReactNode }) => 
 };
 
 type StepType = 'input' | 'generating-outline' | 'outline-review' | 'generating-story' | 'preview';
-type InputMode = 'wishes' | 'tellus' | 'teach';
 
-interface TeachingValue {
+interface FocusValue {
   id: string;
   name: string;
   icon: LucideIcon;
@@ -118,7 +112,17 @@ interface TeachingValue {
   desc: string;
 }
 
-const TEACHING_VALUES: TeachingValue[] = [
+interface SituationPreset {
+  id: string;
+  label: string;
+  prompt: string;
+  icon: LucideIcon;
+  color: string;
+  textColor: string;
+  iconColor: string;
+}
+
+const FOCUS_VALUES: FocusValue[] = [
   { id: 'compassion', name: 'Compassion', icon: Heart, color: 'bg-rose-50', desc: 'Understanding feelings' },
   { id: 'bravery', name: 'Bravery', icon: Shield, color: 'bg-amber-50', desc: 'Finding courage' },
   { id: 'sharing', name: 'Sharing', icon: Gift, color: 'bg-purple-50', desc: 'The joy of giving' },
@@ -131,31 +135,53 @@ const TEACHING_VALUES: TeachingValue[] = [
   { id: 'problem_solving', name: 'Problem Solving', icon: Puzzle, color: 'bg-teal-50', desc: 'Finding solutions' },
 ];
 
-const CHILD_REQUESTS = [
-  { id: 'r1', text: 'A big red dragon that eats ice cream', date: '2 hours ago', isNew: true },
-  { id: 'r2', text: 'The time I lost my tooth at school', date: 'Yesterday', isNew: false },
-  { id: 'r3', text: 'Swimming with dolphins in the sky', date: '2 days ago', isNew: false },
+const SITUATION_PRESETS: SituationPreset[] = [
+  {
+    id: 'conflict',
+    label: 'Conflict',
+    prompt: 'My child had a conflict with another child and needs help repairing the friendship.',
+    icon: Heart,
+    color: 'bg-rose-50 border-rose-100',
+    textColor: 'text-rose-700',
+    iconColor: '#f43f5e',
+  },
+  {
+    id: 'fear',
+    label: 'Feeling scared',
+    prompt: 'My child is scared of the dark and wants help feeling brave.',
+    icon: Shield,
+    color: 'bg-amber-50 border-amber-100',
+    textColor: 'text-amber-700',
+    iconColor: '#f59e0b',
+  },
+  {
+    id: 'sharing',
+    label: 'Sharing',
+    prompt: 'My child is having trouble sharing and wants to learn how.',
+    icon: Users,
+    color: 'bg-purple-50 border-purple-100',
+    textColor: 'text-purple-700',
+    iconColor: '#8b5cf6',
+  },
+  {
+    id: 'celebration',
+    label: 'Celebration',
+    prompt: 'We are celebrating a special moment and want to capture it in a story.',
+    icon: Gift,
+    color: 'bg-emerald-50 border-emerald-100',
+    textColor: 'text-emerald-700',
+    iconColor: '#059669',
+  },
+  {
+    id: 'doctor',
+    label: 'Doctor visit',
+    prompt: 'My child is nervous about a doctor or dentist visit tomorrow.',
+    icon: Activity,
+    color: 'bg-blue-50 border-blue-100',
+    textColor: 'text-blue-700',
+    iconColor: '#3b82f6',
+  },
 ];
-
-const QuickTag = ({
-  icon: Icon,
-  label,
-  color,
-  onPress,
-}: {
-  icon: LucideIcon;
-  label: string;
-  color: string;
-  onPress: () => void;
-}) => (
-  <Pressable
-    onPress={onPress}
-    className="flex-row items-center gap-2 pl-2 pr-3 py-2 rounded-full border border-slate-200 bg-white active:scale-95"
-  >
-    <Icon size={14} color={color} />
-    <Text className="text-xs font-bold text-slate-600">{label}</Text>
-  </Pressable>
-);
 
 const CrystalModal = ({
   visible,
@@ -349,12 +375,85 @@ const CrystalModal = ({
   );
 };
 
+const WishDetailModal = ({
+  visible,
+  wish,
+  isSelected,
+  onClose,
+  onUse,
+}: {
+  visible: boolean;
+  wish: Wish | null;
+  isSelected: boolean;
+  onClose: () => void;
+  onUse: (wish: Wish) => void;
+}) => {
+  if (!wish) return null;
+
+  return (
+    <Modal visible={visible} transparent animationType="slide">
+      <View className="flex-1 bg-black/60 justify-end">
+        <View className="bg-white rounded-t-[32px] p-6 max-h-[80%]">
+          <Pressable
+            onPress={onClose}
+            className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/5 items-center justify-center"
+          >
+            <X size={18} color="#64748b" />
+          </Pressable>
+
+          <View className="items-start mb-4">
+            <View className="flex-row items-center gap-2 bg-purple-50 px-3 py-1 rounded-full border border-purple-100">
+              <Sparkles size={12} color="#a855f7" />
+              <Text className="text-[10px] font-bold text-purple-600 uppercase tracking-wider">Wish Details</Text>
+            </View>
+          </View>
+
+          <ScrollView className="mb-6">
+            <Text className="text-2xl font-extrabold text-slate-800 leading-tight mb-3">
+              {wish.text}
+            </Text>
+            <Text className="text-sm text-slate-600 leading-relaxed font-medium mb-4">
+              {wish.detail || wish.text}
+            </Text>
+            <View className="flex-row items-center gap-2">
+              <Calendar size={12} color="#94a3b8" />
+              <Text className="text-xs font-bold text-slate-400">{wish.createdAt}</Text>
+              {wish.isNew && (
+                <View className="bg-purple-500 px-2 py-0.5 rounded">
+                  <Text className="text-[8px] font-bold text-white uppercase">New</Text>
+                </View>
+              )}
+            </View>
+          </ScrollView>
+
+          {isSelected ? (
+            <View className="bg-emerald-50 py-3 rounded-2xl items-center border border-emerald-100">
+              <View className="flex-row items-center gap-2">
+                <Check size={16} color="#059669" />
+                <Text className="text-emerald-700 font-bold text-sm">Selected for this story</Text>
+              </View>
+            </View>
+          ) : (
+            <Pressable
+              onPress={() => onUse(wish)}
+              className="w-full py-4 rounded-2xl bg-purple-500 items-center active:scale-95"
+            >
+              <Text className="text-white font-bold text-sm">Use this Wish</Text>
+            </Pressable>
+          )}
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
 export default function CreateScreen() {
   const [step, setStep] = useState<StepType>('input');
-  const [inputMode, setInputMode] = useState<InputMode>('tellus');
-  const [tellUsMode, setTellUsMode] = useState<'creative' | 'real_life'>('creative');
-  const [textPrompt, setTextPrompt] = useState('');
+  const [seedPrompt, setSeedPrompt] = useState('');
+  const [selectedWishId, setSelectedWishId] = useState<string | null>(null);
   const [selectedValueId, setSelectedValueId] = useState<string | null>(null);
+  const [selectedSituationId, setSelectedSituationId] = useState<string | null>(null);
+  const [situationText, setSituationText] = useState('');
   const [crystalBalance, setCrystalBalance] = useState(150);
   const [showCrystalModal, setShowCrystalModal] = useState(false);
   const [timeToNextCrystal, setTimeToNextCrystal] = useState(REGEN_TIME_SECONDS);
@@ -364,6 +463,8 @@ export default function CreateScreen() {
   const [storyLength, setStoryLength] = useState<StoryLength>('medium');
   const [storyDifficulty, setStoryDifficulty] = useState<StoryDifficulty>('intermediate');
   const [storyTime, setStoryTime] = useState<StoryTime>('day');
+  const [showWorldOptions, setShowWorldOptions] = useState(false);
+  const [wishDetailId, setWishDetailId] = useState<string | null>(null);
 
   const openAssetStudio = (tab: 'places' | 'faces' | 'voices') => {
     router.push({
@@ -404,6 +505,11 @@ export default function CreateScreen() {
   const currentVoice = VOICE_PRESETS.find(v => v.id === selectedVoiceId);
   const currentFriends = FRIENDS.filter(f => selectedCharacterIds.includes(f.id));
   const isMeSelected = selectedCharacterIds.includes('me');
+  const selectedWish = WISHES.find(w => w.id === selectedWishId) || null;
+  const activeWish = WISHES.find(w => w.id === wishDetailId) || null;
+  const isRemix = Boolean(selectedWish && situationText.trim());
+  const isFocusValid = Boolean(selectedValueId || situationText.trim());
+  const hasNewWishes = WISHES.some(w => w.isNew);
 
   const getCharacterSummary = () => {
     const parts = [];
@@ -431,6 +537,9 @@ export default function CreateScreen() {
   const totalCost = calculateTotalCost();
 
   const handleCreateOutline = () => {
+    if (!isFocusValid) {
+      return;
+    }
     if (crystalBalance < totalCost) {
       setShowCrystalModal(true);
       return;
@@ -445,14 +554,24 @@ export default function CreateScreen() {
     setTimeout(() => setStep('preview'), 3000);
   };
 
-  const handleAddTag = (label: string) => {
-    if (inputMode !== 'tellus') setInputMode('tellus');
-    setTextPrompt(prev => prev + (prev.length > 0 ? ' ' : '') + label);
+  const handleSelectWish = (wish: Wish) => {
+    setSelectedWishId(wish.id);
   };
 
-  const handleUseRequest = (text: string) => {
-    setTextPrompt(text);
-    setInputMode('tellus');
+  const handleRemoveWish = () => {
+    const currentWishId = selectedWishId;
+    setSelectedWishId(null);
+    setWishDetailId(prev => (prev === currentWishId ? null : prev));
+  };
+
+  const handleSelectSituation = (preset: SituationPreset) => {
+    setSituationText(preset.prompt);
+    setSelectedSituationId(preset.id);
+  };
+
+  const handleSituationChange = (value: string) => {
+    setSituationText(value);
+    if (selectedSituationId) setSelectedSituationId(null);
   };
 
   const handleToggleCharacter = (id: string) => {
@@ -505,7 +624,7 @@ export default function CreateScreen() {
             <ChevronLeft size={20} color="#475569" />
           </Pressable>
           <View className="items-center">
-            <Text className="text-xs font-bold text-slate-400 uppercase tracking-widest">Step 2 of 3</Text>
+            <Text className="text-xs font-bold text-slate-400 uppercase tracking-widest">Outline</Text>
             <Text className="text-sm font-bold text-slate-800">Review Outline</Text>
           </View>
           <View className="w-10" />
@@ -634,6 +753,16 @@ export default function CreateScreen() {
         onClose={() => setShowCrystalModal(false)}
         onRefill={handleRefill}
       />
+      <WishDetailModal
+        visible={Boolean(wishDetailId)}
+        wish={activeWish}
+        isSelected={Boolean(activeWish && activeWish.id === selectedWishId)}
+        onClose={() => setWishDetailId(null)}
+        onUse={(wish) => {
+          handleSelectWish(wish);
+          setWishDetailId(null);
+        }}
+      />
 
 
 
@@ -687,344 +816,364 @@ export default function CreateScreen() {
           </View>
 
           <View className="px-6">
-            <View className="mb-8">
-              <View className="flex-row items-center justify-between mb-4">
-                <Text className="text-lg font-bold text-slate-800">Scene & Cast</Text>
+            <View className="mb-10">
+              <View className="flex-row items-center justify-between mb-2">
+                <Text className="text-lg font-bold text-slate-800">Story Seed</Text>
                 <View className="bg-white px-2 py-1 rounded-lg border border-slate-100">
                   <Text className="text-xs font-bold text-slate-400">Step 1</Text>
                 </View>
               </View>
+              <Text className="text-xs text-slate-400 font-medium mb-4">
+                Start with a wish or add your own idea.
+              </Text>
 
-              <View className="flex-row gap-3">
-                <Pressable
-                  onPress={() => openAssetStudio('places')}
-                  className="flex-1 h-28 rounded-3xl bg-white border border-slate-200 shadow-sm items-center justify-center p-2"
-                >
-                  <View className="w-10 h-10 rounded-full bg-indigo-50 items-center justify-center mb-2">
-                    <MapPin size={20} color="#6366f1" />
-                  </View>
-                  <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Scene</Text>
-                  <Text className="text-xs font-extrabold text-slate-700" numberOfLines={1}>
-                    {currentLocation?.name || 'Select'}
-                  </Text>
-                </Pressable>
-
-                <Pressable
-                  onPress={() => openAssetStudio('faces')}
-                  className="flex-1 h-28 rounded-3xl bg-white border border-slate-200 shadow-sm items-center justify-center p-2"
-                >
-                  <View className="w-10 h-10 rounded-full bg-orange-50 items-center justify-center mb-2">
-                    <User size={20} color="#f97316" />
-                  </View>
-                  <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Cast</Text>
-                  <Text className="text-xs font-extrabold text-slate-700" numberOfLines={1}>
-                    {getCharacterSummary()}
-                  </Text>
-                </Pressable>
-
-                <Pressable
-                  onPress={() => openAssetStudio('voices')}
-                  className="flex-1 h-28 rounded-3xl bg-white border border-slate-200 shadow-sm items-center justify-center p-2"
-                >
-                  <View className="w-10 h-10 rounded-full bg-rose-50 items-center justify-center mb-2">
-                    <Mic size={20} color="#f43f5e" />
-                  </View>
-                  <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Voice</Text>
-                  <Text className="text-xs font-extrabold text-slate-700" numberOfLines={1}>
-                    {currentVoice?.name || 'Select'}
-                  </Text>
-                </Pressable>
-              </View>
-            </View>
-
-
-            <View className="mb-6">
-              {/* Tab Switcher */}
-              <View className="flex-row items-center bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm mb-5">
-                <Pressable
-                  onPress={() => setInputMode('wishes')}
-                  className={`flex-1 py-3 rounded-xl flex-row items-center justify-center gap-2 ${inputMode === 'wishes' ? 'bg-purple-500' : ''}`}
-                >
-                  <Sparkles size={14} color={inputMode === 'wishes' ? 'white' : '#94a3b8'} />
-                  <Text className={`text-xs font-bold ${inputMode === 'wishes' ? 'text-white' : 'text-slate-400'}`}>
-                    Wishes
-                  </Text>
-                  {CHILD_REQUESTS.some(r => r.isNew) && inputMode !== 'wishes' && (
-                    <View className="w-2 h-2 rounded-full bg-red-500" />
-                  )}
-                </Pressable>
-                <Pressable
-                  onPress={() => setInputMode('tellus')}
-                  className={`flex-1 py-3 rounded-xl flex-row items-center justify-center gap-2 ${inputMode === 'tellus' ? 'bg-indigo-500' : ''}`}
-                >
-                  <PenTool size={14} color={inputMode === 'tellus' ? 'white' : '#94a3b8'} />
-                  <Text className={`text-xs font-bold ${inputMode === 'tellus' ? 'text-white' : 'text-slate-400'}`}>
-                    Tell Us
-                  </Text>
-                </Pressable>
-                <Pressable
-                  onPress={() => setInputMode('teach')}
-                  className={`flex-1 py-3 rounded-xl flex-row items-center justify-center gap-2 ${inputMode === 'teach' ? 'bg-emerald-500' : ''}`}
-                >
-                  <GraduationCap size={14} color={inputMode === 'teach' ? 'white' : '#94a3b8'} />
-                  <Text className={`text-xs font-bold ${inputMode === 'teach' ? 'text-white' : 'text-slate-400'}`}>
-                    Teach
-                  </Text>
-                </Pressable>
-              </View>
-
-              {/* Dynamic Section Header */}
-              <View className="mb-4">
-                {inputMode === 'wishes' && (
+              {selectedWish ? (
+                <View className="bg-purple-50 p-4 rounded-3xl border border-purple-100 mb-5">
                   <View className="flex-row items-center gap-3">
                     <View className="w-10 h-10 rounded-2xl bg-purple-100 items-center justify-center">
-                      <Sparkles size={20} color="#a855f7" />
+                      <Lock size={18} color="#a855f7" />
                     </View>
                     <View className="flex-1">
-                      <Text className="text-lg font-bold text-slate-800">Wishing Well Inbox</Text>
-                      <Text className="text-xs text-slate-400 font-medium">Story wishes your child sent</Text>
-                    </View>
-                  </View>
-                )}
-                {inputMode === 'tellus' && (
-                  <View className="flex-row items-center gap-3">
-                    <View className={`w-10 h-10 rounded-2xl items-center justify-center ${tellUsMode === 'creative' ? 'bg-indigo-100' : 'bg-rose-100'}`}>
-                      {tellUsMode === 'creative' ? (
-                        <PenTool size={20} color="#6366f1" />
-                      ) : (
-                        <Heart size={20} color="#f43f5e" />
-                      )}
-                    </View>
-                    <View className="flex-1">
-                      <Text className="text-lg font-bold text-slate-800">
-                        {tellUsMode === 'creative' ? "Creative Story" : "Real Life Situation"}
-                      </Text>
-                      <Text className="text-xs text-slate-400 font-medium">
-                        {tellUsMode === 'creative' ? "Describe the fun details" : "Describe what happened"}
+                      <Text className="text-[10px] font-bold text-purple-500 uppercase tracking-wider">Selected Wish</Text>
+                      <Text className="text-sm font-bold text-slate-800 leading-tight" numberOfLines={2}>
+                        {selectedWish.text}
                       </Text>
                     </View>
                   </View>
-                )}
-                {inputMode === 'teach' && (
-                  <View className="flex-row items-center gap-3">
-                    <View className="w-10 h-10 rounded-2xl bg-emerald-100 items-center justify-center">
-                      <GraduationCap size={20} color="#059669" />
-                    </View>
-                    <View className="flex-1">
-                      <Text className="text-lg font-bold text-slate-800">Pick a Life Lesson</Text>
-                      <Text className="text-xs text-slate-400 font-medium">Choose a value to weave into the story</Text>
-                    </View>
+                  <View className="flex-row gap-3 mt-3">
+                    <Pressable
+                      onPress={() => setWishDetailId(selectedWish.id)}
+                      className="flex-1 py-2 rounded-xl bg-white border border-purple-100 items-center active:scale-95"
+                    >
+                      <Text className="text-xs font-bold text-purple-600">View</Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={handleRemoveWish}
+                      className="flex-1 py-2 rounded-xl bg-white border border-slate-200 items-center active:scale-95"
+                    >
+                      <Text className="text-xs font-bold text-slate-600">Remove</Text>
+                    </Pressable>
                   </View>
-                )}
-              </View>
-
-              {/* Wishes Tab Content */}
-              {inputMode === 'wishes' && (
-                <View className="gap-3 mb-8">
-                  {CHILD_REQUESTS.length === 0 ? (
-                    <View className="bg-purple-50 p-8 rounded-3xl items-center">
-                      <Sparkles size={32} color="#c4b5fd" />
-                      <Text className="text-sm font-bold text-slate-600 mt-3 text-center">No wishes yet!</Text>
-                      <Text className="text-xs text-slate-400 mt-1 text-center">Your child can make wishes from the Wishing Well</Text>
-                    </View>
-                  ) : (
-                    CHILD_REQUESTS.map(req => (
-                      <Pressable
-                        key={req.id}
-                        onPress={() => handleUseRequest(req.text)}
-                        className="bg-white p-4 rounded-3xl border border-purple-100 shadow-sm flex-row items-center gap-4 active:scale-[0.98]"
-                      >
-                        <View className={`w-12 h-12 rounded-2xl items-center justify-center ${req.isNew ? 'bg-purple-100' : 'bg-slate-50'}`}>
-                          {req.isNew ? (
-                            <Sparkles size={20} color="#a855f7" />
-                          ) : (
-                            <MessageCircle size={20} color="#94a3b8" />
-                          )}
-                        </View>
-                        <View className="flex-1">
-                          <View className="flex-row items-center gap-2 mb-1">
-                            {req.isNew && (
-                              <View className="bg-purple-500 px-1.5 py-0.5 rounded">
-                                <Text className="text-[8px] font-bold text-white uppercase">New</Text>
-                              </View>
-                            )}
-                            <Text className="font-bold text-slate-800 text-sm leading-tight flex-1" numberOfLines={1}>
-                              {req.text}
-                            </Text>
-                          </View>
-                          <View className="flex-row items-center gap-1">
-                            <Calendar size={10} color="#94a3b8" />
-                            <Text className="text-[10px] font-bold text-slate-400">{req.date}</Text>
-                          </View>
-                        </View>
-                        <View className="bg-purple-500 px-3 py-2 rounded-xl">
-                          <Text className="text-white text-[10px] font-bold">Use</Text>
-                        </View>
-                      </Pressable>
-                    ))
-                  )}
                 </View>
-              )}
-
-              {/* Tell Us Tab Content */}
-              {inputMode === 'tellus' && (
-                <View className="mb-8">
-                  {/* Mode Toggle */}
-                  <View className="flex-row p-1 bg-slate-100 rounded-xl mb-6 border border-slate-200">
-                    <Pressable
-                      onPress={() => setTellUsMode('creative')}
-                      className={`flex-1 py-2 px-3 rounded-lg flex-row items-center justify-center gap-2 ${tellUsMode === 'creative' ? 'bg-white' : ''}`}
-                      style={tellUsMode === 'creative' ? { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 } : undefined}
-                    >
-                      <Sparkles size={14} color={tellUsMode === 'creative' ? '#a855f7' : '#94a3b8'} />
-                      <Text className={`text-xs font-bold ${tellUsMode === 'creative' ? 'text-slate-800' : 'text-slate-500'}`}>Just for Fun</Text>
-                    </Pressable>
-                    <Pressable
-                      onPress={() => setTellUsMode('real_life')}
-                      className={`flex-1 py-2 px-3 rounded-lg flex-row items-center justify-center gap-2 ${tellUsMode === 'real_life' ? 'bg-white' : ''}`}
-                      style={tellUsMode === 'real_life' ? { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 } : undefined}
-                    >
-                      <Heart size={14} color={tellUsMode === 'real_life' ? '#ec4899' : '#94a3b8'} />
-                      <Text className={`text-xs font-bold ${tellUsMode === 'real_life' ? 'text-slate-800' : 'text-slate-500'}`}>Real Life Issue</Text>
-                    </Pressable>
-                  </View>
-
-                  <View
-                    className={`bg-white rounded-[32px] p-5 border mb-4 ${tellUsMode === 'creative' ? 'border-indigo-100' : 'border-rose-100'}`}
-                    style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 }}
-                  >
-                    <TextInput
-                      className="w-full h-28 text-slate-700 text-base font-medium"
-                      placeholder={tellUsMode === 'creative'
-                        ? "A space pirate who loves baking cookies and exploring new planets..."
-                        : "My child is nervous about their first dentist appointment tomorrow..."}
-                      placeholderTextColor="#94a3b8"
-                      value={textPrompt}
-                      onChangeText={setTextPrompt}
-                      multiline
-                      textAlignVertical="top"
-                    />
-                    <View className="flex-row items-center justify-between mt-3 pt-3 border-t border-slate-100">
-                      <View className="flex-row items-center gap-1">
-                        <Keyboard size={12} color="#cbd5e1" />
-                        <Text className="text-[10px] font-bold text-slate-300">{textPrompt.length} chars</Text>
-                      </View>
-                    </View>
-                  </View>
-
-                  {/* Situation/Creative Quick Prompts */}
-                  <Text className="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1 mb-3">
-                    {tellUsMode === 'creative' ? 'Fun Ideas' : 'Common Situations'}
+              ) : (
+                <View className="bg-slate-50 p-4 rounded-3xl border border-slate-200 mb-5">
+                  <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">No wish selected</Text>
+                  <Text className="text-sm text-slate-600 mt-1">
+                    Choose a wish below to use as your story seed.
                   </Text>
-
-                  {tellUsMode === 'creative' ? (
-                    <View className="flex-row flex-wrap gap-2">
-                      <Pressable
-                        onPress={() => setTextPrompt('A magical dragon who collects clouds...')}
-                        className="flex-row items-center gap-2 px-3 py-2 rounded-xl bg-indigo-50 border border-indigo-100 active:scale-95"
-                      >
-                        <Cloud size={12} color="#6366f1" />
-                        <Text className="text-xs font-bold text-indigo-700">Cloud Dragon</Text>
-                      </Pressable>
-                      <Pressable
-                        onPress={() => setTextPrompt('A robot detective solving mysteries...')}
-                        className="flex-row items-center gap-2 px-3 py-2 rounded-xl bg-cyan-50 border border-cyan-100 active:scale-95"
-                      >
-                        <Zap size={12} color="#06b6d4" />
-                        <Text className="text-xs font-bold text-cyan-700">Robot Detective</Text>
-                      </Pressable>
-                      <Pressable
-                        onPress={() => setTextPrompt('Adventures in a candy forest...')}
-                        className="flex-row items-center gap-2 px-3 py-2 rounded-xl bg-pink-50 border border-pink-100 active:scale-95"
-                      >
-                        <Gift size={12} color="#ec4899" />
-                        <Text className="text-xs font-bold text-pink-700">Candy Forest</Text>
-                      </Pressable>
-                      <Pressable
-                        onPress={() => setTextPrompt('A superhero who saves the day with kindness...')}
-                        className="flex-row items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-100 active:scale-95"
-                      >
-                        <Star size={12} color="#f59e0b" />
-                        <Text className="text-xs font-bold text-amber-700">Kind Superhero</Text>
-                      </Pressable>
-                    </View>
-                  ) : (
-                    <View className="flex-row flex-wrap gap-2">
-                      <Pressable
-                        onPress={() => setTextPrompt('My child is scared of the dark and needs help feeling brave...')}
-                        className="flex-row items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-100 active:scale-95"
-                      >
-                        <Shield size={12} color="#f59e0b" />
-                        <Text className="text-xs font-bold text-amber-700">Feeling scared</Text>
-                      </Pressable>
-                      <Pressable
-                        onPress={() => setTextPrompt('My child had a conflict with another child and I want to teach them about kindness...')}
-                        className="flex-row items-center gap-2 px-3 py-2 rounded-xl bg-rose-50 border border-rose-100 active:scale-95"
-                      >
-                        <Heart size={12} color="#f43f5e" />
-                        <Text className="text-xs font-bold text-rose-700">Conflict</Text>
-                      </Pressable>
-                      <Pressable
-                        onPress={() => setTextPrompt('We are celebrating a special moment and want to capture it in a story...')}
-                        className="flex-row items-center gap-2 px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-100 active:scale-95"
-                      >
-                        <Gift size={12} color="#059669" />
-                        <Text className="text-xs font-bold text-emerald-700">Celebration</Text>
-                      </Pressable>
-                      <Pressable
-                        onPress={() => setTextPrompt('My child is having trouble sharing...')}
-                        className="flex-row items-center gap-2 px-3 py-2 rounded-xl bg-purple-50 border border-purple-100 active:scale-95"
-                      >
-                        <Users size={12} color="#8b5cf6" />
-                        <Text className="text-xs font-bold text-purple-700">Sharing</Text>
-                      </Pressable>
-                      <Pressable
-                        onPress={() => setTextPrompt('Going to the doctor/dentist...')}
-                        className="flex-row items-center gap-2 px-3 py-2 rounded-xl bg-blue-50 border border-blue-100 active:scale-95"
-                      >
-                        <Activity size={12} color="#3b82f6" />
-                        <Text className="text-xs font-bold text-blue-700">Doctor Visit</Text>
-                      </Pressable>
-                    </View>
-                  )}
                 </View>
               )}
 
-              {/* Teach Tab Content */}
-              {inputMode === 'teach' && (
-                <View className="bg-white rounded-[32px] p-5 border border-slate-200 mb-8 shadow-sm">
-                  <View className="flex-row flex-wrap gap-3">
-                    {TEACHING_VALUES.map(val => {
-                      const IconComponent = val.icon;
-                      const isSelected = selectedValueId === val.id;
+              <View className="mb-6">
+                <View className="flex-row items-center justify-between mb-3">
+                  <View className="flex-row items-center gap-2">
+                    <Sparkles size={14} color="#a855f7" />
+                    <Text className="text-sm font-bold text-slate-700">Wishing Well Inbox</Text>
+                  </View>
+                  {hasNewWishes && (
+                    <View className="bg-purple-500 px-2 py-0.5 rounded">
+                      <Text className="text-[8px] font-bold text-white uppercase">New</Text>
+                    </View>
+                  )}
+                </View>
+
+                {WISHES.length === 0 ? (
+                  <View className="bg-purple-50 p-8 rounded-3xl items-center">
+                    <Sparkles size={32} color="#c4b5fd" />
+                    <Text className="text-sm font-bold text-slate-600 mt-3 text-center">No wishes yet!</Text>
+                    <Text className="text-xs text-slate-400 mt-1 text-center">
+                      Your child can make wishes from the Wishing Well.
+                    </Text>
+                  </View>
+                ) : (
+                  <View className="gap-3">
+                    {WISHES.map(wish => {
+                      const isSelected = selectedWishId === wish.id;
                       return (
-                        <Pressable
-                          key={val.id}
-                          onPress={() => setSelectedValueId(isSelected ? null : val.id)}
-                          className={`p-4 rounded-2xl border-2 ${isSelected ? 'bg-emerald-500 border-emerald-500' : 'bg-slate-50 border-slate-100'} w-[48%]`}
+                        <View
+                          key={wish.id}
+                          className="bg-white p-4 rounded-3xl border border-purple-100 shadow-sm"
                         >
-                          <View className={`w-10 h-10 rounded-xl items-center justify-center mb-2 ${isSelected ? 'bg-white/20' : val.color}`}>
-                            <IconComponent size={20} color={isSelected ? 'white' : '#64748b'} />
-                          </View>
-                          <Text className={`font-bold text-sm ${isSelected ? 'text-white' : 'text-slate-800'}`}>
-                            {val.name}
-                          </Text>
-                          <Text className={`text-[10px] font-medium mt-0.5 ${isSelected ? 'text-white/70' : 'text-slate-400'}`}>
-                            {val.desc}
-                          </Text>
-                          {isSelected && (
-                            <View className="absolute top-3 right-3">
-                              <Check size={16} color="white" />
+                          <View className="flex-row items-center gap-4">
+                            <View className={`w-12 h-12 rounded-2xl items-center justify-center ${wish.isNew ? 'bg-purple-100' : 'bg-slate-50'}`}>
+                              {wish.isNew ? (
+                                <Sparkles size={20} color="#a855f7" />
+                              ) : (
+                                <MessageCircle size={20} color="#94a3b8" />
+                              )}
                             </View>
-                          )}
-                        </Pressable>
+                            <View className="flex-1">
+                              <View className="flex-row items-center gap-2 mb-1">
+                                {wish.isNew && (
+                                  <View className="bg-purple-500 px-1.5 py-0.5 rounded">
+                                    <Text className="text-[8px] font-bold text-white uppercase">New</Text>
+                                  </View>
+                                )}
+                                <Text className="font-bold text-slate-800 text-sm leading-tight flex-1" numberOfLines={1}>
+                                  {wish.text}
+                                </Text>
+                              </View>
+                              <View className="flex-row items-center gap-1">
+                                <Calendar size={10} color="#94a3b8" />
+                                <Text className="text-[10px] font-bold text-slate-400">{wish.createdAt}</Text>
+                              </View>
+                            </View>
+                          </View>
+                          <View className="flex-row gap-2 mt-3">
+                            <Pressable
+                              onPress={() => setWishDetailId(wish.id)}
+                              className="flex-1 py-2 rounded-xl bg-white border border-slate-200 items-center active:scale-95"
+                            >
+                              <Text className="text-[10px] font-bold text-slate-600">View</Text>
+                            </Pressable>
+                            <Pressable
+                              onPress={() => handleSelectWish(wish)}
+                              disabled={isSelected}
+                              style={isSelected ? { opacity: 0.6 } : undefined}
+                              className="flex-1 py-2 rounded-xl bg-purple-500 items-center active:scale-95"
+                            >
+                              <Text className="text-[10px] font-bold text-white">{isSelected ? 'Selected' : 'Use'}</Text>
+                            </Pressable>
+                          </View>
+                        </View>
                       );
                     })}
                   </View>
+                )}
+              </View>
+
+              <View className="bg-white rounded-[32px] p-5 border border-slate-200 shadow-sm">
+                <View className="flex-row items-center gap-2 mb-3">
+                  <Lightbulb size={14} color="#6366f1" />
+                  <Text className="text-xs font-bold text-slate-400 uppercase tracking-wider">Parent idea (optional)</Text>
+                </View>
+                <TextInput
+                  className="w-full h-24 text-slate-700 text-base font-medium"
+                  placeholder="Describe what the story should be about..."
+                  placeholderTextColor="#94a3b8"
+                  value={seedPrompt}
+                  onChangeText={setSeedPrompt}
+                  multiline
+                  textAlignVertical="top"
+                />
+                <View className="flex-row items-center justify-between mt-3 pt-3 border-t border-slate-100">
+                  <View className="flex-row items-center gap-1">
+                    <Keyboard size={12} color="#cbd5e1" />
+                    <Text className="text-[10px] font-bold text-slate-300">{seedPrompt.length} chars</Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            <View className="mb-10">
+              <View className="flex-row items-center justify-between mb-2">
+                <View>
+                  <Text className="text-lg font-bold text-slate-800">Focus</Text>
+                  <Text className="text-xs text-slate-400 font-medium">Every story teaches something.</Text>
+                </View>
+                <View className="flex-row items-center gap-2">
+                  <View className="bg-rose-50 px-2 py-1 rounded-lg border border-rose-100">
+                    <Text className="text-xs font-bold text-rose-600">Required</Text>
+                  </View>
+                  <View className="bg-white px-2 py-1 rounded-lg border border-slate-100">
+                    <Text className="text-xs font-bold text-slate-400">Step 2</Text>
+                  </View>
+                </View>
+              </View>
+
+              {isRemix && (
+                <View className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 mb-4">
+                  <View className="flex-row items-center gap-2 mb-2">
+                    <Sparkles size={14} color="#6366f1" />
+                    <Text className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">Remix</Text>
+                  </View>
+                  <Text className="text-sm font-bold text-slate-800">Wish + real life situation</Text>
+                  <Text className="text-xs text-slate-500 mt-1">
+                    We will weave the wish into the moment and the lesson you choose.
+                  </Text>
+                </View>
+              )}
+
+              {!isFocusValid && (
+                <Text className="text-xs font-bold text-rose-500 mb-3">
+                  Pick a focus value or describe a situation to continue.
+                </Text>
+              )}
+
+              <View className="bg-white rounded-[32px] p-5 border border-slate-200 shadow-sm mb-5">
+                <Text className="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1 mb-3">
+                  Pick a value
+                </Text>
+                <View className="flex-row flex-wrap gap-3">
+                  {FOCUS_VALUES.map(val => {
+                    const IconComponent = val.icon;
+                    const isSelected = selectedValueId === val.id;
+                    return (
+                      <Pressable
+                        key={val.id}
+                        onPress={() => setSelectedValueId(isSelected ? null : val.id)}
+                        className={`p-4 rounded-2xl border-2 ${isSelected ? 'bg-emerald-500 border-emerald-500' : 'bg-slate-50 border-slate-100'} w-[48%]`}
+                      >
+                        <View className={`w-10 h-10 rounded-xl items-center justify-center mb-2 ${isSelected ? 'bg-white/20' : val.color}`}>
+                          <IconComponent size={20} color={isSelected ? 'white' : '#64748b'} />
+                        </View>
+                        <Text className={`font-bold text-sm ${isSelected ? 'text-white' : 'text-slate-800'}`}>
+                          {val.name}
+                        </Text>
+                        <Text className={`text-[10px] font-medium mt-0.5 ${isSelected ? 'text-white/70' : 'text-slate-400'}`}>
+                          {val.desc}
+                        </Text>
+                        {isSelected && (
+                          <View className="absolute top-3 right-3">
+                            <Check size={16} color="white" />
+                          </View>
+                        )}
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+
+              <View className="bg-white rounded-[32px] p-5 border border-slate-200 shadow-sm">
+                <Text className="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1 mb-3">
+                  Or describe a situation
+                </Text>
+                <View className="bg-slate-50 rounded-2xl border border-slate-100 p-4 mb-4">
+                  <TextInput
+                    className="w-full h-24 text-slate-700 text-base font-medium"
+                    placeholder="My child got into a fight at school and felt upset..."
+                    placeholderTextColor="#94a3b8"
+                    value={situationText}
+                    onChangeText={handleSituationChange}
+                    multiline
+                    textAlignVertical="top"
+                  />
+                  <View className="flex-row items-center justify-between mt-3 pt-3 border-t border-slate-100">
+                    <View className="flex-row items-center gap-1">
+                      <Keyboard size={12} color="#cbd5e1" />
+                      <Text className="text-[10px] font-bold text-slate-300">{situationText.length} chars</Text>
+                    </View>
+                  </View>
+                </View>
+
+                <Text className="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1 mb-3">
+                  Common situations
+                </Text>
+                <View className="flex-row flex-wrap gap-2">
+                  {SITUATION_PRESETS.map(preset => {
+                    const isSelected = selectedSituationId === preset.id;
+                    return (
+                      <Pressable
+                        key={preset.id}
+                        onPress={() => handleSelectSituation(preset)}
+                        className={`flex-row items-center gap-2 px-3 py-2 rounded-xl border ${isSelected ? 'bg-slate-900 border-slate-900' : preset.color} active:scale-95`}
+                      >
+                        <preset.icon size={12} color={isSelected ? 'white' : preset.iconColor} />
+                        <Text className={`text-xs font-bold ${isSelected ? 'text-white' : preset.textColor}`}>
+                          {preset.label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+            </View>
+
+            <View className="mb-10">
+              <Pressable
+                onPress={() => setShowWorldOptions(prev => !prev)}
+                className="bg-white rounded-[32px] p-5 border border-slate-200 shadow-sm active:scale-[0.99]"
+              >
+                <View className="flex-row items-center justify-between">
+                  <View>
+                    <Text className="text-lg font-bold text-slate-800">Enhance World</Text>
+                    <Text className="text-xs text-slate-400 font-medium">Optional scene, cast, and voice.</Text>
+                  </View>
+                  <View className="flex-row items-center gap-2">
+                    <View className="bg-white px-2 py-1 rounded-lg border border-slate-100">
+                      <Text className="text-xs font-bold text-slate-400">Step 3</Text>
+                    </View>
+                    <View className={`w-8 h-8 rounded-full bg-slate-100 items-center justify-center ${showWorldOptions ? 'rotate-180' : ''}`}>
+                      <ChevronDown size={16} color="#64748b" />
+                    </View>
+                  </View>
+                </View>
+
+                <View className="flex-row flex-wrap gap-2 mt-4">
+                  <View className="flex-row items-center gap-2 px-3 py-2 rounded-full bg-slate-50 border border-slate-200">
+                    <MapPin size={12} color="#6366f1" />
+                    <Text className="text-xs font-bold text-slate-600" numberOfLines={1}>
+                      Scene: {currentLocation?.name || 'Select'}
+                    </Text>
+                  </View>
+                  <View className="flex-row items-center gap-2 px-3 py-2 rounded-full bg-slate-50 border border-slate-200">
+                    <User size={12} color="#f97316" />
+                    <Text className="text-xs font-bold text-slate-600" numberOfLines={1}>
+                      Cast: {getCharacterSummary()}
+                    </Text>
+                  </View>
+                  <View className="flex-row items-center gap-2 px-3 py-2 rounded-full bg-slate-50 border border-slate-200">
+                    <Mic size={12} color="#f43f5e" />
+                    <Text className="text-xs font-bold text-slate-600" numberOfLines={1}>
+                      Voice: {currentVoice?.name || 'Select'}
+                    </Text>
+                  </View>
+                </View>
+              </Pressable>
+
+              {showWorldOptions && (
+                <View className="flex-row gap-3 mt-4">
+                  <Pressable
+                    onPress={() => openAssetStudio('places')}
+                    className="flex-1 h-28 rounded-3xl bg-white border border-slate-200 shadow-sm items-center justify-center p-2"
+                  >
+                    <View className="w-10 h-10 rounded-full bg-indigo-50 items-center justify-center mb-2">
+                      <MapPin size={20} color="#6366f1" />
+                    </View>
+                    <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Scene</Text>
+                    <Text className="text-xs font-extrabold text-slate-700" numberOfLines={1}>
+                      {currentLocation?.name || 'Select'}
+                    </Text>
+                  </Pressable>
+
+                  <Pressable
+                    onPress={() => openAssetStudio('faces')}
+                    className="flex-1 h-28 rounded-3xl bg-white border border-slate-200 shadow-sm items-center justify-center p-2"
+                  >
+                    <View className="w-10 h-10 rounded-full bg-orange-50 items-center justify-center mb-2">
+                      <User size={20} color="#f97316" />
+                    </View>
+                    <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Cast</Text>
+                    <Text className="text-xs font-extrabold text-slate-700" numberOfLines={1}>
+                      {getCharacterSummary()}
+                    </Text>
+                  </Pressable>
+
+                  <Pressable
+                    onPress={() => openAssetStudio('voices')}
+                    className="flex-1 h-28 rounded-3xl bg-white border border-slate-200 shadow-sm items-center justify-center p-2"
+                  >
+                    <View className="w-10 h-10 rounded-full bg-rose-50 items-center justify-center mb-2">
+                      <Mic size={20} color="#f43f5e" />
+                    </View>
+                    <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Voice</Text>
+                    <Text className="text-xs font-extrabold text-slate-700" numberOfLines={1}>
+                      {currentVoice?.name || 'Select'}
+                    </Text>
+                  </Pressable>
                 </View>
               )}
             </View>
 
+            <View className="mb-4">
+              <View className="flex-row items-center justify-between mb-2">
+                <Text className="text-lg font-bold text-slate-800">Story Settings</Text>
+                <View className="bg-white px-2 py-1 rounded-lg border border-slate-100">
+                  <Text className="text-xs font-bold text-slate-400">Step 4</Text>
+                </View>
+              </View>
+              <Text className="text-xs text-slate-400 font-medium">Tune length, vocabulary, and vibe.</Text>
+            </View>
 
             <StoryControls
               length={storyLength}
@@ -1039,6 +1188,8 @@ export default function CreateScreen() {
           <View className="p-6 pb-32">
             <Pressable
               onPress={handleCreateOutline}
+              disabled={!isFocusValid}
+              style={!isFocusValid ? { opacity: 0.6 } : undefined}
               className="w-full py-5 rounded-[28px] bg-slate-900 flex-row items-center justify-center gap-3 shadow-lg active:scale-95"
             >
               <Sparkles size={20} color="#67e8f9" />
@@ -1054,4 +1205,3 @@ export default function CreateScreen() {
     </>
   );
 }
-

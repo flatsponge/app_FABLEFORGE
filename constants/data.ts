@@ -1,4 +1,4 @@
-import { Book, Category, AvatarItem, PresetLocation, Friend, VoicePreset } from '../types';
+import { Book, Category, AvatarItem, PresetLocation, Friend, VoicePreset, Wish } from '../types';
 
 export const CATEGORIES: Category[] = [
   { id: 'animals', name: 'Animals', color: 'bg-orange-50', text: 'text-orange-600', iconName: 'Star' },
@@ -97,6 +97,28 @@ export const BOOKS: Book[] = [
     vocabularyLevel: 'Beginner',
     isLiked: true,
     generatedDate: "1 day ago"
+  },
+];
+
+export const WISHES: Wish[] = [
+  {
+    id: 'wish-1',
+    text: 'A big red dragon that eats ice cream.',
+    detail: 'I want a big red dragon that eats ice cream and makes friends at the park.',
+    createdAt: '2 hours ago',
+    isNew: true,
+  },
+  {
+    id: 'wish-2',
+    text: 'The time I lost my tooth at school.',
+    detail: 'I lost my tooth at school and felt nervous. I want a story about it.',
+    createdAt: 'Yesterday',
+  },
+  {
+    id: 'wish-3',
+    text: 'Swimming with dolphins in the sky.',
+    detail: 'I want to swim with dolphins in the sky and explore a rainbow ocean.',
+    createdAt: '2 days ago',
   },
 ];
 

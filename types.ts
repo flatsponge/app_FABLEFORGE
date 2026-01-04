@@ -62,4 +62,12 @@ export interface VoicePreset {
   color: string;
 }
 
+export interface Wish {
+  id: string;
+  text: string;
+  detail?: string;
+  createdAt: string;
+  isNew?: boolean;
+}
+
 export type ReadingMode = 'autoplay' | 'child' | 'parent';
