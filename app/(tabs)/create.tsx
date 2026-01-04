@@ -1093,7 +1093,10 @@ export default function CreateScreen() {
                     <View className="bg-white px-2 py-1 rounded-lg border border-slate-100">
                       <Text className="text-xs font-bold text-slate-400">Step 3</Text>
                     </View>
-                    <View className={`w-8 h-8 rounded-full bg-slate-100 items-center justify-center ${showWorldOptions ? 'rotate-180' : ''}`}>
+                    <View
+                      className="w-8 h-8 rounded-full bg-slate-100 items-center justify-center"
+                      style={showWorldOptions ? { transform: [{ rotate: '180deg' }] } : undefined}
+                    >
                       <ChevronDown size={16} color="#64748b" />
                     </View>
                   </View>
