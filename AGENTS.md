@@ -24,3 +24,14 @@
 - Styling: Use NativeWind className for styling, StyleSheet for complex cases
 - Colors: Use Tailwind classes; background=#FDFBF7, primary=purple scale
 - Icons: Import from lucide-react-native with explicit size/color props
+
+## Critical Rules & Troubleshooting
+
+### NativeWind 4.x "Navigation Context" Error
+**Issue**: Using dynamic `shadow-*`, `transition-*`, or `opacity-*` classes in `className` can cause a crash: `"Couldn't find a navigation context"`.
+**Fix**: Never add these classes conditionally in `className`. Use **inline styles** for conditional shadows or transitions.
+
+**Example**:
+- ❌ `className={isActive ? 'shadow-sm' : ''}`
+- ✅ `style={isActive ? { shadowColor: '#000', ... } : undefined}`
+

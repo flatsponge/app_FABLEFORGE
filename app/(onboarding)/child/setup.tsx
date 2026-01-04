@@ -32,7 +32,7 @@ export default function ChildSetupScreen() {
                 </View>
 
                 <TouchableOpacity
-                    className="bg-white py-4 rounded-2xl flex-row justify-center items-center active:scale-95 transition-transform"
+                    className="bg-white py-4 rounded-2xl flex-row justify-center items-center active:scale-95"
                     onPress={() => router.push('/(onboarding)/child/avatar')}
                 >
                     <Ionicons name="lock-open" size={24} color="#9333ea" style={{ marginRight: 8 }} />

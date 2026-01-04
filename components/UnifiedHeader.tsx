@@ -1,13 +1,13 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Platform } from 'react-native';
-import Animated, { 
-  useAnimatedStyle, 
-  interpolate, 
-  Extrapolation, 
-  SharedValue 
+import Animated, {
+  useAnimatedStyle,
+  interpolate,
+  Extrapolation,
+  SharedValue
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { router } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
 
 type HeaderVariant = 'default' | 'child';
@@ -28,7 +28,7 @@ export function UnifiedHeader({
   scrollY,
 }: UnifiedHeaderProps) {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
+  // const router = useRouter(); removed to avoid context error
 
   const handleBack = () => {
     if (router.canGoBack()) {
@@ -38,7 +38,7 @@ export function UnifiedHeader({
 
   // Base styles
   const isChild = variant === 'child';
-  
+
   // Dynamic styles via Reanimated
   const containerAnimatedStyle = useAnimatedStyle(() => {
     if (!scrollY || isChild) return {};
@@ -76,11 +76,11 @@ export function UnifiedHeader({
   const staticContainerClass = isChild
     ? 'bg-yellow-400 border-b-4 border-yellow-500'
     : scrollY ? '' : 'bg-background dark:bg-slate-900 shadow-sm';
-    
+
   // We need to resolve colors for the animated background manually or use a simple hack.
   // For simplicity with NativeWind + Reanimated, we'll apply the static class if NO scrollY,
   // and manage styles manually if scrollY exists.
-  
+
   const titleClass = isChild
     ? 'text-2xl font-bold text-yellow-900'
     : 'text-xl font-bold text-slate-900 dark:text-white';
@@ -115,8 +115,8 @@ export function UnifiedHeader({
 
         {/* Center: Title */}
         <View className="flex-1 items-center justify-center mx-2">
-          <Animated.Text 
-            className={titleClass} 
+          <Animated.Text
+            className={titleClass}
             numberOfLines={1}
             style={!isChild && scrollY ? titleAnimatedStyle : {}}
           >

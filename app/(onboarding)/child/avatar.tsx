@@ -48,7 +48,7 @@ export default function AvatarSelectionScreen() {
             <TouchableOpacity
               key={avatar.id}
               onPress={() => setSelectedAvatar(avatar.id)}
-              className={`items-center p-4 rounded-3xl border-4 transition-all ${selectedAvatar === avatar.id
+              className={`items-center p-4 rounded-3xl border-4 ${selectedAvatar === avatar.id
                 ? 'border-primary-500 bg-primary-50 scale-105'
                 : 'border-transparent bg-white'
                 }`}

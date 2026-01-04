@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Text } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, {
     FadeIn,
@@ -171,6 +171,10 @@ export default function IntroSlide1() {
         router.push('/(onboarding)/intro/slide-2');
     };
 
+    const handleSkip = () => {
+        router.replace('/(tabs)');
+    };
+
     return (
         <OnboardingLayout
             onNext={handleNext}
@@ -181,6 +185,10 @@ export default function IntroSlide1() {
             backgroundColor="#fff0f0"
         >
             <View style={styles.container}>
+                <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
+                    <Text style={styles.skipButtonText}>SKIP</Text>
+                </TouchableOpacity>
+
                 <View style={styles.contentArea}>
                     <Animated.View entering={FadeIn.delay(100).duration(400)}>
                         <Animated.Text style={[styles.emoji, emojiStyle]}>
@@ -383,5 +391,18 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '900',
         color: '#0f172a',
+    },
+    skipButton: {
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        zIndex: 50,
+        padding: 10,
+    },
+    skipButtonText: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: '#94a3b8',
+        letterSpacing: 1,
     },
 });

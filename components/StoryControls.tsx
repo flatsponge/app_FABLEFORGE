@@ -23,23 +23,23 @@ const ControlSection = ({ title, children }: { title: string, children: React.Re
   </View>
 );
 
-const LengthOption = ({ 
-  label, 
-  value, 
-  selected, 
-  onSelect 
-}: { 
-  label: string; 
-  value: StoryLength; 
-  selected: boolean; 
+const LengthOption = ({
+  label,
+  value,
+  selected,
+  onSelect
+}: {
+  label: string;
+  value: StoryLength;
+  selected: boolean;
   onSelect: () => void;
 }) => (
-  <Pressable 
+  <Pressable
     onPress={onSelect}
     className={`flex-1 p-3 rounded-xl border ${selected ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-slate-100'} items-center active:scale-95`}
   >
-    <View className={`w-full h-1.5 rounded-full mb-2 ${selected ? 'bg-indigo-500' : 'bg-slate-200'}`} 
-      style={{ width: value === 'short' ? '40%' : value === 'medium' ? '70%' : '100%' }} 
+    <View className={`w-full h-1.5 rounded-full mb-2 ${selected ? 'bg-indigo-500' : 'bg-slate-200'}`}
+      style={{ width: value === 'short' ? '40%' : value === 'medium' ? '70%' : '100%' }}
     />
     <Text className={`text-xs font-bold ${selected ? 'text-indigo-600' : 'text-slate-500'}`}>{label}</Text>
   </Pressable>
@@ -84,7 +84,7 @@ const TimeOption = ({
 }) => (
   <Pressable
     onPress={onSelect}
-    className={`flex-1 flex-row items-center justify-center gap-2 p-3 rounded-xl border ${selected ? `bg-${color}-50 border-${color}-200` : 'bg-white border-slate-100'} active:scale-95 transition-all`}
+    className={`flex-1 flex-row items-center justify-center gap-2 p-3 rounded-xl border ${selected ? `bg-${color}-50 border-${color}-200` : 'bg-white border-slate-100'} active:scale-95`}
   >
     <Icon size={18} color={selected ? (value === 'day' ? '#eab308' : '#6366f1') : '#94a3b8'} />
     <Text className={`text-sm font-bold ${selected ? (value === 'day' ? 'text-yellow-700' : 'text-indigo-700') : 'text-slate-500'}`}>{label}</Text>
@@ -102,7 +102,7 @@ export const StoryControls = ({
 
   return (
     <View className="bg-white rounded-[40px] p-6 border border-slate-200 shadow-sm mb-8">
-      
+
       <ControlSection title="Story Length">
         <View className="flex-row gap-3">
           <LengthOption label="Short" value="short" selected={length === 'short'} onSelect={() => setLength('short')} />
@@ -113,25 +113,25 @@ export const StoryControls = ({
 
       <ControlSection title="Vocabulary Level">
         <View className="flex-row gap-3">
-          <DifficultyOption 
-            label="Simple" 
-            value="beginner" 
-            selected={difficulty === 'beginner'} 
-            onSelect={() => setDifficulty('beginner')} 
+          <DifficultyOption
+            label="Simple"
+            value="beginner"
+            selected={difficulty === 'beginner'}
+            onSelect={() => setDifficulty('beginner')}
             icon={Feather}
           />
-          <DifficultyOption 
-            label="Standard" 
-            value="intermediate" 
-            selected={difficulty === 'intermediate'} 
-            onSelect={() => setDifficulty('intermediate')} 
+          <DifficultyOption
+            label="Standard"
+            value="intermediate"
+            selected={difficulty === 'intermediate'}
+            onSelect={() => setDifficulty('intermediate')}
             icon={BookOpen}
           />
-          <DifficultyOption 
-            label="Rich" 
-            value="advanced" 
-            selected={difficulty === 'advanced'} 
-            onSelect={() => setDifficulty('advanced')} 
+          <DifficultyOption
+            label="Rich"
+            value="advanced"
+            selected={difficulty === 'advanced'}
+            onSelect={() => setDifficulty('advanced')}
             icon={Brain}
           />
         </View>
@@ -140,19 +140,19 @@ export const StoryControls = ({
       <View>
         <Text className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 pl-1">Story Vibe</Text>
         <View className="flex-row gap-3">
-          <TimeOption 
-            label="Playtime" 
-            value="day" 
-            selected={time === 'day'} 
-            onSelect={() => setTime('day')} 
+          <TimeOption
+            label="Playtime"
+            value="day"
+            selected={time === 'day'}
+            onSelect={() => setTime('day')}
             icon={Sun}
             color="yellow"
           />
-          <TimeOption 
-            label="Bedtime" 
-            value="night" 
-            selected={time === 'night'} 
-            onSelect={() => setTime('night')} 
+          <TimeOption
+            label="Bedtime"
+            value="night"
+            selected={time === 'night'}
+            onSelect={() => setTime('night')}
             icon={Moon}
             color="indigo"
           />
