@@ -66,8 +66,8 @@ export const CrystalModal = ({
                     </Pressable>
 
                     {/* Header Section - Balance Display */}
-                    <View className="bg-background p-8 pb-10 border-b border-slate-100 relative overflow-hidden">
-                        <View className="absolute top-0 right-0 w-64 h-64 bg-cyan-100/30 rounded-full -mr-16 -mt-16" />
+                    <View className="bg-white p-8 pb-10 border-b border-slate-100 relative overflow-hidden">
+
 
                         <View className="items-center">
                             <Text className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
