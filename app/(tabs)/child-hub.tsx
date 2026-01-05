@@ -52,6 +52,8 @@ const AnimatedBottle = ({ onComplete, onLanded }: { onComplete: () => void; onLa
   const opacity = useSharedValue(1);
   const scale = useSharedValue(1);
   const rotate = useSharedValue(0);
+  const landedTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const completeTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const duration = 800;
@@ -76,9 +78,20 @@ const AnimatedBottle = ({ onComplete, onLanded }: { onComplete: () => void; onLa
       easing: Easing.in(Easing.quad),
     });
 
-    setTimeout(() => runOnJS(onLanded)(), 500);
-    setTimeout(() => runOnJS(onComplete)(), duration + 50);
-  }, []);
+    landedTimeout.current = setTimeout(() => runOnJS(onLanded)(), 500);
+    completeTimeout.current = setTimeout(() => runOnJS(onComplete)(), duration + 50);
+
+    return () => {
+      if (landedTimeout.current) {
+        clearTimeout(landedTimeout.current);
+        landedTimeout.current = null;
+      }
+      if (completeTimeout.current) {
+        clearTimeout(completeTimeout.current);
+        completeTimeout.current = null;
+      }
+    };
+  }, [onComplete, onLanded]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [
@@ -235,9 +248,10 @@ const ChunkyButton = ({
             borderTopWidth: s.borderTop,
             borderLeftWidth: s.borderSide,
             borderRightWidth: s.borderSide,
+            opacity: disabled ? 0.5 : 1,
           },
         ]}
-        className={`${bgColor} ${rounded} ${borderColor} ${disabled ? 'opacity-50' : ''}`}
+        className={`${bgColor} ${rounded} ${borderColor}`}
       >
         {children}
       </Animated.View>
@@ -656,6 +670,7 @@ export default function ChildHubScreen() {
   const [wishSent, setWishSent] = useState(false);
 
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const unlockHintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const insets = useSafeAreaInsets();
 
@@ -674,6 +689,14 @@ export default function ChildHubScreen() {
     }, [setIsOnChildHub])
   );
 
+  useEffect(() => {
+    PRESET_LOCATIONS.forEach((loc) => {
+      if (loc.image) {
+        Image.prefetch(loc.image).catch(() => null);
+      }
+    });
+  }, [PRESET_LOCATIONS]);
+
   const currentOutfit = OUTFITS.find(o => o.id === avatarConfig.outfitId) || OUTFITS[0];
   const currentHat = HATS.find(h => h.id === avatarConfig.hatId);
   const currentToy = TOYS.find(t => t.id === avatarConfig.toyId);
@@ -681,10 +704,15 @@ export default function ChildHubScreen() {
   // Inverted lock behavior: tap to lock, long-press to unlock
   const handleLockPressStart = () => {
     if (isLocked) {
+      if (longPressTimer.current) {
+        clearTimeout(longPressTimer.current);
+        longPressTimer.current = null;
+      }
       // When locked, start long-press timer to unlock
       longPressTimer.current = setTimeout(() => {
         setIsLocked(false);
         setShowUnlockHint(false);
+        longPressTimer.current = null;
       }, 1500);
     }
     // When unlocked, we lock on press release (short tap)
@@ -698,7 +726,13 @@ export default function ChildHubScreen() {
     if (isLocked) {
       // Show hint that they need to hold longer
       setShowUnlockHint(true);
-      setTimeout(() => setShowUnlockHint(false), 2000);
+      if (unlockHintTimer.current) {
+        clearTimeout(unlockHintTimer.current);
+      }
+      unlockHintTimer.current = setTimeout(() => {
+        setShowUnlockHint(false);
+        unlockHintTimer.current = null;
+      }, 2000);
     } else {
       // Short tap while unlocked = lock immediately
       setIsLocked(true);
@@ -724,17 +758,17 @@ export default function ChildHubScreen() {
     setShowBottleAnimation(true);
   };
 
-  const handleBottleLanded = () => {
+  const handleBottleLanded = useCallback(() => {
     // Show glitter when bottle lands in the well
     setShowGlitter(true);
-  };
+  }, [setShowGlitter]);
 
-  const handleBottleAnimationComplete = () => {
+  const handleBottleAnimationComplete = useCallback(() => {
     setShowBottleAnimation(false);
     setShowGlitter(false);
     // Show success message - stay in this state until user taps "Again"
     setWishSent(true);
-  };
+  }, [setShowBottleAnimation, setShowGlitter, setWishSent]);
 
   const handleSendAnother = () => {
     // Reset to idle state for another wish
@@ -747,6 +781,8 @@ export default function ChildHubScreen() {
   useEffect(() => {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
+      if (longPressTimer.current) clearTimeout(longPressTimer.current);
+      if (unlockHintTimer.current) clearTimeout(unlockHintTimer.current);
     };
   }, []);
 
@@ -841,9 +877,10 @@ export default function ChildHubScreen() {
                           onPress={() =>
                             setAvatarConfig({ ...avatarConfig, outfitId: item.id })
                           }
+                          style={currentOutfit.id === item.id ? undefined : { opacity: 0.9 }}
                           className={`w-20 h-20 rounded-2xl items-center justify-center border-4 ${item.color} ${currentOutfit.id === item.id
                             ? 'border-black/20 ring-4'
-                            : 'border-transparent opacity-90'
+                            : 'border-transparent'
                             }`}
                         >
                           <Text className="text-4xl">{item.iconName}</Text>

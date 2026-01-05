@@ -592,6 +592,7 @@ export const CreateScreen: React.FC = () => {
   const [timeToNextCrystal, setTimeToNextCrystal] = useState(REGEN_TIME_SECONDS);
 
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [toggleLayout, setToggleLayout] = useState({ width: 0, height: 0 });
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Enable LayoutAnimation for Android
@@ -778,17 +779,24 @@ export const CreateScreen: React.FC = () => {
           <View className="px-5">
             <View className="mb-4">
               <Pressable
-                onPress={() => setStudioMode(isAuto ? 'creative' : 'auto')}
-                className="rounded-2xl"
+                onPress={() => {
+                  setStudioMode(isAuto ? 'creative' : 'auto');
+                  Vibration.vibrate(5);
+                }}
+                style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.98 : 1 }] })}
               >
-                <View
-                  className={`rounded-2xl p-1 border ${isAuto ? 'border-amber-200 bg-amber-50' : 'border-slate-200 bg-white'
-                    }`}
+                <MotiView
+                  animate={{
+                    backgroundColor: isAuto ? '#fffbeb' : '#ffffff',
+                    borderColor: isAuto ? '#fde68a' : '#e2e8f0',
+                  }}
+                  transition={{ type: 'timing', duration: 300 }}
+                  className="rounded-2xl p-1 border"
                 >
                   <View className="relative rounded-xl overflow-hidden">
                     <MotiView
                       animate={{ opacity: isAuto ? 1 : 0 }}
-                      transition={{ type: 'timing', duration: 200 }}
+                      transition={{ type: 'timing', duration: 300 }}
                       style={StyleSheet.absoluteFillObject}
                     >
                       <LinearGradient
@@ -796,73 +804,110 @@ export const CreateScreen: React.FC = () => {
                         style={StyleSheet.absoluteFillObject}
                       />
                     </MotiView>
-                    <View className="relative bg-white/80 rounded-xl py-3 px-4 flex-row items-center justify-between">
+                    <View className="relative bg-white/0 rounded-xl py-3 px-4 flex-row items-center justify-between">
                       <View className="flex-1 shrink flex-row items-center gap-3">
                         <View
-                          className={`w-10 h-10 rounded-full items-center justify-center ${isAuto ? 'bg-amber-500' : 'bg-slate-100'
-                            }`}
+                          className={`w-10 h-10 rounded-full items-center justify-center ${
+                            isAuto ? 'bg-amber-500' : 'bg-slate-100'
+                          }`}
                         >
                           <Infinity size={20} color={isAuto ? '#ffffff' : '#94a3b8'} />
                         </View>
                         <View className="flex-1 shrink">
-                          <Text
-                            className={`text-sm font-black uppercase tracking-wide ${isAuto ? 'text-amber-700' : 'text-slate-500'
-                              }`}
-                          >
-                            Instant Story
-                          </Text>
+                          <MotiView animate={{ opacity: isAuto ? 1 : 0.6 }}>
+                            <Text
+                              className={`text-sm font-black uppercase tracking-wide ${isAuto ? 'text-amber-700' : 'text-slate-500'
+                                }`}
+                            >
+                              Instant Story
+                            </Text>
+                          </MotiView>
                           <Text className="text-[10px] font-bold text-slate-400" numberOfLines={1}>
                             Randomize everything for a perfect story on the go.
                           </Text>
                         </View>
                       </View>
-                      {isAuto ? (
+                      <MotiView
+                        animate={{
+                          opacity: isAuto ? 1 : 0,
+                          scale: isAuto ? 1 : 0,
+                        }}
+                        transition={{ type: 'timing', duration: 200 }}
+                      >
                         <View className="bg-amber-100 px-3 py-1 rounded-full flex-row items-center gap-1">
                           <Check size={12} color="#b45309" />
                           <Text className="text-xs font-bold text-amber-700">Active</Text>
                         </View>
-                      ) : null}
+                      </MotiView>
                     </View>
                   </View>
-                </View>
+                </MotiView>
               </Pressable>
             </View>
 
-            {!isAuto ? (
-              <MotiView
-                from={{ opacity: 0, translateY: 10 }}
-                animate={{ opacity: 1, translateY: 0 }}
-                transition={{ type: 'timing', duration: 250 }}
-                className="bg-white p-1 rounded-2xl border border-slate-200 flex-row mb-8 shadow-sm"
-              >
-                <Pressable
-                  onPress={() => setStudioMode('creative')}
-                  className={`flex-1 py-3 rounded-xl flex-row items-center justify-center gap-2 ${isCreative ? 'bg-primary-50' : ''
-                    }`}
+            <AnimatePresence initial={false}>
+              {!isAuto && (
+                <MotiView
+                  from={{ opacity: 0, height: 0, translateY: -10, marginBottom: 0 }}
+                  animate={{ opacity: 1, height: 60, translateY: 0, marginBottom: 32 }}
+                  exit={{ opacity: 0, height: 0, translateY: -10, marginBottom: 0 }}
+                  transition={{ type: 'timing', duration: 300 }}
+                  className="bg-white p-1 rounded-2xl border border-slate-200 flex-row shadow-sm overflow-hidden"
+                  onLayout={(e) => {
+                    if (e.nativeEvent.layout.height > 0) {
+                      setToggleLayout(e.nativeEvent.layout);
+                    }
+                  }}
                 >
-                  <Palette size={16} color={isCreative ? '#a855f7' : '#94a3b8'} />
-                  <Text
-                    className={`text-sm font-black ${isCreative ? 'text-primary-700' : 'text-slate-400'
-                      }`}
+                  {toggleLayout.width > 0 && (
+                    <MotiView
+                      animate={{
+                        translateX: isCreative ? 0 : (toggleLayout.width - 10) / 2,
+                        backgroundColor: isCreative ? '#faf5ff' : '#f0fdfa',
+                      }}
+                      transition={{
+                        type: 'spring',
+                        damping: 25,
+                        stiffness: 250,
+                        mass: 0.8,
+                      }}
+                      style={{
+                        position: 'absolute',
+                        top: 5,
+                        left: 5,
+                        bottom: 5,
+                        width: (toggleLayout.width - 10) / 2,
+                        borderRadius: 12,
+                      }}
+                    />
+                  )}
+                  <Pressable
+                    onPress={() => setStudioMode('creative')}
+                    className="flex-1 rounded-xl flex-row items-center justify-center gap-2 z-10"
                   >
-                    Creative Magic
-                  </Text>
-                </Pressable>
-                <Pressable
-                  onPress={() => setStudioMode('situation')}
-                  className={`flex-1 py-3 rounded-xl flex-row items-center justify-center gap-2 ${!isCreative ? 'bg-teal-50' : ''
-                    }`}
-                >
-                  <LifeBuoy size={16} color={!isCreative ? '#14b8a6' : '#94a3b8'} />
-                  <Text
-                    className={`text-sm font-black ${!isCreative ? 'text-teal-700' : 'text-slate-400'
-                      }`}
+                    <Palette size={16} color={isCreative ? '#a855f7' : '#94a3b8'} />
+                    <Text
+                      className={`text-sm font-black ${isCreative ? 'text-primary-700' : 'text-slate-400'
+                        }`}
+                    >
+                      Creative Magic
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => setStudioMode('situation')}
+                    className="flex-1 rounded-xl flex-row items-center justify-center gap-2 z-10"
                   >
-                    Real Life Help
-                  </Text>
-                </Pressable>
-              </MotiView>
-            ) : null}
+                    <LifeBuoy size={16} color={!isCreative ? '#14b8a6' : '#94a3b8'} />
+                    <Text
+                      className={`text-sm font-black ${!isCreative ? 'text-teal-700' : 'text-slate-400'
+                        }`}
+                    >
+                      Real Life Help
+                    </Text>
+                  </Pressable>
+                </MotiView>
+              )}
+            </AnimatePresence>
 
             <View className="mb-4">
               <Text className="text-2xl font-black text-slate-800 mb-1 leading-tight">
