@@ -70,3 +70,5 @@ export interface Wish {
 }
 
 export type ReadingMode = 'autoplay' | 'child' | 'parent';
+
+export type StoryLength = 'short' | 'medium' | 'long';

@@ -44,14 +44,15 @@ import {
 import { LucideIcon } from 'lucide-react-native';
 
 import { CrystalModal } from '@/components/CrystalModal';
+import { DurationSelector } from '@/components/DurationSelector';
+import { VibeSelector } from '@/components/VibeSelector';
 import { WishDetailModal } from '@/components/WishDetailModal';
 import { MAX_CRYSTALS, REGEN_TIME_SECONDS } from '@/constants/crystals';
 import { FRIENDS, PRESET_LOCATIONS, VOICE_PRESETS, WISHES } from '@/constants/data';
-import { Friend, PresetLocation, VoicePreset, Wish } from '@/types';
+import { Friend, PresetLocation, StoryLength, VoicePreset, Wish } from '@/types';
 
 type AppState = 'studio' | 'generating-outline' | 'outline-review' | 'generating-story' | 'preview';
 type StudioMode = 'creative' | 'situation' | 'auto';
-type StoryLength = 'short' | 'medium' | 'long';
 type StoryVibe = 'energizing' | 'soothing' | 'whimsical' | 'thoughtful';
 type ThemeMode = 'purple' | 'teal' | 'amber';
 type SelectorType = 'location' | 'value' | 'character' | 'voice';
@@ -318,251 +319,6 @@ const VoiceControl: React.FC<VoiceControlProps> = ({ value, onPress, theme = 'pu
   );
 };
 
-interface DurationSelectorProps {
-  value: StoryLength;
-  onChange: (value: StoryLength) => void;
-  theme?: ThemeMode;
-}
-
-const DurationSelector: React.FC<DurationSelectorProps> = ({ value, onChange, theme = 'purple' }) => {
-  const [showMenu, setShowMenu] = useState(false);
-  const longPressTriggered = useRef(false);
-  const tint = THEME_TINTS[theme];
-
-  const options: { val: StoryLength; label: string; desc: string }[] = [
-    { val: 'short', label: 'Short', desc: '1 min read' },
-    { val: 'medium', label: 'Medium', desc: '5 min read' },
-    { val: 'long', label: 'Long', desc: '10 min read' },
-  ];
-
-  const currentIndex = options.findIndex((option) => option.val === value);
-  const resolvedIndex = currentIndex === -1 ? 1 : currentIndex;
-  const current = options[resolvedIndex];
-
-  const handleCycle = () => {
-    if (longPressTriggered.current || showMenu) return;
-    const nextIndex = (resolvedIndex + 1) % options.length;
-    onChange(options[nextIndex].val);
-  };
-
-  const handleLongPress = () => {
-    longPressTriggered.current = true;
-    setShowMenu(true);
-    Vibration.vibrate(8);
-  };
-
-  const handlePressIn = () => {
-    longPressTriggered.current = false;
-  };
-
-  return (
-    <>
-      <View className="rounded-2xl border shadow-sm bg-white border-slate-200 flex-row overflow-hidden">
-        <Pressable
-          onPressIn={handlePressIn}
-          onLongPress={handleLongPress}
-          delayLongPress={350}
-          onPress={handleCycle}
-          className="flex-row items-center gap-3 pl-5 py-3 pr-2 active:scale-95"
-        >
-          <Clock size={18} color={tint.icon} />
-          <View className="flex-row items-center gap-1">
-            {[0, 1, 2].map((dot) => (
-              <View
-                key={dot}
-                style={[
-                  styles.dot,
-                  { backgroundColor: dot <= resolvedIndex ? tint.icon : '#e2e8f0' },
-                ]}
-              />
-            ))}
-          </View>
-          <Text className="text-sm font-bold text-slate-700 min-w-[56px]">{current.label}</Text>
-        </Pressable>
-        <Pressable
-          onPress={() => setShowMenu(true)}
-          className="px-4 py-3 items-center justify-center active:scale-95"
-        >
-          <ChevronDown size={14} color="#94a3b8" />
-        </Pressable>
-      </View>
-
-      <Modal
-        visible={showMenu}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowMenu(false)}
-      >
-        <Pressable style={styles.modalOverlay} onPress={() => setShowMenu(false)} />
-        <View style={styles.menuContainer}>
-          <MotiView
-            from={{ opacity: 0, translateY: 18, scale: 0.96 }}
-            animate={{ opacity: 1, translateY: 0, scale: 1 }}
-            transition={{ type: 'timing', duration: 200 }}
-            className="bg-white rounded-3xl border border-slate-100 shadow-lg p-4"
-          >
-            <Text className="px-2 py-1 text-[10px] font-black uppercase tracking-widest text-slate-400">
-              Select Duration
-            </Text>
-            {options.map((option, index) => {
-              const selected = value === option.val;
-              return (
-                <Pressable
-                  key={option.val}
-                  onPress={() => {
-                    onChange(option.val);
-                    setShowMenu(false);
-                  }}
-                  className={`mt-2 p-3 rounded-2xl flex-row items-center justify-between ${
-                    selected ? 'bg-slate-100' : 'bg-white'
-                  }`}
-                >
-                  <View>
-                    <View className="flex-row items-center gap-2">
-                      <View className="flex-row items-center gap-0.5">
-                        {[0, 1, 2].map((dot) => (
-                          <View
-                            key={dot}
-                            style={[
-                              styles.microDot,
-                              { backgroundColor: dot <= index ? '#0f172a' : '#e2e8f0' },
-                            ]}
-                          />
-                        ))}
-                      </View>
-                      <Text className="text-sm font-bold text-slate-800">{option.label}</Text>
-                    </View>
-                    <Text className="text-[10px] font-bold text-slate-400 mt-1 ml-5">
-                      {option.desc}
-                    </Text>
-                  </View>
-                  {selected ? <Check size={16} color="#10b981" /> : null}
-                </Pressable>
-              );
-            })}
-          </MotiView>
-        </View>
-      </Modal>
-    </>
-  );
-};
-
-interface VibeSelectorProps {
-  value: StoryVibe;
-  onChange: (value: StoryVibe) => void;
-  theme?: ThemeMode;
-}
-
-const VibeSelector: React.FC<VibeSelectorProps> = ({ value, onChange, theme = 'purple' }) => {
-  const [showMenu, setShowMenu] = useState(false);
-  const longPressTriggered = useRef(false);
-  const tint = THEME_TINTS[theme];
-
-  const options: { val: StoryVibe; label: string; desc: string; icon: LucideIcon }[] = [
-    { val: 'energizing', label: 'Energizing', desc: 'Play-focused, active', icon: Zap },
-    { val: 'soothing', label: 'Soothing', desc: 'Bedtime-focused, calming', icon: Moon },
-    { val: 'whimsical', label: 'Whimsical', desc: 'Funny, magical', icon: Sparkles },
-    { val: 'thoughtful', label: 'Thoughtful', desc: 'Learning, value-driven', icon: BookOpen },
-  ];
-
-  const currentIndex = options.findIndex((option) => option.val === value);
-  const resolvedIndex = currentIndex === -1 ? 1 : currentIndex;
-  const current = options[resolvedIndex];
-  const CurrentIcon = current.icon;
-
-  const handleCycle = () => {
-    if (longPressTriggered.current || showMenu) return;
-    const nextIndex = (resolvedIndex + 1) % options.length;
-    onChange(options[nextIndex].val);
-  };
-
-  const handleLongPress = () => {
-    longPressTriggered.current = true;
-    setShowMenu(true);
-    Vibration.vibrate(8);
-  };
-
-  const handlePressIn = () => {
-    longPressTriggered.current = false;
-  };
-
-  return (
-    <>
-      <View className="rounded-2xl border shadow-sm bg-white border-slate-200 flex-row overflow-hidden">
-        <Pressable
-          onPressIn={handlePressIn}
-          onLongPress={handleLongPress}
-          delayLongPress={350}
-          onPress={handleCycle}
-          className="flex-row items-center gap-3 pl-5 py-3 pr-2 active:scale-95"
-        >
-          <CurrentIcon size={18} color={tint.icon} />
-          <Text className="text-sm font-bold text-slate-700 min-w-[72px]">{current.label}</Text>
-        </Pressable>
-        <View className="w-px h-3 bg-slate-200 self-center" />
-        <Pressable
-          onPress={() => setShowMenu(true)}
-          className="px-4 py-3 items-center justify-center active:scale-95"
-        >
-          <ChevronDown size={14} color="#94a3b8" />
-        </Pressable>
-      </View>
-
-      <Modal
-        visible={showMenu}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowMenu(false)}
-      >
-        <Pressable style={styles.modalOverlay} onPress={() => setShowMenu(false)} />
-        <View style={styles.menuContainer}>
-          <MotiView
-            from={{ opacity: 0, translateY: 18, scale: 0.96 }}
-            animate={{ opacity: 1, translateY: 0, scale: 1 }}
-            transition={{ type: 'timing', duration: 200 }}
-            className="bg-white rounded-3xl border border-slate-100 shadow-lg p-4"
-          >
-            <Text className="px-2 py-1 text-[10px] font-black uppercase tracking-widest text-slate-400">
-              Select Vibe
-            </Text>
-            {options.map((option) => {
-              const selected = value === option.val;
-              const OptionIcon = option.icon;
-              return (
-                <Pressable
-                  key={option.val}
-                  onPress={() => {
-                    onChange(option.val);
-                    setShowMenu(false);
-                  }}
-                  className={`mt-2 p-3 rounded-2xl flex-row items-center justify-between ${
-                    selected ? 'bg-slate-100' : 'bg-white'
-                  }`}
-                >
-                  <View className="flex-row items-center gap-3">
-                    <View
-                      className={`w-8 h-8 rounded-full items-center justify-center ${
-                        selected ? 'bg-white' : 'bg-slate-100'
-                      }`}
-                    >
-                      <OptionIcon size={14} color={selected ? '#0f172a' : '#94a3b8'} />
-                    </View>
-                    <View>
-                      <Text className="text-sm font-bold text-slate-800">{option.label}</Text>
-                      <Text className="text-[10px] font-bold text-slate-400">{option.desc}</Text>
-                    </View>
-                  </View>
-                  {selected ? <Check size={16} color="#10b981" /> : null}
-                </Pressable>
-              );
-            })}
-          </MotiView>
-        </View>
-      </Modal>
-    </>
-  );
-};
-
 interface CompactElementProps {
   icon: LucideIcon;
   label: string;
@@ -588,14 +344,12 @@ const CompactElement: React.FC<CompactElementProps> = ({
   return (
     <Pressable
       onPress={onPress}
-      className={`relative flex-1 min-w-0 flex-row items-center gap-2.5 px-3 py-2 rounded-xl border ${
-        containerClass
-      }`}
+      className={`relative flex-1 min-w-0 flex-row items-center gap-2.5 px-3 py-2 rounded-xl border ${containerClass
+        }`}
     >
       <View
-        className={`w-8 h-8 rounded-lg items-center justify-center ${
-          hasValue ? 'bg-white/60' : 'bg-slate-100'
-        }`}
+        className={`w-8 h-8 rounded-lg items-center justify-center ${hasValue ? 'bg-white/60' : 'bg-slate-100'
+          }`}
       >
         <Icon size={16} color={iconColor} />
       </View>
@@ -762,47 +516,47 @@ export const CreateScreen: React.FC = () => {
     const bottomPadding = insets.bottom + 180;
     const selectorTitle = activeSelector
       ? {
-          location: 'World',
-          value: 'Lesson',
-          character: 'Sidekick',
-          voice: 'Voice',
-        }[activeSelector]
+        location: 'World',
+        value: 'Lesson',
+        character: 'Sidekick',
+        voice: 'Voice',
+      }[activeSelector]
       : 'Option';
     const actionBgClass = hasValidPrompt
       ? isAuto
         ? 'bg-amber-500'
         : isCreative
-        ? 'bg-slate-900'
-        : 'bg-teal-700'
-      : 'bg-slate-200';
+          ? 'bg-slate-900'
+          : 'bg-teal-700'
+      : 'bg-slate-400';
     const sparklesColor = hasValidPrompt
       ? isAuto
         ? '#ffffff'
         : isCreative
-        ? '#c4b5fd'
-        : '#ccfbf1'
-      : '#94a3b8';
-    const diamondColor = hasValidPrompt ? '#ffffff' : '#94a3b8';
-    const actionTextClass = hasValidPrompt ? 'text-white' : 'text-slate-400';
+          ? '#c4b5fd'
+          : '#ccfbf1'
+      : '#e2e8f0';
+    const diamondColor = hasValidPrompt ? '#ffffff' : '#e2e8f0';
+    const actionTextClass = hasValidPrompt ? 'text-white' : 'text-slate-200';
 
     return (
       <View className="flex-1 bg-background">
         <View className="absolute top-0 left-0 right-0 z-40">
-            <UnifiedHeader 
-                title="Create" 
-                scrollY={scrollY}
-                rightAction={
-                    <Pressable
-                        onPress={() => setShowCrystalModal(true)}
-                        className="flex-row items-center gap-2 bg-white px-2 py-1.5 rounded-full border border-slate-200 shadow-sm active:scale-95"
-                    >
-                        <View className="w-5 h-5 rounded-full bg-cyan-100 items-center justify-center">
-                        <Diamond size={10} color="#06b6d4" fill="#06b6d4" />
-                        </View>
-                        <Text className="text-sm font-bold text-slate-700 font-mono">{crystalBalance}</Text>
-                    </Pressable>
-                }
-            />
+          <UnifiedHeader
+            title="Create"
+            scrollY={scrollY}
+            rightAction={
+              <Pressable
+                onPress={() => setShowCrystalModal(true)}
+                className="flex-row items-center gap-2 bg-white px-2 py-1.5 rounded-full border border-slate-200 shadow-sm active:scale-95"
+              >
+                <View className="w-5 h-5 rounded-full bg-cyan-100 items-center justify-center">
+                  <Diamond size={10} color="#06b6d4" fill="#06b6d4" />
+                </View>
+                <Text className="text-sm font-bold text-slate-700 font-mono">{crystalBalance}</Text>
+              </Pressable>
+            }
+          />
         </View>
 
         <Animated.ScrollView
@@ -812,11 +566,11 @@ export const CreateScreen: React.FC = () => {
           onScroll={scrollHandler}
           scrollEventThrottle={16}
         >
-            <View className="pt-28 px-6 pb-6">
-                <Text className="text-4xl font-bold text-slate-900 dark:text-white tracking-tight">
-                    Create
-                </Text>
-            </View>
+          <View className="pt-28 px-6 pb-6">
+            <Text className="text-4xl font-bold text-slate-900 dark:text-white tracking-tight">
+              Create
+            </Text>
+          </View>
 
           <View className="px-5">
             <View className="mb-4">
@@ -825,9 +579,8 @@ export const CreateScreen: React.FC = () => {
                 className="rounded-2xl"
               >
                 <View
-                  className={`rounded-2xl p-1 border ${
-                    isAuto ? 'border-amber-200 bg-amber-50' : 'border-slate-200 bg-white'
-                  }`}
+                  className={`rounded-2xl p-1 border ${isAuto ? 'border-amber-200 bg-amber-50' : 'border-slate-200 bg-white'
+                    }`}
                 >
                   <View className="relative rounded-xl overflow-hidden">
                     <MotiView
@@ -841,23 +594,21 @@ export const CreateScreen: React.FC = () => {
                       />
                     </MotiView>
                     <View className="relative bg-white/80 rounded-xl py-3 px-4 flex-row items-center justify-between">
-                      <View className="flex-row items-center gap-3">
+                      <View className="flex-1 shrink flex-row items-center gap-3">
                         <View
-                          className={`w-10 h-10 rounded-full items-center justify-center ${
-                            isAuto ? 'bg-amber-500' : 'bg-slate-100'
-                          }`}
+                          className={`w-10 h-10 rounded-full items-center justify-center ${isAuto ? 'bg-amber-500' : 'bg-slate-100'
+                            }`}
                         >
                           <Infinity size={20} color={isAuto ? '#ffffff' : '#94a3b8'} />
                         </View>
-                        <View>
+                        <View className="flex-1 shrink">
                           <Text
-                            className={`text-sm font-black uppercase tracking-wide ${
-                              isAuto ? 'text-amber-700' : 'text-slate-500'
-                            }`}
+                            className={`text-sm font-black uppercase tracking-wide ${isAuto ? 'text-amber-700' : 'text-slate-500'
+                              }`}
                           >
                             Instant Story
                           </Text>
-                          <Text className="text-[10px] font-bold text-slate-400">
+                          <Text className="text-[10px] font-bold text-slate-400" numberOfLines={1}>
                             Randomize everything for a perfect story on the go.
                           </Text>
                         </View>
@@ -883,30 +634,26 @@ export const CreateScreen: React.FC = () => {
               >
                 <Pressable
                   onPress={() => setStudioMode('creative')}
-                  className={`flex-1 py-3 rounded-xl flex-row items-center justify-center gap-2 ${
-                    isCreative ? 'bg-primary-50' : ''
-                  }`}
+                  className={`flex-1 py-3 rounded-xl flex-row items-center justify-center gap-2 ${isCreative ? 'bg-primary-50' : ''
+                    }`}
                 >
                   <Palette size={16} color={isCreative ? '#a855f7' : '#94a3b8'} />
                   <Text
-                    className={`text-sm font-black ${
-                      isCreative ? 'text-primary-700' : 'text-slate-400'
-                    }`}
+                    className={`text-sm font-black ${isCreative ? 'text-primary-700' : 'text-slate-400'
+                      }`}
                   >
                     Creative Magic
                   </Text>
                 </Pressable>
                 <Pressable
                   onPress={() => setStudioMode('situation')}
-                  className={`flex-1 py-3 rounded-xl flex-row items-center justify-center gap-2 ${
-                    !isCreative ? 'bg-teal-50' : ''
-                  }`}
+                  className={`flex-1 py-3 rounded-xl flex-row items-center justify-center gap-2 ${!isCreative ? 'bg-teal-50' : ''
+                    }`}
                 >
                   <LifeBuoy size={16} color={!isCreative ? '#14b8a6' : '#94a3b8'} />
                   <Text
-                    className={`text-sm font-black ${
-                      !isCreative ? 'text-teal-700' : 'text-slate-400'
-                    }`}
+                    className={`text-sm font-black ${!isCreative ? 'text-teal-700' : 'text-slate-400'
+                      }`}
                   >
                     Real Life Help
                   </Text>
@@ -919,15 +666,15 @@ export const CreateScreen: React.FC = () => {
                 {isAuto
                   ? 'Magic is in the air.'
                   : isCreative
-                  ? "Let's build a world."
-                  : "What's the challenge?"}
+                    ? "Let's build a world."
+                    : "What's the challenge?"}
               </Text>
               <Text className="text-sm text-slate-500 font-medium">
                 {isAuto
                   ? "Sit back. We'll conjure a unique tale for you."
                   : isCreative
-                  ? 'Create a magical story from scratch.'
-                  : 'Get help with a specific situation.'}
+                    ? 'Create a magical story from scratch.'
+                    : 'Get help with a specific situation.'}
               </Text>
             </View>
 
@@ -968,9 +715,8 @@ export const CreateScreen: React.FC = () => {
                     onChangeText={handlePromptChange}
                     placeholder={isCreative ? 'Once upon a time...' : 'Describe the situation (e.g. Scared of the dark)...'}
                     placeholderTextColor="#94a3b8"
-                    className={`w-full text-lg text-slate-700 font-medium bg-transparent ${
-                      isCreative ? 'h-32' : 'h-24'
-                    }`}
+                    className={`w-full text-lg text-slate-700 font-medium bg-transparent ${isCreative ? 'h-32' : 'h-24'
+                      }`}
                     multiline
                     textAlignVertical="top"
                   />
@@ -1034,7 +780,7 @@ export const CreateScreen: React.FC = () => {
                           className="pb-2"
                         >
                           <Pressable
-                            onPress={() => {}}
+                            onPress={() => { }}
                             className="w-12 items-center justify-center mr-3"
                           >
                             <View className="w-12 h-12 rounded-full bg-slate-100 border border-slate-200 items-center justify-center">
@@ -1084,16 +830,14 @@ export const CreateScreen: React.FC = () => {
                             <Pressable
                               key={preset.id}
                               onPress={() => handlePresetSituation(preset)}
-                              className={`flex-row items-center gap-2 pl-1.5 pr-4 py-1.5 rounded-full border ${
-                                isSelected
-                                  ? 'bg-slate-900 border-slate-900'
-                                  : `${preset.bgClass} ${preset.borderClass}`
-                              } active:scale-95`}
+                              className={`flex-row items-center gap-2 pl-1.5 pr-4 py-1.5 rounded-full border ${isSelected
+                                ? 'bg-slate-900 border-slate-900'
+                                : `${preset.bgClass} ${preset.borderClass}`
+                                } active:scale-95`}
                             >
                               <View
-                                className={`w-8 h-8 rounded-full items-center justify-center ${
-                                  isSelected ? 'bg-white/10' : 'bg-white'
-                                }`}
+                                className={`w-8 h-8 rounded-full items-center justify-center ${isSelected ? 'bg-white/10' : 'bg-white'
+                                  }`}
                               >
                                 <preset.icon
                                   size={14}
@@ -1101,9 +845,8 @@ export const CreateScreen: React.FC = () => {
                                 />
                               </View>
                               <Text
-                                className={`text-xs font-bold ${
-                                  isSelected ? 'text-white' : preset.textClass
-                                }`}
+                                className={`text-xs font-bold ${isSelected ? 'text-white' : preset.textClass
+                                  }`}
                               >
                                 {preset.label}
                               </Text>
@@ -1123,9 +866,8 @@ export const CreateScreen: React.FC = () => {
                       >
                         <View className="flex-row items-center gap-3">
                           <View
-                            className={`w-10 h-10 rounded-xl items-center justify-center ${
-                              isAutoElements ? 'bg-amber-100' : 'bg-primary-100'
-                            }`}
+                            className={`w-10 h-10 rounded-xl items-center justify-center ${isAutoElements ? 'bg-amber-100' : 'bg-primary-100'
+                              }`}
                           >
                             {isAutoElements ? (
                               <Sparkles size={18} color="#d97706" />
@@ -1228,10 +970,8 @@ export const CreateScreen: React.FC = () => {
           <Pressable
             onPress={handleCreateStory}
             disabled={!hasValidPrompt}
-            style={!hasValidPrompt ? { opacity: 0.6 } : undefined}
-            className={`w-full py-4 rounded-2xl flex-row items-center justify-center gap-3 shadow-lg ${
-              actionBgClass
-            } active:scale-[0.98]`}
+            className={`w-full py-4 rounded-2xl flex-row items-center justify-center gap-3 shadow-lg ${actionBgClass
+              } active:scale-[0.98]`}
           >
             <Sparkles size={20} color={sparklesColor} />
             <Text className={`font-black text-lg ${actionTextClass}`}>
@@ -1272,112 +1012,108 @@ export const CreateScreen: React.FC = () => {
               >
                 {activeSelector === 'location'
                   ? PRESET_LOCATIONS.map((loc) => {
-                      const isSelected = overrideLocation?.id === loc.id;
-                      return (
-                        <Pressable
-                          key={loc.id}
-                          onPress={() => {
-                            setOverrideLocation(loc);
-                            setActiveSelector(null);
-                          }}
-                          className={`w-full p-4 rounded-xl flex-row items-center justify-between mb-2 ${
-                            isSelected ? 'bg-slate-100' : 'bg-slate-50'
+                    const isSelected = overrideLocation?.id === loc.id;
+                    return (
+                      <Pressable
+                        key={loc.id}
+                        onPress={() => {
+                          setOverrideLocation(loc);
+                          setActiveSelector(null);
+                        }}
+                        className={`w-full p-4 rounded-xl flex-row items-center justify-between mb-2 ${isSelected ? 'bg-slate-100' : 'bg-slate-50'
                           }`}
-                        >
-                          <Text className="font-bold text-slate-700">{loc.name}</Text>
-                          <View className="bg-white px-2 py-1 rounded border border-slate-200">
-                            <Text className="text-xs font-bold text-slate-400">{loc.cost} crystals</Text>
-                          </View>
-                        </Pressable>
-                      );
-                    })
+                      >
+                        <Text className="font-bold text-slate-700">{loc.name}</Text>
+                        <View className="bg-white px-2 py-1 rounded border border-slate-200">
+                          <Text className="text-xs font-bold text-slate-400">{loc.cost} crystals</Text>
+                        </View>
+                      </Pressable>
+                    );
+                  })
                   : null}
 
                 {activeSelector === 'value'
                   ? FOCUS_VALUES.map((val) => {
-                      const isSelected = overrideValue?.id === val.id;
-                      return (
-                        <Pressable
-                          key={val.id}
-                          onPress={() => {
-                            setOverrideValue(val);
-                            setActiveSelector(null);
-                          }}
-                          className={`w-full p-4 rounded-xl flex-row items-center justify-between mb-2 ${
-                            isSelected ? 'bg-slate-100' : 'bg-slate-50'
+                    const isSelected = overrideValue?.id === val.id;
+                    return (
+                      <Pressable
+                        key={val.id}
+                        onPress={() => {
+                          setOverrideValue(val);
+                          setActiveSelector(null);
+                        }}
+                        className={`w-full p-4 rounded-xl flex-row items-center justify-between mb-2 ${isSelected ? 'bg-slate-100' : 'bg-slate-50'
                           }`}
-                        >
-                          <View className="flex-row items-center gap-3">
-                            <View className={`w-9 h-9 rounded-full items-center justify-center ${val.bgClass}`}>
-                              <val.icon size={18} color={val.iconColor} />
-                            </View>
-                            <Text className="font-bold text-slate-700">{val.name}</Text>
+                      >
+                        <View className="flex-row items-center gap-3">
+                          <View className={`w-9 h-9 rounded-full items-center justify-center ${val.bgClass}`}>
+                            <val.icon size={18} color={val.iconColor} />
                           </View>
-                          {isSelected ? <Check size={16} color="#10b981" /> : null}
-                        </Pressable>
-                      );
-                    })
+                          <Text className="font-bold text-slate-700">{val.name}</Text>
+                        </View>
+                        {isSelected ? <Check size={16} color="#10b981" /> : null}
+                      </Pressable>
+                    );
+                  })
                   : null}
 
                 {activeSelector === 'character'
                   ? FRIENDS.map((char) => {
-                      const isSelected = overrideCharacter?.id === char.id;
-                      return (
-                        <Pressable
-                          key={char.id}
-                          onPress={() => {
-                            setOverrideCharacter(char);
-                            setActiveSelector(null);
-                          }}
-                          className={`w-full p-4 rounded-xl flex-row items-center justify-between mb-2 ${
-                            isSelected ? 'bg-slate-100' : 'bg-slate-50'
+                    const isSelected = overrideCharacter?.id === char.id;
+                    return (
+                      <Pressable
+                        key={char.id}
+                        onPress={() => {
+                          setOverrideCharacter(char);
+                          setActiveSelector(null);
+                        }}
+                        className={`w-full p-4 rounded-xl flex-row items-center justify-between mb-2 ${isSelected ? 'bg-slate-100' : 'bg-slate-50'
                           }`}
-                        >
-                          <View className="flex-row items-center gap-3">
-                            <View className={`w-9 h-9 rounded-full items-center justify-center ${char.color}`}>
-                              <Text className="text-lg">{char.icon}</Text>
-                            </View>
-                            <Text className="font-bold text-slate-700">{char.name}</Text>
+                      >
+                        <View className="flex-row items-center gap-3">
+                          <View className={`w-9 h-9 rounded-full items-center justify-center ${char.color}`}>
+                            <Text className="text-lg">{char.icon}</Text>
                           </View>
-                          <View className="bg-white px-2 py-1 rounded border border-slate-200">
-                            <Text className="text-xs font-bold text-slate-400">{char.cost} crystals</Text>
-                          </View>
-                        </Pressable>
-                      );
-                    })
+                          <Text className="font-bold text-slate-700">{char.name}</Text>
+                        </View>
+                        <View className="bg-white px-2 py-1 rounded border border-slate-200">
+                          <Text className="text-xs font-bold text-slate-400">{char.cost} crystals</Text>
+                        </View>
+                      </Pressable>
+                    );
+                  })
                   : null}
 
                 {activeSelector === 'voice'
                   ? VOICE_PRESETS.map((voice) => {
-                      const isSelected = overrideVoice?.id === voice.id;
-                      return (
-                        <Pressable
-                          key={voice.id}
-                          onPress={() => {
-                            setOverrideVoice(voice);
-                            setActiveSelector(null);
-                          }}
-                          className={`w-full p-4 rounded-xl flex-row items-center justify-between mb-2 ${
-                            isSelected ? 'bg-slate-100' : 'bg-slate-50'
+                    const isSelected = overrideVoice?.id === voice.id;
+                    return (
+                      <Pressable
+                        key={voice.id}
+                        onPress={() => {
+                          setOverrideVoice(voice);
+                          setActiveSelector(null);
+                        }}
+                        className={`w-full p-4 rounded-xl flex-row items-center justify-between mb-2 ${isSelected ? 'bg-slate-100' : 'bg-slate-50'
                           }`}
-                        >
-                          <View className="flex-row items-center gap-3">
-                            <View className={`w-9 h-9 rounded-full items-center justify-center ${voice.color}`}>
-                              <Text className="text-base">{voice.icon}</Text>
-                            </View>
-                            <View>
-                              <Text className="font-bold text-slate-700">{voice.name}</Text>
-                              <Text className="text-xs text-slate-400">{voice.style}</Text>
-                            </View>
+                      >
+                        <View className="flex-row items-center gap-3">
+                          <View className={`w-9 h-9 rounded-full items-center justify-center ${voice.color}`}>
+                            <Text className="text-base">{voice.icon}</Text>
                           </View>
-                          <View className="bg-white px-2 py-1 rounded border border-slate-200">
-                            <Text className="text-xs font-bold text-slate-400">
-                              {voice.cost === 0 ? 'Free' : `${voice.cost} crystals`}
-                            </Text>
+                          <View>
+                            <Text className="font-bold text-slate-700">{voice.name}</Text>
+                            <Text className="text-xs text-slate-400">{voice.style}</Text>
                           </View>
-                        </Pressable>
-                      );
-                    })
+                        </View>
+                        <View className="bg-white px-2 py-1 rounded border border-slate-200">
+                          <Text className="text-xs font-bold text-slate-400">
+                            {voice.cost === 0 ? 'Free' : `${voice.cost} crystals`}
+                          </Text>
+                        </View>
+                      </Pressable>
+                    );
+                  })
                   : null}
               </ScrollView>
             </MotiView>
@@ -1638,5 +1374,8 @@ const styles = StyleSheet.create({
     width: 4,
     height: 4,
     borderRadius: 999,
+  },
+  durationMenuContainer: {
+    zIndex: 100,
   },
 });
