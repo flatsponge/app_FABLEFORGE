@@ -1,12 +1,19 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, ScrollView, Pressable, TextInput, Modal, Vibration, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, Pressable, TextInput, Modal, Vibration, StyleSheet, LayoutAnimation, Platform, UIManager } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AnimatePresence, MotiView } from 'moti';
-import Animated, { useSharedValue, useAnimatedScrollHandler } from 'react-native-reanimated';
+import Animated, {
+  useSharedValue,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  interpolateColor,
+} from 'react-native-reanimated';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
 import {
-  Activity,
+
   ArrowRight,
   BookOpen,
   Check,
@@ -16,6 +23,7 @@ import {
   Clock,
   Diamond,
   Dice5,
+  FileText,
   Gift,
   Heart,
   Hourglass,
@@ -49,6 +57,7 @@ import { VibeSelector } from '@/components/VibeSelector';
 import { WishDetailModal } from '@/components/WishDetailModal';
 import { MAX_CRYSTALS, REGEN_TIME_SECONDS } from '@/constants/crystals';
 import { FRIENDS, PRESET_LOCATIONS, VOICE_PRESETS, WISHES } from '@/constants/data';
+import { STORY_STARTERS, CHALLENGE_SUGGESTIONS } from '@/constants/suggestions';
 import { Friend, PresetLocation, StoryLength, VoicePreset, Wish } from '@/types';
 
 type AppState = 'studio' | 'generating-outline' | 'outline-review' | 'generating-story' | 'preview';
@@ -66,16 +75,7 @@ interface FocusValue {
   desc: string;
 }
 
-interface SituationPreset {
-  id: string;
-  label: string;
-  prompt: string;
-  icon: LucideIcon;
-  bgClass: string;
-  borderClass: string;
-  textClass: string;
-  iconColor: string;
-}
+
 
 const THEME_TINTS: Record<ThemeMode, { icon: string; bgLight: string; borderLight: string; text: string }> = {
   purple: {
@@ -199,58 +199,7 @@ const FOCUS_VALUES: FocusValue[] = [
   },
 ];
 
-const SITUATION_PRESETS: SituationPreset[] = [
-  {
-    id: 'conflict',
-    label: 'Conflict',
-    prompt: 'My child had a conflict with another child and needs help repairing the friendship.',
-    icon: Heart,
-    bgClass: 'bg-rose-50',
-    borderClass: 'border-rose-100',
-    textClass: 'text-rose-700',
-    iconColor: '#f43f5e',
-  },
-  {
-    id: 'fear',
-    label: 'Feeling scared',
-    prompt: 'My child is scared of the dark and wants help feeling brave.',
-    icon: Shield,
-    bgClass: 'bg-amber-50',
-    borderClass: 'border-amber-100',
-    textClass: 'text-amber-700',
-    iconColor: '#f59e0b',
-  },
-  {
-    id: 'sharing',
-    label: 'Sharing',
-    prompt: 'My child is having trouble sharing and wants to learn how.',
-    icon: Users,
-    bgClass: 'bg-purple-50',
-    borderClass: 'border-purple-100',
-    textClass: 'text-purple-700',
-    iconColor: '#a855f7',
-  },
-  {
-    id: 'celebration',
-    label: 'Celebration',
-    prompt: 'We are celebrating a special moment and want to capture it in a story.',
-    icon: Gift,
-    bgClass: 'bg-emerald-50',
-    borderClass: 'border-emerald-100',
-    textClass: 'text-emerald-700',
-    iconColor: '#059669',
-  },
-  {
-    id: 'doctor',
-    label: 'Doctor visit',
-    prompt: 'My child is nervous about a doctor or dentist visit tomorrow.',
-    icon: Activity,
-    bgClass: 'bg-blue-50',
-    borderClass: 'border-blue-100',
-    textClass: 'text-blue-700',
-    iconColor: '#3b82f6',
-  },
-];
+
 
 const getRandomItem = <T,>(items: T[]) => items[Math.floor(Math.random() * items.length)];
 
@@ -266,6 +215,251 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({ title, icon: Icon }) => (
   </View>
 );
 
+// === NEW PREMIUM STORY SETTINGS PANEL ===
+
+interface StorySettingsPanelProps {
+  storyLength: StoryLength;
+  onLengthChange: (value: StoryLength) => void;
+  storyVibe: StoryVibe;
+  onVibeChange: (value: StoryVibe) => void;
+  voice: VoicePreset | null;
+  onVoicePress: () => void;
+  showWishes: boolean;
+  onWishesToggle: () => void;
+  theme?: ThemeMode;
+}
+
+const DURATION_OPTIONS: { val: StoryLength; label: string }[] = [
+  { val: 'short', label: 'Short' },
+  { val: 'medium', label: 'Medium' },
+  { val: 'long', label: 'Long' },
+];
+
+const VIBE_OPTIONS: { val: StoryVibe; label: string; icon: LucideIcon }[] = [
+  { val: 'energizing', label: 'Energizing', icon: Zap },
+  { val: 'soothing', label: 'Soothing', icon: Moon },
+  { val: 'whimsical', label: 'Whimsical', icon: Sparkles },
+  { val: 'thoughtful', label: 'Thoughtful', icon: BookOpen },
+];
+
+// Animated Duration Dot
+const AnimatedDot: React.FC<{
+  isActive: boolean;
+  activeColor: string;
+  onPress: () => void;
+}> = ({ isActive, activeColor, onPress }) => {
+  const scale = useSharedValue(1);
+  const size = useSharedValue(isActive ? 10 : 6);
+  const colorProgress = useSharedValue(isActive ? 1 : 0);
+
+  React.useEffect(() => {
+    size.value = withSpring(isActive ? 10 : 6, { damping: 12, stiffness: 300 });
+    colorProgress.value = withTiming(isActive ? 1 : 0, { duration: 200 });
+  }, [isActive]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    width: size.value,
+    height: size.value,
+    borderRadius: 5,
+    backgroundColor: interpolateColor(colorProgress.value, [0, 1], ['#e2e8f0', activeColor]),
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.8, { damping: 15, stiffness: 400 });
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 15, stiffness: 400 });
+  };
+
+  return (
+    <Pressable
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      onPress={onPress}
+      hitSlop={12}
+    >
+      <Animated.View style={animatedStyle} />
+    </Pressable>
+  );
+};
+
+// Animated Label with fade transition
+const AnimatedLabel: React.FC<{ label: string }> = ({ label }) => {
+  return (
+    <MotiView
+      key={label}
+      from={{ opacity: 0, translateY: -4 }}
+      animate={{ opacity: 1, translateY: 0 }}
+      transition={{ type: 'timing', duration: 200 }}
+    >
+      <Text className="text-sm font-bold text-slate-800 min-w-[60px]">{label}</Text>
+    </MotiView>
+  );
+};
+
+// Animated Vibe Chip
+const AnimatedVibeChip: React.FC<{
+  label: string;
+  Icon: LucideIcon;
+  isActive: boolean;
+  activeIconColor: string;
+  onPress: () => void;
+}> = ({ label, Icon, isActive, activeIconColor, onPress }) => {
+  const scale = useSharedValue(1);
+  const bgProgress = useSharedValue(isActive ? 1 : 0);
+  const iconScale = useSharedValue(1);
+
+  React.useEffect(() => {
+    bgProgress.value = withTiming(isActive ? 1 : 0, { duration: 200 });
+    if (isActive) {
+      iconScale.value = withSpring(1.15, { damping: 8, stiffness: 300 }, () => {
+        iconScale.value = withSpring(1, { damping: 12, stiffness: 300 });
+      });
+    }
+  }, [isActive]);
+
+  const containerStyle = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(bgProgress.value, [0, 1], ['#f8fafc', '#0f172a']),
+    transform: [{ scale: scale.value }],
+  }));
+
+  const iconContainerStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: iconScale.value }],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.95, { damping: 15, stiffness: 400 });
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 15, stiffness: 400 });
+  };
+
+  return (
+    <Pressable
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      onPress={onPress}
+      style={{ minWidth: '47%' }}
+    >
+      <Animated.View
+        style={containerStyle}
+        className="flex-row items-center gap-1.5 px-3 py-2 rounded-xl"
+      >
+        <Animated.View style={iconContainerStyle}>
+          <Icon size={14} color={isActive ? '#ffffff' : activeIconColor} />
+        </Animated.View>
+        <Text className={`text-xs font-bold ${isActive ? 'text-white' : 'text-slate-600'}`}>
+          {label}
+        </Text>
+      </Animated.View>
+    </Pressable>
+  );
+};
+
+const StorySettingsPanel: React.FC<StorySettingsPanelProps> = ({
+  storyLength,
+  onLengthChange,
+  storyVibe,
+  onVibeChange,
+  voice,
+  onVoicePress,
+  showWishes,
+  onWishesToggle,
+  theme = 'purple',
+}) => {
+  const tint = THEME_TINTS[theme];
+  const currentLengthIndex = DURATION_OPTIONS.findIndex((opt) => opt.val === storyLength);
+
+  return (
+    <View className="bg-white rounded-3xl border border-slate-100 overflow-hidden">
+      {/* Duration Row */}
+      <View className="flex-row items-center justify-between px-5 py-4 border-b border-slate-50">
+        <View className="flex-row items-center gap-3">
+          <Clock size={18} color={tint.icon} />
+          <Text className="text-sm font-semibold text-slate-600">Duration</Text>
+        </View>
+        <View className="flex-row items-center gap-3">
+          {/* Dot Stepper */}
+          <View className="flex-row items-center gap-1.5">
+            {DURATION_OPTIONS.map((opt, index) => (
+              <AnimatedDot
+                key={opt.val}
+                isActive={index <= currentLengthIndex}
+                activeColor={tint.icon}
+                onPress={() => onLengthChange(opt.val)}
+              />
+            ))}
+          </View>
+          <AnimatedLabel label={DURATION_OPTIONS[currentLengthIndex]?.label || 'Medium'} />
+        </View>
+      </View>
+
+      {/* Vibe Row - 2x2 Grid (all visible) */}
+      <View className="px-4 py-3 border-b border-slate-50">
+        <View className="flex-row flex-wrap gap-2">
+          {VIBE_OPTIONS.map((opt) => (
+            <AnimatedVibeChip
+              key={opt.val}
+              label={opt.label}
+              Icon={opt.icon}
+              isActive={storyVibe === opt.val}
+              activeIconColor={tint.icon}
+              onPress={() => onVibeChange(opt.val)}
+            />
+          ))}
+        </View>
+      </View>
+
+      {/* Bottom Row - Voice & Wishes */}
+      <View className="flex-row">
+        {/* Voice */}
+        <Pressable
+          onPress={onVoicePress}
+          className="flex-1 flex-row items-center gap-2 px-5 py-3.5 border-r border-slate-50 active:bg-slate-50"
+        >
+          <Mic size={16} color={voice ? tint.icon : '#94a3b8'} />
+          <Text
+            className={`text-sm font-semibold ${voice ? 'text-slate-800' : 'text-slate-400'
+              }`}
+          >
+            {voice ? voice.name : 'Voice'}
+          </Text>
+        </Pressable>
+
+        {/* Wishes Toggle */}
+        <Pressable
+          onPress={onWishesToggle}
+          className="flex-1 flex-row items-center justify-between gap-2 px-5 py-3.5 active:bg-slate-50"
+        >
+          <View className="flex-row items-center gap-2">
+            <Shuffle size={16} color={showWishes ? tint.icon : '#94a3b8'} />
+            <Text
+              className={`text-sm font-semibold ${showWishes ? 'text-slate-800' : 'text-slate-400'
+                }`}
+            >
+              Wishes
+            </Text>
+          </View>
+          <View
+            className={`w-10 h-6 rounded-full p-0.5 ${showWishes ? 'bg-slate-900' : 'bg-slate-200'
+              }`}
+          >
+            <MotiView
+              animate={{ translateX: showWishes ? 16 : 0 }}
+              transition={{ type: 'timing', duration: 150 }}
+              className="w-5 h-5 rounded-full bg-white shadow-sm"
+            />
+          </View>
+        </Pressable>
+      </View>
+    </View>
+  );
+};
+
+// Keep old components for backwards compatibility (can be removed later)
 interface TogglePillProps {
   icon: LucideIcon;
   label: string;
@@ -287,10 +481,10 @@ const TogglePill: React.FC<TogglePillProps> = ({ icon: Icon, label, active, onPr
     >
       <Pressable
         onPress={onPress}
-        className={`flex-row items-center gap-2 px-5 py-3 rounded-2xl border shadow-sm ${containerClass} active:scale-95`}
+        className={`flex-row items-center gap-3 pl-5 pr-5 py-3 rounded-2xl border shadow-sm ${containerClass} active:scale-95`}
       >
-        <Icon size={14} color={iconColor} />
-        <Text className={`text-[10px] font-black uppercase tracking-wider ${labelClass}`}>{label}</Text>
+        <Icon size={18} color={iconColor} />
+        <Text className={`text-sm font-bold ${labelClass}`}>{label}</Text>
       </Pressable>
     </MotiView>
   );
@@ -311,7 +505,7 @@ const VoiceControl: React.FC<VoiceControlProps> = ({ value, onPress, theme = 'pu
   return (
     <Pressable
       onPress={onPress}
-      className={`flex-row items-center gap-2 pl-4 pr-5 py-3 rounded-2xl border shadow-sm ${containerClass} active:scale-95`}
+      className={`flex-row items-center gap-3 pl-5 pr-5 py-3 rounded-2xl border shadow-sm ${containerClass} active:scale-95`}
     >
       <Mic size={18} color={tint.icon} />
       <Text className={`text-sm font-bold ${labelClass}`}>{value ? value.name : 'Voice'}</Text>
@@ -396,8 +590,24 @@ export const CreateScreen: React.FC = () => {
   const [crystalBalance, setCrystalBalance] = useState(150);
   const [showCrystalModal, setShowCrystalModal] = useState(false);
   const [timeToNextCrystal, setTimeToNextCrystal] = useState(REGEN_TIME_SECONDS);
-  const [selectedSituationId, setSelectedSituationId] = useState<string | null>(null);
+
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Enable LayoutAnimation for Android
+  if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+    UIManager.setLayoutAnimationEnabledExperimental(true);
+  }
+
+  const toggleSuggestions = () => {
+    LayoutAnimation.configureNext({
+      duration: 250,
+      create: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
+      update: { type: LayoutAnimation.Types.easeInEaseOut },
+      delete: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
+    });
+    setShowSuggestions(!showSuggestions);
+  };
 
   useEffect(() => {
     if (crystalBalance >= MAX_CRYSTALS) return;
@@ -421,7 +631,8 @@ export const CreateScreen: React.FC = () => {
     setPrompt('');
     setShowRemix(false);
     setShowElements(false);
-    setSelectedSituationId(null);
+
+    setShowSuggestions(false);
   }, [studioMode]);
 
   useEffect(() => {
@@ -488,18 +699,10 @@ export const CreateScreen: React.FC = () => {
     if (randomWish) setPrompt(randomWish.text);
   };
 
-  const handlePresetSituation = (preset: SituationPreset) => {
-    setPrompt(preset.prompt);
-    setSelectedSituationId(preset.id);
-    const valueMatch = FOCUS_VALUES.find(
-      (valueItem) => preset.id.includes(valueItem.id) || valueItem.id.includes(preset.id)
-    );
-    if (valueMatch) setOverrideValue(valueMatch);
-  };
+
 
   const handlePromptChange = (value: string) => {
     setPrompt(value);
-    if (selectedSituationId) setSelectedSituationId(null);
   };
 
   const handleUseWish = (wish: Wish) => {
@@ -695,32 +898,76 @@ export const CreateScreen: React.FC = () => {
                 </Text>
               </View>
             ) : (
-              <View className="bg-white rounded-[26px] p-2 border border-slate-200 shadow-sm mb-8">
-                <View className="bg-slate-50 rounded-[20px] px-5 py-4 relative">
-                  {isCreative ? (
-                    <View className="absolute top-3 right-3">
-                      <Pressable
-                        onPress={handleRandomPrompt}
-                        className="flex-row items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-lg shadow-sm active:scale-95"
-                      >
-                        <Dice5 size={14} color="#94a3b8" />
-                        <Text className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">
-                          Inspire
-                        </Text>
-                      </Pressable>
-                    </View>
-                  ) : null}
+              <View className="bg-white rounded-[26px] border border-slate-200 shadow-sm mb-8 relative">
+                {/* Ideas chip - positioned absolutely on outer container */}
+                <Pressable
+                  onPress={toggleSuggestions}
+                  className={`absolute -top-2 right-4 z-20 flex-row items-center gap-1.5 px-3 py-1.5 rounded-full active:scale-95 ${showSuggestions
+                    ? isCreative ? 'bg-purple-500' : 'bg-teal-500'
+                    : 'bg-white border border-slate-200 shadow-sm'
+                    }`}
+                  style={{ elevation: 4 }}
+                >
+                  <MotiView
+                    animate={{ rotate: showSuggestions ? '180deg' : '0deg' }}
+                    transition={{ type: 'timing', duration: 300 }}
+                  >
+                    <Sparkles size={12} color={showSuggestions ? '#ffffff' : '#94a3b8'} />
+                  </MotiView>
+                  <Text className={`text-[10px] font-bold uppercase tracking-wide ${showSuggestions
+                    ? 'text-white'
+                    : 'text-slate-400'
+                    }`}>
+                    Ideas
+                  </Text>
+                </Pressable>
+
+                {/* Text input area */}
+                <View className="bg-slate-50 rounded-[20px] m-2">
                   <TextInput
                     value={prompt}
                     onChangeText={handlePromptChange}
-                    placeholder={isCreative ? 'Once upon a time...' : 'Describe the situation (e.g. Scared of the dark)...'}
+                    placeholder={isCreative ? 'Once upon a time...' : 'Describe the situation...'}
                     placeholderTextColor="#94a3b8"
-                    className={`w-full text-lg text-slate-700 font-medium bg-transparent ${isCreative ? 'h-32' : 'h-24'
-                      }`}
+                    className="w-full text-lg text-slate-700 font-medium bg-transparent"
+                    style={{
+                      minHeight: isCreative ? 100 : 80,
+                      paddingTop: 20,
+                      paddingBottom: 16,
+                      paddingHorizontal: 20,
+                    }}
                     multiline
                     textAlignVertical="top"
                   />
                 </View>
+
+                {/* Suggestion chips - animated with LayoutAnimation */}
+                {showSuggestions && (
+                  <View className="px-4 pb-4">
+                    <View className="flex-row flex-wrap gap-2">
+                      {(isCreative ? STORY_STARTERS : CHALLENGE_SUGGESTIONS).map((item) => {
+                        const Icon = item.icon;
+                        return (
+                          <Pressable
+                            key={item.id}
+                            onPress={() => {
+                              setPrompt(item.prompt);
+                              toggleSuggestions();
+                            }}
+                            className={`flex-row items-center gap-1.5 px-3 py-2.5 rounded-xl active:scale-95 ${isCreative ? 'bg-purple-50 border border-purple-100' : 'bg-teal-50 border border-teal-100'
+                              }`}
+                          >
+                            <Icon size={14} color={isCreative ? '#a855f7' : '#14b8a6'} />
+                            <Text className={`text-xs font-semibold ${isCreative ? 'text-purple-700' : 'text-teal-700'
+                              }`}>
+                              {item.label}
+                            </Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  </View>
+                )}
               </View>
             )}
 
@@ -732,233 +979,216 @@ export const CreateScreen: React.FC = () => {
               >
                 <View className="mb-8">
                   <SectionHeader title="Story Settings" />
-                  <View className="flex-row flex-wrap gap-2">
-                    <View className="flex-1 min-w-[150px]">
+
+                  {/* Primary: Duration & Vibe (original selectors with dropdowns) */}
+                  <View className="flex-row gap-3 mb-3">
+                    <View className="flex-1">
                       <DurationSelector
                         value={storyLength}
                         onChange={setStoryLength}
                         theme={controlsTheme}
                       />
                     </View>
-                    <View className="flex-1 min-w-[150px]">
+                    <View className="flex-1">
                       <VibeSelector value={storyVibe} onChange={setStoryVibe} theme={controlsTheme} />
                     </View>
-                    <View className="flex-1 min-w-[140px]">
-                      <VoiceControl
-                        value={overrideVoice}
-                        onPress={() => setActiveSelector('voice')}
-                        theme={controlsTheme}
-                      />
-                    </View>
-                    <View className="flex-1 min-w-[140px]">
-                      <TogglePill
-                        icon={Shuffle}
-                        label="Remix"
-                        active={showRemix}
-                        onPress={() => setShowRemix((prev) => !prev)}
-                        theme={controlsTheme}
-                      />
-                    </View>
+                  </View>
+
+                  {/* Secondary: Voice & Wishes (simple minimal row) */}
+                  <View className="flex-row gap-3">
+                    <Pressable
+                      onPress={() => setActiveSelector('voice')}
+                      className={`flex-1 flex-row items-center gap-2 px-4 py-3 rounded-xl border ${overrideVoice ? 'bg-primary-50 border-primary-200' : 'bg-slate-50 border-transparent'
+                        }`}
+                    >
+                      <Mic size={16} color={overrideVoice ? '#a855f7' : '#94a3b8'} />
+                      <Text className={`text-sm font-medium ${overrideVoice ? 'text-slate-800' : 'text-slate-500'}`}>
+                        {overrideVoice ? overrideVoice.name : 'Voice'}
+                      </Text>
+                    </Pressable>
+
+                    <Pressable
+                      onPress={() => setShowRemix((prev) => !prev)}
+                      className={`flex-1 flex-row items-center justify-between px-4 py-3 rounded-xl border ${showRemix ? 'bg-primary-50 border-primary-200' : 'bg-slate-50 border-transparent'
+                        }`}
+                    >
+                      <View className="flex-row items-center gap-2">
+                        <Shuffle size={16} color={showRemix ? '#a855f7' : '#94a3b8'} />
+                        <Text className={`text-sm font-medium ${showRemix ? 'text-slate-800' : 'text-slate-500'}`}>
+                          Wishes
+                        </Text>
+                      </View>
+                      <View className={`w-8 h-5 rounded-full ${showRemix ? 'bg-primary-500' : 'bg-slate-300'}`}>
+                        <MotiView
+                          animate={{ translateX: showRemix ? 14 : 2 }}
+                          transition={{ type: 'timing', duration: 120 }}
+                          className="w-4 h-4 mt-0.5 rounded-full bg-white"
+                        />
+                      </View>
+                    </Pressable>
                   </View>
                 </View>
 
-                <View className="mb-8">
-                  <AnimatePresence>
-                    {showRemix ? (
-                      <MotiView
-                        from={{ opacity: 0, translateY: -8 }}
-                        animate={{ opacity: 1, translateY: 0 }}
-                        exit={{ opacity: 0, translateY: -8 }}
-                        transition={{ type: 'timing', duration: 200 }}
-                        className="mb-8"
-                      >
-                        <SectionHeader title="From the Wish Jar" />
-                        <ScrollView
-                          horizontal
-                          showsHorizontalScrollIndicator={false}
-                          contentContainerStyle={{ paddingRight: 12 }}
-                          className="pb-2"
-                        >
-                          <Pressable
-                            onPress={() => { }}
-                            className="w-12 items-center justify-center mr-3"
-                          >
-                            <View className="w-12 h-12 rounded-full bg-slate-100 border border-slate-200 items-center justify-center">
-                              <Plus size={20} color="#94a3b8" />
-                            </View>
-                            <Text className="text-[10px] font-bold text-slate-400 mt-1">Add</Text>
-                          </Pressable>
-                          {WISHES.map((wish) => (
-                            <Pressable
-                              key={wish.id}
-                              onPress={() => setViewingWish(wish)}
-                              className="w-64 p-4 rounded-2xl bg-white border border-slate-100 shadow-sm mr-3"
-                            >
-                              {wish.isNew ? (
-                                <View className="absolute top-0 right-0 w-3 h-3 bg-rose-500 rounded-bl-lg" />
-                              ) : null}
-                              <View className="flex-row items-start gap-3">
-                                <View className="w-8 h-8 rounded-full bg-purple-50 items-center justify-center">
-                                  <Sparkles size={14} color="#a855f7" />
-                                </View>
-                                <View className="flex-1">
-                                  <Text
-                                    className="text-sm font-bold text-slate-700"
-                                    numberOfLines={2}
-                                  >
-                                    "{wish.text}"
-                                  </Text>
-                                  <Text className="text-[10px] font-bold text-slate-400 mt-1">
-                                    {wish.createdAt}
-                                  </Text>
-                                </View>
-                              </View>
-                            </Pressable>
-                          ))}
-                        </ScrollView>
-                      </MotiView>
-                    ) : null}
-                  </AnimatePresence>
-
-                  {!isCreative ? (
-                    <View className="mb-8">
-                      <SectionHeader title="Common Challenges" />
-                      <View className="flex-row flex-wrap gap-2">
-                        {SITUATION_PRESETS.map((preset) => {
-                          const isSelected = selectedSituationId === preset.id;
-                          return (
-                            <Pressable
-                              key={preset.id}
-                              onPress={() => handlePresetSituation(preset)}
-                              className={`flex-row items-center gap-2 pl-1.5 pr-4 py-1.5 rounded-full border ${isSelected
-                                ? 'bg-slate-900 border-slate-900'
-                                : `${preset.bgClass} ${preset.borderClass}`
-                                } active:scale-95`}
-                            >
-                              <View
-                                className={`w-8 h-8 rounded-full items-center justify-center ${isSelected ? 'bg-white/10' : 'bg-white'
-                                  }`}
-                              >
-                                <preset.icon
-                                  size={14}
-                                  color={isSelected ? '#ffffff' : preset.iconColor}
-                                />
-                              </View>
-                              <Text
-                                className={`text-xs font-bold ${isSelected ? 'text-white' : preset.textClass
-                                  }`}
-                              >
-                                {preset.label}
-                              </Text>
-                            </Pressable>
-                          );
-                        })}
-                      </View>
-                    </View>
-                  ) : null}
-
+                {showRemix ? (
                   <View className="mb-8">
-                    <SectionHeader title="Story Elements" />
-                    <View className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <SectionHeader title="From the Wish Jar" />
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={{ paddingRight: 12 }}
+                      className="pb-2"
+                    >
                       <Pressable
-                        onPress={() => setShowElements((prev) => !prev)}
-                        className="w-full flex-row items-center justify-between p-4"
+                        onPress={() => { }}
+                        className="w-12 items-center justify-center mr-3"
                       >
-                        <View className="flex-row items-center gap-3">
-                          <View
-                            className={`w-10 h-10 rounded-xl items-center justify-center ${isAutoElements ? 'bg-amber-100' : 'bg-primary-100'
-                              }`}
-                          >
-                            {isAutoElements ? (
-                              <Sparkles size={18} color="#d97706" />
-                            ) : (
-                              <Palette size={18} color="#7c3aed" />
-                            )}
-                          </View>
-                          <View>
-                            <Text className="text-sm font-bold text-slate-800">
-                              {isAutoElements ? 'Optimized' : 'Custom Elements'}
-                            </Text>
-                            <Text className="text-[11px] font-bold text-slate-400">
-                              {isAutoElements ? 'World, Sidekick, & Lesson' : `${activeCount} active`}
-                            </Text>
-                          </View>
+                        <View className="w-12 h-12 rounded-full bg-slate-100 border border-slate-200 items-center justify-center">
+                          <Plus size={20} color="#94a3b8" />
                         </View>
-                        <View className="flex-row items-center gap-3">
-                          {isAutoElements ? (
-                            <View className="px-3 py-1.5 bg-amber-50 rounded-lg">
-                              <Text className="text-xs font-black uppercase tracking-wider text-amber-600">
-                                Auto
-                              </Text>
-                            </View>
-                          ) : (
-                            <View className="flex-row -space-x-2">
-                              {overrideLocation ? (
-                                <View className="w-6 h-6 rounded-full bg-primary-100 border-2 border-white items-center justify-center">
-                                  <MapPin size={12} color="#7c3aed" />
-                                </View>
-                              ) : null}
-                              {overrideCharacter ? (
-                                <View className="w-6 h-6 rounded-full bg-orange-100 border-2 border-white items-center justify-center">
-                                  <User size={12} color="#f97316" />
-                                </View>
-                              ) : null}
-                              {overrideValue ? (
-                                <View className="w-6 h-6 rounded-full bg-rose-100 border-2 border-white items-center justify-center">
-                                  <Heart size={12} color="#f43f5e" />
-                                </View>
-                              ) : null}
-                            </View>
-                          )}
-                          <MotiView
-                            animate={{ rotate: showElements ? '180deg' : '0deg' }}
-                            transition={{ type: 'timing', duration: 200 }}
-                          >
-                            <ChevronDown size={16} color="#cbd5e1" />
-                          </MotiView>
-                        </View>
+                        <Text className="text-[10px] font-bold text-slate-400 mt-1">Add</Text>
                       </Pressable>
-
-                      <AnimatePresence>
-                        {showElements ? (
-                          <MotiView
-                            from={{ opacity: 0, translateY: -6 }}
-                            animate={{ opacity: 1, translateY: 0 }}
-                            exit={{ opacity: 0, translateY: -6 }}
-                            transition={{ type: 'timing', duration: 200 }}
-                            className="p-4 pt-0"
-                          >
-                            <View className="h-px w-full bg-slate-100 mb-4" />
-                            <View className="flex-row gap-2">
-                              <CompactElement
-                                icon={MapPin}
-                                label="World"
-                                value={overrideLocation?.name || null}
-                                onPress={() => setActiveSelector('location')}
-                                onClear={() => setOverrideLocation(null)}
-                                theme={controlsTheme}
-                              />
-                              <CompactElement
-                                icon={User}
-                                label="Sidekick"
-                                value={overrideCharacter?.name || null}
-                                onPress={() => setActiveSelector('character')}
-                                onClear={() => setOverrideCharacter(null)}
-                                theme={controlsTheme}
-                              />
-                              <CompactElement
-                                icon={Heart}
-                                label="Lesson"
-                                value={overrideValue?.name || null}
-                                onPress={() => setActiveSelector('value')}
-                                onClear={() => setOverrideValue(null)}
-                                theme={controlsTheme}
-                              />
+                      {WISHES.map((wish) => (
+                        <Pressable
+                          key={wish.id}
+                          onPress={() => setViewingWish(wish)}
+                          className="w-64 p-4 rounded-2xl bg-white border border-slate-100 shadow-sm mr-3"
+                        >
+                          <View className="flex-row items-start gap-3">
+                            <View className={`w-8 h-8 rounded-full items-center justify-center ${wish.type === 'audio' ? 'bg-rose-50' : 'bg-indigo-50'}`}>
+                              {wish.type === 'audio' ? (
+                                <Mic size={14} color="#f43f5e" />
+                              ) : (
+                                <FileText size={14} color="#6366f1" />
+                              )}
                             </View>
-                          </MotiView>
-                        ) : null}
-                      </AnimatePresence>
-                    </View>
+                            <View className="flex-1">
+                              <Text
+                                className="text-sm font-bold text-slate-700"
+                                numberOfLines={2}
+                              >
+                                "{wish.text}"
+                              </Text>
+                              <View className="flex-row items-center justify-between mt-1">
+                                <Text className="text-[10px] font-bold text-slate-400">
+                                  {wish.createdAt}
+                                </Text>
+                                {wish.isNew && (
+                                  <View className="bg-rose-500 px-1.5 py-0.5 rounded">
+                                    <Text className="text-[8px] font-bold text-white">NEW</Text>
+                                  </View>
+                                )}
+                              </View>
+                            </View>
+                          </View>
+                        </Pressable>
+                      ))}
+                    </ScrollView>
+                  </View>
+                ) : null}
+
+
+
+                <View className="mb-8">
+                  <SectionHeader title="Story Elements" />
+                  <View className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <Pressable
+                      onPress={() => setShowElements((prev) => !prev)}
+                      className="w-full flex-row items-center justify-between p-4"
+                    >
+                      <View className="flex-row items-center gap-3">
+                        <View
+                          className={`w-10 h-10 rounded-xl items-center justify-center ${isAutoElements ? 'bg-amber-100' : 'bg-primary-100'
+                            }`}
+                        >
+                          {isAutoElements ? (
+                            <Sparkles size={18} color="#d97706" />
+                          ) : (
+                            <Palette size={18} color="#7c3aed" />
+                          )}
+                        </View>
+                        <View>
+                          <Text className="text-sm font-bold text-slate-800">
+                            {isAutoElements ? 'Optimized' : 'Custom Elements'}
+                          </Text>
+                          <Text className="text-[11px] font-bold text-slate-400">
+                            {isAutoElements ? 'World, Sidekick, & Lesson' : `${activeCount} active`}
+                          </Text>
+                        </View>
+                      </View>
+                      <View className="flex-row items-center gap-3">
+                        {isAutoElements ? (
+                          <View className="px-3 py-1.5 bg-amber-50 rounded-lg">
+                            <Text className="text-xs font-black uppercase tracking-wider text-amber-600">
+                              Auto
+                            </Text>
+                          </View>
+                        ) : (
+                          <View className="flex-row -space-x-2">
+                            {overrideLocation ? (
+                              <View className="w-6 h-6 rounded-full bg-primary-100 border-2 border-white items-center justify-center">
+                                <MapPin size={12} color="#7c3aed" />
+                              </View>
+                            ) : null}
+                            {overrideCharacter ? (
+                              <View className="w-6 h-6 rounded-full bg-orange-100 border-2 border-white items-center justify-center">
+                                <User size={12} color="#f97316" />
+                              </View>
+                            ) : null}
+                            {overrideValue ? (
+                              <View className="w-6 h-6 rounded-full bg-rose-100 border-2 border-white items-center justify-center">
+                                <Heart size={12} color="#f43f5e" />
+                              </View>
+                            ) : null}
+                          </View>
+                        )}
+                        <MotiView
+                          animate={{ rotate: showElements ? '180deg' : '0deg' }}
+                          transition={{ type: 'timing', duration: 200 }}
+                        >
+                          <ChevronDown size={16} color="#cbd5e1" />
+                        </MotiView>
+                      </View>
+                    </Pressable>
+
+                    <AnimatePresence>
+                      {showElements ? (
+                        <MotiView
+                          from={{ opacity: 0, translateY: -6 }}
+                          animate={{ opacity: 1, translateY: 0 }}
+                          exit={{ opacity: 0, translateY: -6 }}
+                          transition={{ type: 'timing', duration: 200 }}
+                          className="p-4 pt-0"
+                        >
+                          <View className="h-px w-full bg-slate-100 mb-4" />
+                          <View className="flex-row gap-2">
+                            <CompactElement
+                              icon={MapPin}
+                              label="World"
+                              value={overrideLocation?.name || null}
+                              onPress={() => setActiveSelector('location')}
+                              onClear={() => setOverrideLocation(null)}
+                              theme={controlsTheme}
+                            />
+                            <CompactElement
+                              icon={User}
+                              label="Sidekick"
+                              value={overrideCharacter?.name || null}
+                              onPress={() => setActiveSelector('character')}
+                              onClear={() => setOverrideCharacter(null)}
+                              theme={controlsTheme}
+                            />
+                            <CompactElement
+                              icon={Heart}
+                              label="Lesson"
+                              value={overrideValue?.name || null}
+                              onPress={() => setActiveSelector('value')}
+                              onClear={() => setOverrideValue(null)}
+                              theme={controlsTheme}
+                            />
+                          </View>
+                        </MotiView>
+                      ) : null}
+                    </AnimatePresence>
                   </View>
                 </View>
               </MotiView>
@@ -1139,7 +1369,7 @@ export const CreateScreen: React.FC = () => {
             setShowCrystalModal(false);
           }}
         />
-      </View>
+      </View >
     );
   };
 

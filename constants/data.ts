@@ -101,18 +101,21 @@ export const WISHES: Wish[] = [
     detail: 'I want a big red dragon that eats ice cream and makes friends at the park.',
     createdAt: '2 hours ago',
     isNew: true,
+    type: 'audio',
   },
   {
     id: 'wish-2',
     text: 'The time I lost my tooth at school.',
     detail: 'I lost my tooth at school and felt nervous. I want a story about it.',
     createdAt: 'Yesterday',
+    type: 'text',
   },
   {
     id: 'wish-3',
     text: 'Swimming with dolphins in the sky.',
     detail: 'I want to swim with dolphins in the sky and explore a rainbow ocean.',
     createdAt: '2 days ago',
+    type: 'audio',
   },
 ];
 

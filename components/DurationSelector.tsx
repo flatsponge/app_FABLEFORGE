@@ -1,10 +1,16 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { View, Text, Pressable, Modal, Vibration, StyleSheet } from 'react-native';
 import { MotiView } from 'moti';
+import Animated, {
+    useSharedValue,
+    useAnimatedStyle,
+    withSpring,
+    withTiming,
+    interpolateColor,
+} from 'react-native-reanimated';
 import { Clock, ChevronDown, Check } from 'lucide-react-native';
 import { StoryLength } from '@/types';
 
-// Theme interface to match the existing usage in create.tsx
 export type ThemeMode = 'purple' | 'teal' | 'amber';
 
 const THEME_TINTS: Record<ThemeMode, { icon: string; bgLight: string; borderLight: string; text: string }> = {
@@ -28,6 +34,29 @@ const THEME_TINTS: Record<ThemeMode, { icon: string; bgLight: string; borderLigh
     },
 };
 
+// Animated Dot Component
+const AnimatedDot: React.FC<{
+    isActive: boolean;
+    activeColor: string;
+}> = ({ isActive, activeColor }) => {
+    const size = useSharedValue(isActive ? 8 : 6);
+    const colorProgress = useSharedValue(isActive ? 1 : 0);
+
+    useEffect(() => {
+        size.value = withTiming(isActive ? 8 : 6, { duration: 150 });
+        colorProgress.value = withTiming(isActive ? 1 : 0, { duration: 150 });
+    }, [isActive]);
+
+    const animatedStyle = useAnimatedStyle(() => ({
+        width: size.value,
+        height: size.value,
+        borderRadius: 4,
+        backgroundColor: interpolateColor(colorProgress.value, [0, 1], ['#e2e8f0', activeColor]),
+    }));
+
+    return <Animated.View style={animatedStyle} />;
+};
+
 interface DurationSelectorProps {
     value: StoryLength;
     onChange: (value: StoryLength) => void;
@@ -41,6 +70,9 @@ export const DurationSelector: React.FC<DurationSelectorProps> = ({ value, onCha
     const buttonRef = useRef<View>(null);
     const tint = THEME_TINTS[theme];
 
+    // Animation for button press
+    const buttonScale = useSharedValue(1);
+
     const options: { val: StoryLength; label: string; desc: string }[] = [
         { val: 'short', label: 'Short', desc: '1 min read' },
         { val: 'medium', label: 'Medium', desc: '5 min read' },
@@ -51,7 +83,6 @@ export const DurationSelector: React.FC<DurationSelectorProps> = ({ value, onCha
     const resolvedIndex = currentIndex === -1 ? 1 : currentIndex;
     const current = options[resolvedIndex];
 
-    // Helper to get the next option in the list
     const getNextOption = () => {
         return options[(resolvedIndex + 1) % options.length].val;
     };
@@ -81,51 +112,65 @@ export const DurationSelector: React.FC<DurationSelectorProps> = ({ value, onCha
 
     const handlePressIn = () => {
         longPressTriggered.current = false;
+        buttonScale.value = withTiming(0.98, { duration: 100 });
     };
 
-    // Close menu when pressing outside or selecting an option
+    const handlePressOut = () => {
+        buttonScale.value = withTiming(1, { duration: 100 });
+    };
+
     const closeMenu = () => setShowMenu(false);
+
+    const buttonAnimatedStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: buttonScale.value }],
+    }));
 
     return (
         <>
-            <View
+            <Animated.View
                 ref={buttonRef}
-                className="rounded-2xl border shadow-sm bg-white border-slate-200 flex-row overflow-hidden"
+                style={buttonAnimatedStyle}
+                className="w-full rounded-2xl border shadow-sm bg-white border-slate-200 flex-row overflow-hidden"
             >
                 <Pressable
                     onPressIn={handlePressIn}
+                    onPressOut={handlePressOut}
                     onLongPress={handleLongPress}
                     delayLongPress={350}
                     onPress={handleCycle}
-                    className="flex-row items-center gap-3 pl-5 py-3 pr-2 active:bg-slate-50 transition-colors"
+                    className="flex-1 flex-row items-center gap-3 pl-5 py-3 pr-2"
                 >
                     <Clock size={18} color={tint.icon} />
                     <View className="flex-row items-center gap-1">
                         {[0, 1, 2].map((dot) => (
-                            <View
+                            <AnimatedDot
                                 key={dot}
-                                style={[
-                                    styles.dot,
-                                    { backgroundColor: dot <= resolvedIndex ? tint.icon : '#e2e8f0' },
-                                ]}
+                                isActive={dot <= resolvedIndex}
+                                activeColor={tint.icon}
                             />
                         ))}
                     </View>
-                    <Text className="text-sm font-bold text-slate-700 min-w-[56px]">
-                        {current.label}
-                    </Text>
+                    <MotiView
+                        key={current.label}
+                        from={{ opacity: 0, translateY: -6 }}
+                        animate={{ opacity: 1, translateY: 0 }}
+                        transition={{ type: 'timing', duration: 180 }}
+                    >
+                        <Text className="text-sm font-bold text-slate-700 min-w-[56px]">
+                            {current.label}
+                        </Text>
+                    </MotiView>
                 </Pressable>
 
-                {/* Separator line for "sleek" built-in look */}
                 <View className="w-px h-5 bg-slate-100 self-center mx-0.5" />
 
                 <Pressable
                     onPress={measureAndShowMenu}
-                    className="px-4 py-3 items-center justify-center active:bg-slate-50 transition-colors"
+                    className="px-4 py-3 items-center justify-center active:bg-slate-50"
                 >
                     <ChevronDown size={14} color="#94a3b8" />
                 </Pressable>
-            </View>
+            </Animated.View>
 
             <Modal
                 visible={showMenu}
@@ -135,11 +180,6 @@ export const DurationSelector: React.FC<DurationSelectorProps> = ({ value, onCha
             >
                 <Pressable style={styles.modalOverlay} onPress={closeMenu} />
 
-                {/* 
-            Positioning rationale: 
-            The popup should appear anchored to the button.
-            We use the measured layout coordinates.
-        */}
                 <View
                     style={[
                         styles.menuPositioner,
@@ -162,7 +202,6 @@ export const DurationSelector: React.FC<DurationSelectorProps> = ({ value, onCha
                         </Text>
                         {options.map((option, index) => {
                             const selected = value === option.val;
-                            // Determine dot color based on selection status
                             const isFilled = (dotIndex: number) => dotIndex <= index;
 
                             return (
@@ -208,11 +247,6 @@ export const DurationSelector: React.FC<DurationSelectorProps> = ({ value, onCha
 };
 
 const styles = StyleSheet.create({
-    dot: {
-        width: 6,
-        height: 6,
-        borderRadius: 3,
-    },
     microDot: {
         width: 4,
         height: 4,
@@ -220,13 +254,10 @@ const styles = StyleSheet.create({
     },
     modalOverlay: {
         ...StyleSheet.absoluteFillObject,
-        // Transparent overlay to avoid the "glitchy gray" look the user mentioned
-        // but still catching touches to close the menu
         backgroundColor: 'transparent',
     },
     menuPositioner: {
         position: 'absolute',
-        // Ensure it doesn't go off-screen if close to right edge (basic safety)
         maxWidth: 300,
     },
 });

@@ -67,6 +67,7 @@ export interface Wish {
   detail?: string;
   createdAt: string;
   isNew?: boolean;
+  type: 'text' | 'audio';
 }
 
 export type ReadingMode = 'autoplay' | 'child' | 'parent';

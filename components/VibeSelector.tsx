@@ -1,10 +1,15 @@
-import React, { useRef, useState } from 'react';
-import { View, Text, Pressable, Modal, Vibration, StyleSheet } from 'react-native';
+import React, { useRef, useState, useEffect } from 'react';
+import { View, Text, Pressable, Modal, Vibration, StyleSheet, Dimensions } from 'react-native';
 import { MotiView } from 'moti';
+import Animated, {
+    useSharedValue,
+    useAnimatedStyle,
+    withSpring,
+    withTiming,
+} from 'react-native-reanimated';
 import { ChevronDown, Check, Zap, Moon, Sparkles, BookOpen } from 'lucide-react-native';
 import { LucideIcon } from 'lucide-react-native';
 
-// Theme and Vibe types
 export type ThemeMode = 'purple' | 'teal' | 'amber';
 export type StoryVibe = 'energizing' | 'soothing' | 'whimsical' | 'thoughtful';
 
@@ -27,6 +32,10 @@ export const VibeSelector: React.FC<VibeSelectorProps> = ({ value, onChange, the
     const buttonRef = useRef<View>(null);
     const tint = THEME_TINTS[theme];
 
+    // Animation for button press
+    const buttonScale = useSharedValue(1);
+    const iconScale = useSharedValue(1);
+
     const options: { val: StoryVibe; label: string; desc: string; icon: LucideIcon }[] = [
         { val: 'energizing', label: 'Energizing', desc: 'Play-focused, active', icon: Zap },
         { val: 'soothing', label: 'Soothing', desc: 'Bedtime-focused, calming', icon: Moon },
@@ -38,6 +47,13 @@ export const VibeSelector: React.FC<VibeSelectorProps> = ({ value, onChange, the
     const resolvedIndex = currentIndex === -1 ? 1 : currentIndex;
     const current = options[resolvedIndex];
     const CurrentIcon = current.icon;
+
+    // Animate icon when value changes
+    useEffect(() => {
+        iconScale.value = withTiming(1.1, { duration: 100 }, () => {
+            iconScale.value = withTiming(1, { duration: 100 });
+        });
+    }, [value]);
 
     const handleCycle = () => {
         if (longPressTriggered.current || showMenu) return;
@@ -64,30 +80,53 @@ export const VibeSelector: React.FC<VibeSelectorProps> = ({ value, onChange, the
 
     const handlePressIn = () => {
         longPressTriggered.current = false;
+        buttonScale.value = withTiming(0.98, { duration: 100 });
+    };
+
+    const handlePressOut = () => {
+        buttonScale.value = withTiming(1, { duration: 100 });
     };
 
     const closeMenu = () => setShowMenu(false);
 
+    const buttonAnimatedStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: buttonScale.value }],
+    }));
+
+    const iconAnimatedStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: iconScale.value }],
+    }));
+
     return (
         <>
-            <View
+            <Animated.View
                 ref={buttonRef}
-                className="rounded-2xl border shadow-sm bg-white border-slate-200 flex-row overflow-hidden"
+                style={buttonAnimatedStyle}
+                className="w-full rounded-2xl border shadow-sm bg-white border-slate-200 flex-row overflow-hidden"
             >
                 <Pressable
                     onPressIn={handlePressIn}
+                    onPressOut={handlePressOut}
                     onLongPress={handleLongPress}
                     delayLongPress={350}
                     onPress={handleCycle}
-                    className="flex-row items-center gap-3 pl-5 py-3 pr-2 active:bg-slate-50"
+                    className="flex-1 flex-row items-center gap-3 pl-5 py-3 pr-2"
                 >
-                    <CurrentIcon size={18} color={tint.icon} />
-                    <Text className="text-sm font-bold text-slate-700 min-w-[72px]">
-                        {current.label}
-                    </Text>
+                    <Animated.View style={iconAnimatedStyle}>
+                        <CurrentIcon size={18} color={tint.icon} />
+                    </Animated.View>
+                    <MotiView
+                        key={current.label}
+                        from={{ opacity: 0, translateY: -6 }}
+                        animate={{ opacity: 1, translateY: 0 }}
+                        transition={{ type: 'timing', duration: 180 }}
+                    >
+                        <Text className="text-sm font-bold text-slate-700 min-w-[72px]">
+                            {current.label}
+                        </Text>
+                    </MotiView>
                 </Pressable>
 
-                {/* Separator line for "sleek" built-in look */}
                 <View className="w-px h-5 bg-slate-100 self-center mx-0.5" />
 
                 <Pressable
@@ -96,7 +135,7 @@ export const VibeSelector: React.FC<VibeSelectorProps> = ({ value, onChange, the
                 >
                     <ChevronDown size={14} color="#94a3b8" />
                 </Pressable>
-            </View>
+            </Animated.View>
 
             <Modal
                 visible={showMenu}
@@ -104,7 +143,6 @@ export const VibeSelector: React.FC<VibeSelectorProps> = ({ value, onChange, the
                 animationType="none"
                 onRequestClose={closeMenu}
             >
-                {/* Transparent overlay - no gray background */}
                 <Pressable style={styles.modalOverlay} onPress={closeMenu} />
 
                 <View
@@ -112,7 +150,7 @@ export const VibeSelector: React.FC<VibeSelectorProps> = ({ value, onChange, the
                         styles.menuPositioner,
                         {
                             top: buttonLayout.y + buttonLayout.height + 8,
-                            left: buttonLayout.x,
+                            right: 20,
                         },
                     ]}
                     pointerEvents="box-none"
@@ -122,7 +160,7 @@ export const VibeSelector: React.FC<VibeSelectorProps> = ({ value, onChange, the
                         animate={{ opacity: 1, scale: 1, translateY: 0 }}
                         exit={{ opacity: 0, scale: 0.95, translateY: -8 }}
                         transition={{ type: 'timing', duration: 200 }}
-                        className="bg-white rounded-3xl border border-slate-100 shadow-xl p-4 min-w-[240px]"
+                        className="bg-white rounded-3xl border border-slate-100 shadow-xl p-4"
                     >
                         <Text className="px-2 py-1 text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
                             Select Vibe
@@ -168,6 +206,9 @@ export const VibeSelector: React.FC<VibeSelectorProps> = ({ value, onChange, the
     );
 };
 
+const MENU_WIDTH = 240;
+const SCREEN_PADDING = 20;
+
 const styles = StyleSheet.create({
     modalOverlay: {
         ...StyleSheet.absoluteFillObject,
@@ -175,6 +216,7 @@ const styles = StyleSheet.create({
     },
     menuPositioner: {
         position: 'absolute',
-        maxWidth: 300,
+        width: MENU_WIDTH,
+        maxWidth: Dimensions.get('window').width - (SCREEN_PADDING * 2),
     },
 });
