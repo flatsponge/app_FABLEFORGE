@@ -56,11 +56,6 @@ export default function ChildPersonalityScreen() {
                 <OnboardingBody>
                     Select up to 3 personality traits so we can match the story tone.
                 </OnboardingBody>
-                <View style={styles.selectionCounter}>
-                    <OnboardingBody style={styles.counterText}>
-                        {selected.length}/3 selected
-                    </OnboardingBody>
-                </View>
 
                 <View style={styles.optionsContainer}>
                     {TRAITS.map((trait) => (
@@ -85,15 +80,6 @@ export default function ChildPersonalityScreen() {
 const styles = StyleSheet.create({
     scrollContent: {
         paddingBottom: OnboardingTheme.Spacing.xl,
-    },
-    selectionCounter: {
-        marginTop: OnboardingTheme.Spacing.xs,
-        marginBottom: OnboardingTheme.Spacing.md,
-    },
-    counterText: {
-        fontSize: 14,
-        fontWeight: '700',
-        color: OnboardingTheme.Colors.Accent,
     },
     optionsContainer: {
         marginTop: OnboardingTheme.Spacing.md,

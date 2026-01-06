@@ -52,6 +52,7 @@ export default function ParentGuiltScreen() {
                             key={reaction.id}
                             title={reaction.title}
                             selected={selected === reaction.id}
+                            showCheckbox={false}
                             onPress={() => handleSelect(reaction.id)}
                             icon={
                                 <View style={styles.iconContainer}>

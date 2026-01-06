@@ -52,6 +52,7 @@ export default function ParentingStyleScreen() {
                             title={style.label}
                             description={style.description}
                             selected={selected === style.id}
+                            showCheckbox={false}
                             onPress={() => handleSelect(style.id)}
                             icon={
                                 <View style={styles.iconContainer}>

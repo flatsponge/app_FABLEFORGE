@@ -51,6 +51,7 @@ export default function ReadingTimeScreen() {
                             title={time.label}
                             description={time.description}
                             selected={selected === time.id}
+                            showCheckbox={false}
                             onPress={() => handleSelect(time.id)}
                             icon={
                                 <View style={styles.iconContainer}>

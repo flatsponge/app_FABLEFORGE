@@ -185,15 +185,14 @@ export default function IntroSlide2() {
 
 const styles = StyleSheet.create({
     container: {
+        flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
         width: '100%',
-        flex: 1,
     },
     headerContainer: {
         alignItems: 'center',
         marginBottom: 16,
-        marginTop: 0,
     },
     titleText: {
         fontSize: 36,

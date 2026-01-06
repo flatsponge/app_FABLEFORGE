@@ -293,6 +293,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         alignItems: 'center',
+        justifyContent: 'center',
         width: '100%',
         position: 'relative',
         overflow: 'hidden',
@@ -300,7 +301,6 @@ const styles = StyleSheet.create({
     contentArea: {
         alignItems: 'center',
         zIndex: 10,
-        marginTop: 20,
     },
     emoji: {
         fontSize: 100,

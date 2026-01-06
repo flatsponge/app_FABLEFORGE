@@ -51,6 +51,7 @@ export default function PreviousAttemptsScreen() {
                             title={option.label}
                             description={option.description}
                             selected={selected === option.id}
+                            showCheckbox={false}
                             onPress={() => handleSelect(option.id)}
                             icon={
                                 <View style={styles.iconContainer}>

@@ -51,6 +51,7 @@ export default function DailyRoutineScreen() {
                             title={routine.label}
                             description={routine.description}
                             selected={selected === routine.id}
+                            showCheckbox={false}
                             onPress={() => handleSelect(routine.id)}
                             icon={
                                 <View style={styles.iconContainer}>

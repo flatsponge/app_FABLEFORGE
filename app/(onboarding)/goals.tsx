@@ -51,6 +51,7 @@ export default function OnboardingStart() {
                             title={goal.title}
                             description={goal.description}
                             selected={selected === goal.id}
+                            showCheckbox={false}
                             onPress={() => handleSelect(goal.id)}
                             icon={
                                 <View style={[styles.iconContainer, selected === goal.id && styles.iconContainerSelected]}>

@@ -51,6 +51,7 @@ export default function GoalsTimelineScreen() {
                             title={timeline.label}
                             description={timeline.description}
                             selected={selected === timeline.id}
+                            showCheckbox={false}
                             onPress={() => handleSelect(timeline.id)}
                             icon={
                                 <View style={styles.iconContainer}>

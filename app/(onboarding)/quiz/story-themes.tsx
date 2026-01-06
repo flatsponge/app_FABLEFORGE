@@ -58,11 +58,6 @@ export default function StoryThemesScreen() {
                 <OnboardingBody>
                     Select 2 or more favorite themes.
                 </OnboardingBody>
-                <View style={styles.selectionCounter}>
-                    <OnboardingBody style={styles.counterText}>
-                        {selected.length} selected
-                    </OnboardingBody>
-                </View>
 
                 <View style={styles.optionsContainer}>
                     {THEMES.map((theme) => (
@@ -87,15 +82,6 @@ export default function StoryThemesScreen() {
 const styles = StyleSheet.create({
     scrollContent: {
         paddingBottom: OnboardingTheme.Spacing.xl,
-    },
-    selectionCounter: {
-        marginTop: OnboardingTheme.Spacing.xs,
-        marginBottom: OnboardingTheme.Spacing.md,
-    },
-    counterText: {
-        fontSize: 14,
-        fontWeight: '700',
-        color: OnboardingTheme.Colors.Accent,
     },
     optionsContainer: {
         marginTop: OnboardingTheme.Spacing.md,

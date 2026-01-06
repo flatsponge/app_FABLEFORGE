@@ -51,6 +51,7 @@ export default function StoryLengthScreen() {
                             title={length.label}
                             description={length.description}
                             selected={selected === length.id}
+                            showCheckbox={false}
                             onPress={() => handleSelect(length.id)}
                             icon={
                                 <View style={styles.iconContainer}>

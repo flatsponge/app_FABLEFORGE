@@ -79,6 +79,7 @@ export default function MoralBaselineScreen() {
                             key={option.value}
                             title={option.label}
                             description={option.description}
+                            showCheckbox={false}
                             onPress={() => handleSelect(option.value)}
                         />
                     ))}

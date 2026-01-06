@@ -56,11 +56,6 @@ export default function ParentChallengesScreen() {
                 <OnboardingBody>
                     Pick up to 3 that resonate with you.
                 </OnboardingBody>
-                <View style={styles.selectionCounter}>
-                    <OnboardingBody style={styles.counterText}>
-                        {selected.length}/3 selected
-                    </OnboardingBody>
-                </View>
 
                 <View style={styles.optionsContainer}>
                     {CHALLENGES.map((challenge) => (
@@ -85,15 +80,6 @@ export default function ParentChallengesScreen() {
 const styles = StyleSheet.create({
     scrollContent: {
         paddingBottom: OnboardingTheme.Spacing.xl,
-    },
-    selectionCounter: {
-        marginTop: OnboardingTheme.Spacing.xs,
-        marginBottom: OnboardingTheme.Spacing.md,
-    },
-    counterText: {
-        fontSize: 14,
-        fontWeight: '700',
-        color: OnboardingTheme.Colors.Accent,
     },
     optionsContainer: {
         marginTop: OnboardingTheme.Spacing.md,

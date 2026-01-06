@@ -51,6 +51,7 @@ export default function StruggleFrequencyScreen() {
                             key={freq.id}
                             title={freq.label}
                             selected={selected === freq.id}
+                            showCheckbox={false}
                             onPress={() => handleSelect(freq.id)}
                             icon={
                                 <View style={styles.iconContainer}>

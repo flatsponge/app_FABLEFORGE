@@ -225,7 +225,9 @@ export default function IntroSlide4() {
 
 const styles = StyleSheet.create({
     container: {
+        flex: 1,
         alignItems: 'center',
+        justifyContent: 'center',
         width: '100%',
     },
     header: {
