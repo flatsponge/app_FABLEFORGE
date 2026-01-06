@@ -135,16 +135,13 @@ export const GrowthScoreArc: React.FC<GrowthScoreArcProps> = ({
             </View>
 
             {showMotivation && (
-                <View className="-mt-8 items-center bg-white/80 backdrop-blur-sm px-6 py-3 rounded-full border border-slate-100 shadow-sm z-10">
-                    <View className="flex-row items-center gap-2 mb-1">
+                <View className="-mt-6 items-center bg-gradient-to-r from-sky-50 to-emerald-50 px-5 py-2.5 rounded-full border border-sky-100/50 shadow-sm z-10">
+                    <View className="flex-row items-center gap-2">
                         <Sparkles size={14} color="#0ea5e9" />
-                        <Text className="text-sm font-bold text-slate-700">
+                        <Text className="text-sm font-semibold text-slate-700">
                             {getMotivationalMessage(score)}
                         </Text>
                     </View>
-                    <Text className="text-slate-400 text-[10px] font-medium text-center">
-                        Based on recent stories & quizzes
-                    </Text>
                 </View>
             )}
         </View>

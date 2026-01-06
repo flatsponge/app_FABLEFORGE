@@ -38,7 +38,7 @@ export default function TrajectoryScreen() {
 
     return (
         <OnboardingLayout
-            progress={1.0}
+            showProgressBar={false} progress={1.0}
             showNextButton={showLabels}
             onNext={handleNext}
             nextLabel="Change The Future"
@@ -119,7 +119,7 @@ export default function TrajectoryScreen() {
                                 <Ionicons name="trending-up" size={20} color={OnboardingTheme.Colors.Success} />
                             </View>
                             <View style={styles.outcomeTextWrapper}>
-                                <Text style={styles.outcomeTitleGreen}>With Storytime</Text>
+                                <Text style={styles.outcomeTitleGreen}>With FableTales</Text>
                                 <Text style={styles.outcomeSubtitleGreen}>Steady mastery within 3 months</Text>
                             </View>
                         </View>

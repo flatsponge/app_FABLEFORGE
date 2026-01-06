@@ -23,20 +23,24 @@ export default function DiagnosisScreen() {
     const handleSelect = (id: string) => {
         setSelected(id);
         updateData({ struggleBehavior: id });
+    };
 
-        setTimeout(() => {
-            if (id === 'aggression') {
+    const handleNext = () => {
+        if (selected) {
+            if (selected === 'aggression') {
                 router.push('/(onboarding)/quiz/aggression-details');
             } else {
                 router.push('/(onboarding)/quiz/trigger-situations');
             }
-        }, 300);
+        }
     };
 
     return (
         <OnboardingLayout
-            progress={0.5}
-            showNextButton={false}
+            showProgressBar={false} progress={0.5}
+            showNextButton={!!selected}
+            onNext={handleNext}
+            nextLabel="Continue"
         >
             <View style={styles.contentContainer}>
                 <OnboardingTitle>How does your child typically handle frustration?</OnboardingTitle>
@@ -56,7 +60,7 @@ export default function DiagnosisScreen() {
                         <OnboardingOptionCard
                             key={behavior.id}
                             title={behavior.title}
-                            subtitle={behavior.description}
+                            description={behavior.description}
                             selected={selected === behavior.id}
                             onPress={() => handleSelect(behavior.id)}
                             icon={

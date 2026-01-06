@@ -22,7 +22,7 @@ export default function FinalWarningScreen() {
 
     return (
         <OnboardingLayout
-            progress={1.0}
+            showProgressBar={false} progress={1.0}
             onNext={handleNext}
             nextLabel="See The Solution"
             isScrollable={true}

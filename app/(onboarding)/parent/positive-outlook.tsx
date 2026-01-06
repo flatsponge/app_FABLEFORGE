@@ -37,7 +37,7 @@ export default function PositiveOutlookScreen() {
 
     return (
         <OnboardingLayout
-            progress={1.0}
+            showProgressBar={false} progress={1.0}
             onNext={handleNext}
             nextLabel="Start My 7-Day Free Trial"
             isScrollable={true}

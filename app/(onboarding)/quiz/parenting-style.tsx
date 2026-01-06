@@ -35,7 +35,7 @@ export default function ParentingStyleScreen() {
 
     return (
         <OnboardingLayout
-            progress={0.25}
+            showProgressBar={false} progress={0.25}
             showNextButton={!!selected}
             onNext={handleNext}
         >

@@ -32,10 +32,10 @@ export default function HomeScreen() {
   return (
     <View className="flex-1 bg-background">
       <View className="absolute top-0 left-0 right-0 z-10">
-        <UnifiedHeader variant="default" title="StoryTime" scrollY={scrollY} />
+        <UnifiedHeader variant="default" title="FableTales" scrollY={scrollY} />
       </View>
-      
-      <Animated.ScrollView 
+
+      <Animated.ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}
@@ -44,7 +44,7 @@ export default function HomeScreen() {
       >
         <View className="pt-28 px-4 pb-2">
           <Text className="text-4xl font-bold text-slate-900 dark:text-white tracking-tight">
-            StoryTime
+            FableTales
           </Text>
         </View>
 

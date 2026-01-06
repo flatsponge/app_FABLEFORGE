@@ -44,7 +44,7 @@ export default function StruggleAreasScreen() {
 
     return (
         <OnboardingLayout
-            progress={0.7}
+            showProgressBar={false} progress={0.7}
             onNext={handleNext}
             nextLabel="Continue"
         >

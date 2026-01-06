@@ -7,6 +7,7 @@ interface OnboardingOptionCardProps extends TouchableOpacityProps {
   description?: string;
   selected?: boolean;
   icon?: React.ReactNode;
+  rightContent?: React.ReactNode;
   showCheckbox?: boolean;
 }
 
@@ -15,6 +16,7 @@ export default function OnboardingOptionCard({
   description,
   selected = false,
   icon,
+  rightContent,
   style,
   showCheckbox = true,
   ...props
@@ -40,6 +42,7 @@ export default function OnboardingOptionCard({
           )}
         </View>
       </View>
+      {rightContent}
       {showCheckbox && (
         <View style={[styles.checkbox, selected && styles.checkboxSelected]}>
           {selected && <View style={styles.checkboxInner} />}

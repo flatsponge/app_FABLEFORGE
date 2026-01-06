@@ -43,7 +43,7 @@ export default function StatReveal3Screen() {
 
     return (
         <OnboardingLayout
-            progress={1.0}
+            showProgressBar={false} progress={1.0}
             showNextButton={showCitation}
             onNext={handleNext}
             nextLabel="What this means for you"

@@ -15,7 +15,7 @@ export default function SofteningScreen() {
 
     return (
         <OnboardingLayout
-            progress={0.9}
+            showProgressBar={false} progress={0.9}
             onNext={handleNext}
             nextLabel="Build My Personalized Plan"
         >

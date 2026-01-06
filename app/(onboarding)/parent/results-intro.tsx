@@ -38,7 +38,7 @@ export default function ResultsIntroScreen() {
 
     return (
         <OnboardingLayout
-            progress={1.0} // Transition to results phase
+            showProgressBar={false} progress={1.0} // Transition to results phase
             showNextButton={showContent}
             onNext={handleNext}
             nextLabel="Reveal My Results"

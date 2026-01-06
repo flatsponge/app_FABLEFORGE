@@ -68,7 +68,7 @@ export default function SplashScreen() {
                     <Animated.View style={[styles.iconContainer, animatedIconStyle]}>
                         <BookOpen size={64} color={OnboardingTheme.Colors.Primary} strokeWidth={1.5} />
                     </Animated.View>
-                    <Text style={styles.appName}>Storytime</Text>
+                    <Text style={styles.appName}>FableTales</Text>
                     <Text style={styles.tagline}>Where imagination comes to life.</Text>
                 </Animated.View>
             </View>

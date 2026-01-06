@@ -40,11 +40,11 @@ const AnimatedProgressBar = ({ score, benchmark, color, delay }: { score: number
         <View>
             <View style={styles.barBackground}>
                 <View
-                    style={[styles.barFill, { width: `${animatedWidth}%`, backgroundColor: color }]} 
+                    style={[styles.barFill, { width: `${animatedWidth}%`, backgroundColor: color }]}
                 />
                 {/* Benchmark marker */}
                 <View
-                    style={[styles.benchmarkMarker, { left: `${benchmark}%` }]} 
+                    style={[styles.benchmarkMarker, { left: `${benchmark}%` }]}
                 />
             </View>
             <View style={styles.barLabels}>
@@ -92,7 +92,7 @@ export default function RealityCheckScreen() {
 
     return (
         <OnboardingLayout
-            progress={1.0}
+            showProgressBar={false} progress={1.0}
             onNext={handleNext}
             nextLabel="Start My Child's Transformation"
             isScrollable={true}
@@ -208,7 +208,7 @@ export default function RealityCheckScreen() {
 
                         {/* Labels */}
                         <View style={styles.graphLabelGreen}>
-                            <Text style={styles.graphLabelText}>With Storytime</Text>
+                            <Text style={styles.graphLabelText}>With FableTales</Text>
                         </View>
                         <View style={styles.graphLabelRed}>
                             <Text style={styles.graphLabelText}>Status Quo</Text>

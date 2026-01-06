@@ -46,7 +46,7 @@ export default function StoryThemesScreen() {
 
     return (
         <OnboardingLayout
-            progress={0.35}
+            showProgressBar={false} progress={0.35}
             onNext={handleNext}
             nextLabel="Continue"
         >

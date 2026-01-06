@@ -36,7 +36,7 @@ export default function StatReveal4Screen() {
 
     return (
         <OnboardingLayout
-            progress={1.0}
+            showProgressBar={false} progress={1.0}
             showNextButton={showContext}
             onNext={handleNext}
             nextLabel="See The Ripple Effect"

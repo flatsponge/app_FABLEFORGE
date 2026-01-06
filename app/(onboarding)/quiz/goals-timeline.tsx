@@ -34,7 +34,7 @@ export default function GoalsTimelineScreen() {
 
     return (
         <OnboardingLayout
-            progress={0.2}
+            showProgressBar={false} progress={0.2}
             showNextButton={!!selected}
             onNext={handleNext}
         >

@@ -22,7 +22,7 @@ export default function SocialWarningScreen() {
 
     return (
         <OnboardingLayout
-            progress={1.0}
+            showProgressBar={false} progress={1.0}
             showNextButton={showStat}
             onNext={handleNext}
             nextLabel="And the toll on you..."

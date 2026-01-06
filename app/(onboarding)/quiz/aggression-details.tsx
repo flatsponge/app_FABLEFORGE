@@ -23,15 +23,20 @@ export default function AggressionDetailsScreen() {
     const handleSelect = (id: string) => {
         setSelected(id);
         updateData({ aggressionTarget: id });
-        setTimeout(() => {
+    };
+
+    const handleNext = () => {
+        if (selected) {
             router.push('/(onboarding)/quiz/aggression-frequency');
-        }, 300);
+        }
     };
 
     return (
         <OnboardingLayout
-            progress={0.55}
-            showNextButton={false}
+            showProgressBar={false} progress={0.55}
+            showNextButton={!!selected}
+            onNext={handleNext}
+            nextLabel="Continue"
         >
             <View style={styles.contentContainer}>
                 <OnboardingTitle>Who is this aggression usually directed toward?</OnboardingTitle>

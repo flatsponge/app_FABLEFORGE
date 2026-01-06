@@ -44,7 +44,7 @@ export default function ParentChallengesScreen() {
 
     return (
         <OnboardingLayout
-            progress={0.45}
+            showProgressBar={false} progress={0.45}
             onNext={handleNext}
             nextLabel="Continue"
         >

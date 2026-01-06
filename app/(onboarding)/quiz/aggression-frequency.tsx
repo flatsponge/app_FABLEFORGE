@@ -22,15 +22,20 @@ export default function AggressionFrequencyScreen() {
     const handleSelect = (id: string) => {
         setSelected(id);
         updateData({ aggressionFrequency: id });
-        setTimeout(() => {
+    };
+
+    const handleNext = () => {
+        if (selected) {
             router.push('/(onboarding)/quiz/struggle-areas');
-        }, 300);
+        }
     };
 
     return (
         <OnboardingLayout
-            progress={0.6}
-            showNextButton={false}
+            showProgressBar={false} progress={0.6}
+            showNextButton={!!selected}
+            onNext={handleNext}
+            nextLabel="Continue"
         >
             <View style={styles.contentContainer}>
                 <OnboardingTitle>How often does this happen?</OnboardingTitle>
@@ -43,7 +48,7 @@ export default function AggressionFrequencyScreen() {
                         <OnboardingOptionCard
                             key={freq.id}
                             title={freq.label}
-                            subtitle={freq.description}
+                            description={freq.description}
                             selected={selected === freq.id}
                             onPress={() => handleSelect(freq.id)}
                             rightContent={

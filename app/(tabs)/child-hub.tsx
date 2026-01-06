@@ -5,6 +5,10 @@ import { useFocusEffect } from 'expo-router';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
 import { useChildLock } from '@/contexts/ChildLockContext';
 import ChildBackground from '@/childbackground/childbackground1.png';
+import ChildBackground2 from '@/childbackground/childbackground2.jpg';
+import ChildBackground3 from '@/childbackground/childbackground3.jpg';
+import ChildBackground4 from '@/childbackground/childbackground4.jpg';
+import ChildBackground5 from '@/childbackground/childbackground5.jpg';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -57,7 +61,7 @@ const AnimatedBottle = ({ onComplete, onLanded }: { onComplete: () => void; onLa
 
   useEffect(() => {
     const duration = 800;
-    
+
     translateY.value = withTiming(-180, {
       duration,
       easing: Easing.out(Easing.quad),
@@ -136,7 +140,7 @@ const GlitterBurst = () => {
     particles.forEach((p, i) => {
       const angle = (i * 36) * (Math.PI / 180);
       const dist = 40 + Math.random() * 30;
-      
+
       p.scale.value = withSpring(1.2, { damping: 8, stiffness: 300 });
       p.translateX.value = withTiming(Math.cos(angle) * dist, { duration: 600, easing: Easing.out(Easing.cubic) });
       p.translateY.value = withTiming(Math.sin(angle) * dist - 15, { duration: 600, easing: Easing.out(Easing.cubic) });
@@ -947,6 +951,50 @@ export default function ChildHubScreen() {
                           <Image source={ChildBackground} className="w-full h-full" resizeMode="cover" />
                         </Pressable>
 
+                        {/* Dreamy Night Background */}
+                        <Pressable
+                          onPress={() => setBackgroundSource(ChildBackground2)}
+                          className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === ChildBackground2
+                            ? 'border-green-500 ring-4 ring-green-200'
+                            : 'border-slate-200'
+                            }`}
+                        >
+                          <Image source={ChildBackground2} className="w-full h-full" resizeMode="cover" />
+                        </Pressable>
+
+                        {/* Sunny Meadow Background */}
+                        <Pressable
+                          onPress={() => setBackgroundSource(ChildBackground3)}
+                          className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === ChildBackground3
+                            ? 'border-green-500 ring-4 ring-green-200'
+                            : 'border-slate-200'
+                            }`}
+                        >
+                          <Image source={ChildBackground3} className="w-full h-full" resizeMode="cover" />
+                        </Pressable>
+
+                        {/* Ocean Background */}
+                        <Pressable
+                          onPress={() => setBackgroundSource(ChildBackground4)}
+                          className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === ChildBackground4
+                            ? 'border-green-500 ring-4 ring-green-200'
+                            : 'border-slate-200'
+                            }`}
+                        >
+                          <Image source={ChildBackground4} className="w-full h-full" resizeMode="cover" />
+                        </Pressable>
+
+                        {/* Forest Background */}
+                        <Pressable
+                          onPress={() => setBackgroundSource(ChildBackground5)}
+                          className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === ChildBackground5
+                            ? 'border-green-500 ring-4 ring-green-200'
+                            : 'border-slate-200'
+                            }`}
+                        >
+                          <Image source={ChildBackground5} className="w-full h-full" resizeMode="cover" />
+                        </Pressable>
+
                         {/* Preset Locations */}
                         {PRESET_LOCATIONS.map(loc => (
                           <Pressable
@@ -1039,12 +1087,12 @@ export default function ChildHubScreen() {
                   )}
 
                   {showGlitter && (
-                    <View style={{ 
-                      position: 'absolute', 
-                      top: '15%', 
-                      left: '50%', 
+                    <View style={{
+                      position: 'absolute',
+                      top: '15%',
+                      left: '50%',
                       marginLeft: -10,
-                      zIndex: 30 
+                      zIndex: 30
                     }}>
                       <GlitterBurst />
                     </View>

@@ -42,7 +42,7 @@ export default function ProcessingScreen() {
 
     return (
         <OnboardingLayout
-            progress={0.95}
+            showProgressBar={false} progress={0.95}
             showNextButton={false}
         >
             <View style={styles.contentContainer}>

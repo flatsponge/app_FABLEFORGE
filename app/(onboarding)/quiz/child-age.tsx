@@ -25,7 +25,7 @@ export default function ChildAgeScreen() {
 
     return (
         <OnboardingLayout
-            progress={0.15}
+            showProgressBar={false} progress={0.15}
             onNext={handleNext}
             nextLabel="Continue"
         >

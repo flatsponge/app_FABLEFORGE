@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -29,6 +29,7 @@ export default function MoralBaselineScreen() {
     const router = useRouter();
     const { updateData } = useOnboarding();
     const [ratings, setRatings] = useState<Record<string, number>>({});
+    const [currentSelection, setCurrentSelection] = useState<number | null>(null);
 
     const currentSkillIndex = Object.keys(ratings).length;
     const currentSkill = MORAL_SKILLS[currentSkillIndex];
@@ -38,18 +39,21 @@ export default function MoralBaselineScreen() {
     const stepProgress = 0.1 / MORAL_SKILLS.length;
     const currentProgress = baseProgress + (currentSkillIndex * stepProgress);
 
-    useEffect(() => {
-        if (isComplete) {
-            const avg = Object.values(ratings).reduce((a, b) => a + b, 0) / MORAL_SKILLS.length;
-            updateData({ moralScore: avg * 20 });
-            router.push('/(onboarding)/quiz/parent-guilt');
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isComplete, ratings]);
-
     const handleSelect = (value: number) => {
-        if (currentSkill) {
-            setRatings(prev => ({ ...prev, [currentSkill.id]: value }));
+        setCurrentSelection(value);
+    };
+
+    const handleNext = () => {
+        if (currentSelection !== null && currentSkill) {
+            const newRatings = { ...ratings, [currentSkill.id]: currentSelection };
+            setRatings(newRatings);
+            setCurrentSelection(null);
+            
+            if (Object.keys(newRatings).length >= MORAL_SKILLS.length) {
+                const avg = Object.values(newRatings).reduce((a, b) => a + b, 0) / MORAL_SKILLS.length;
+                updateData({ moralScore: avg * 20 });
+                router.push('/(onboarding)/quiz/parent-guilt');
+            }
         }
     };
 
@@ -59,9 +63,10 @@ export default function MoralBaselineScreen() {
 
     return (
         <OnboardingLayout
-            progress={currentProgress}
-            showNextButton={false}
-            onNext={() => { }}
+            showProgressBar={false} progress={currentProgress}
+            showNextButton={currentSelection !== null}
+            onNext={handleNext}
+            nextLabel="Continue"
         >
             <View style={styles.contentContainer}>
                 <OnboardingTitle>{currentSkill.label}</OnboardingTitle>
@@ -79,6 +84,7 @@ export default function MoralBaselineScreen() {
                             key={option.value}
                             title={option.label}
                             description={option.description}
+                            selected={currentSelection === option.value}
                             showCheckbox={false}
                             onPress={() => handleSelect(option.value)}
                         />

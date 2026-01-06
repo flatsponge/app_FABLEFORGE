@@ -22,7 +22,7 @@ export default function StatReveal2Screen() {
 
     return (
         <OnboardingLayout
-            progress={1.0}
+            showProgressBar={false} progress={1.0}
             showNextButton={showContext}
             onNext={handleNext}
             nextLabel="Continue"

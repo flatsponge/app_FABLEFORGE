@@ -34,7 +34,7 @@ export default function DailyRoutineScreen() {
 
     return (
         <OnboardingLayout
-            progress={0.35}
+            showProgressBar={false} progress={0.35}
             showNextButton={!!selected}
             onNext={handleNext}
         >

@@ -2,7 +2,7 @@ import React from 'react';
 import { View, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { useAnimatedStyle, withTiming, useSharedValue, FadeIn } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, withTiming, useSharedValue } from 'react-native-reanimated';
 import { ArrowLeft } from 'lucide-react-native';
 import { OnboardingTheme } from '../constants/OnboardingTheme';
 import OnboardingButton from './OnboardingButton';
@@ -41,12 +41,12 @@ export default function OnboardingLayout({
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const progressWidth = useSharedValue(progress * 100);
+  const progressWidth = useSharedValue(Math.max(0, progress * 100));
   const buttonOpacity = useSharedValue(showNextButton ? 1 : 0);
 
   // Update progress width when prop changes
   React.useEffect(() => {
-    progressWidth.value = withTiming(progress * 100, { duration: 500 });
+    progressWidth.value = withTiming(progress * 100, { duration: 300 });
   }, [progress]);
 
   // Animate button opacity when showNextButton changes
@@ -75,13 +75,14 @@ export default function OnboardingLayout({
     }
   };
 
-  const ContentWrapper = isScrollable ? ScrollView : View;
   const contentWrapperProps = isScrollable
     ? {
       showsVerticalScrollIndicator: false,
-      contentContainerStyle: styles.scrollContentContainer
+      contentContainerStyle: styles.scrollContentContainer,
     }
-    : { style: styles.content };
+    : { 
+      style: styles.content,
+    };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom, backgroundColor }]}>
@@ -112,7 +113,7 @@ export default function OnboardingLayout({
           {children}
         </ScrollView>
       ) : (
-        <View style={styles.content}>
+        <View {...contentWrapperProps}>
           {children}
         </View>
       )}
