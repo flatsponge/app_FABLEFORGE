@@ -39,7 +39,7 @@ export default function SplashScreen() {
     }));
 
     const handleGetStarted = () => {
-        router.push('/(onboarding)/intro/slide-1');
+        router.push('/(onboarding)/intro/slide-0');
     };
 
     const handleLogin = () => {

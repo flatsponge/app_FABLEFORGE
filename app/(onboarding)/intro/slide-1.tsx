@@ -196,7 +196,7 @@ export default function IntroSlide1() {
                         entering={FadeIn.delay(200).duration(500)}
                         style={styles.titleContainer}
                     >
-                        <Text style={styles.titleTop}>IS IT ALWAYS</Text>
+                        <Text style={styles.titleTop}>IS PARENTING ALWAYS</Text>
                         <GlitchText text="THIS HARD?" />
                         <Text style={styles.subtitle}>YOU AREN'T FAILING. IT'S RELENTLESS.</Text>
                     </Animated.View>
