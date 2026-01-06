@@ -9,15 +9,14 @@ import Animated, {
     FadeInDown,
     Easing,
     interpolateColor,
-    withSpring,
 } from 'react-native-reanimated';
 import { ScanFace, Sparkles, Sprout } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 
 // Constants for the icon box
-const ICON_BOX_SIZE = 56;
-const LENS_PADDING = 4; // Extra padding around the icon box
+const ICON_BOX_SIZE = 72;
+const LENS_PADDING = 5; // Extra padding around the icon box
 const LENS_SIZE = ICON_BOX_SIZE + (LENS_PADDING * 2);
 
 const PROCESS_STEPS = [
@@ -79,19 +78,20 @@ export default function Slide3() {
         const position = iconPositionsRef.current[stepIndex];
         if (!position) return;
 
-        lensX.value = withSpring(position.x - LENS_PADDING, {
-            damping: 18,
-            stiffness: 100,
-        });
-        lensY.value = withSpring(position.y - LENS_PADDING, {
-            damping: 18,
-            stiffness: 100,
-        });
-        lensColorIndex.value = withTiming(stepIndex, { duration: 300 });
+        const targetX = position.x - LENS_PADDING;
+        const targetY = position.y - LENS_PADDING;
 
         if (stepIndex === 0) {
+            // First step: set position immediately (no animation), then fade in
+            lensX.value = targetX;
+            lensY.value = targetY;
             lensOpacity.value = withTiming(1, { duration: 250 });
+        } else {
+            // Subsequent steps: smooth timing animation (no bounce)
+            lensX.value = withTiming(targetX, { duration: 400, easing: Easing.out(Easing.cubic) });
+            lensY.value = withTiming(targetY, { duration: 400, easing: Easing.out(Easing.cubic) });
         }
+        lensColorIndex.value = withTiming(stepIndex, { duration: 300 });
     }, [lensX, lensY, lensColorIndex, lensOpacity]);
 
     // Measure all icon positions relative to the container
@@ -198,12 +198,12 @@ export default function Slide3() {
                 />
             </View>
 
-            <View className="flex-1 items-center w-full relative z-10 pt-4 px-4">
+            <View className="flex-1 items-center justify-center w-full relative z-10 px-4">
 
                 {/* Header Text */}
                 <Animated.View
                     entering={FadeInDown.delay(300).duration(500)}
-                    className="items-center mb-10 px-4 mt-8 w-full"
+                    className="items-center mb-12 px-4 w-full"
                 >
                     <Text className="text-4xl font-black text-slate-900 text-center tracking-tight">
                         Peace in just
@@ -234,7 +234,7 @@ export default function Slide3() {
                 >
 
                     {/* The Line */}
-                    <View className="absolute left-[39px] top-4 bottom-8 w-[2px] bg-slate-100 rounded-full overflow-hidden">
+                    <View className="absolute left-[51px] top-5 bottom-10 w-[2px] bg-slate-100 rounded-full overflow-hidden">
                         <Animated.View
                             style={[animatedTimelineStyle]}
                             className="w-full"
@@ -256,7 +256,7 @@ export default function Slide3() {
                                 top: 0,
                                 width: LENS_SIZE,
                                 height: LENS_SIZE,
-                                borderRadius: 20,
+                                borderRadius: 24,
                                 borderWidth: 2.5,
                                 backgroundColor: 'transparent',
                                 zIndex: 10,
@@ -265,7 +265,7 @@ export default function Slide3() {
                         ]}
                     />
 
-                    <View className="gap-y-6">
+                    <View className="gap-y-8">
                         {PROCESS_STEPS.map((step, index) => (
                             <StepItem
                                 key={step.id}
@@ -307,7 +307,7 @@ function StepItem({ step, index, isActive, setIconRef }: StepItemProps) {
                     style={{
                         width: ICON_BOX_SIZE,
                         height: ICON_BOX_SIZE,
-                        borderRadius: 16,
+                        borderRadius: 20,
                         alignItems: 'center',
                         justifyContent: 'center',
                         borderWidth: 1,
@@ -317,7 +317,7 @@ function StepItem({ step, index, isActive, setIconRef }: StepItemProps) {
                     }}
                 >
                     <Icon
-                        size={22}
+                        size={28}
                         strokeWidth={2}
                         color={isActive ? step.activeColor : '#94a3b8'}
                     />
@@ -336,20 +336,20 @@ function StepItem({ step, index, isActive, setIconRef }: StepItemProps) {
             >
                 <Text
                     style={{
-                        fontSize: 17,
+                        fontSize: 20,
                         fontWeight: '700',
                         color: isActive ? '#0f172a' : '#94a3b8',
-                        marginBottom: 2,
+                        marginBottom: 4,
                     }}
                 >
                     {step.title}
                 </Text>
                 <Text
                     style={{
-                        fontSize: 13,
+                        fontSize: 15,
                         fontWeight: '500',
                         color: '#64748b',
-                        lineHeight: 18,
+                        lineHeight: 20,
                     }}
                 >
                     {step.desc}

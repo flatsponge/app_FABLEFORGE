@@ -2,7 +2,7 @@ import React from 'react';
 import { View, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { useAnimatedStyle, withTiming, useSharedValue } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, withTiming, useSharedValue, FadeIn } from 'react-native-reanimated';
 import { ArrowLeft } from 'lucide-react-native';
 import { OnboardingTheme } from '../constants/OnboardingTheme';
 import OnboardingButton from './OnboardingButton';
@@ -42,16 +42,28 @@ export default function OnboardingLayout({
   const insets = useSafeAreaInsets();
 
   const progressWidth = useSharedValue(progress * 100);
+  const buttonOpacity = useSharedValue(showNextButton ? 1 : 0);
 
   // Update progress width when prop changes
   React.useEffect(() => {
     progressWidth.value = withTiming(progress * 100, { duration: 500 });
   }, [progress]);
 
+  // Animate button opacity when showNextButton changes
+  React.useEffect(() => {
+    buttonOpacity.value = withTiming(showNextButton ? 1 : 0, { duration: 300 });
+  }, [showNextButton]);
+
   const progressStyle = useAnimatedStyle(() => {
     return {
       width: `${progressWidth.value}%`,
       backgroundColor: progressBarColor,
+    };
+  });
+
+  const buttonStyle = useAnimatedStyle(() => {
+    return {
+      opacity: buttonOpacity.value,
     };
   });
 
@@ -105,17 +117,15 @@ export default function OnboardingLayout({
         </View>
       )}
 
-      {/* Footer */}
-      {showNextButton && (
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
-        >
-          <View style={styles.footer}>
-            <OnboardingButton onPress={onNext} title={nextLabel} />
-          </View>
-        </KeyboardAvoidingView>
-      )}
+      {/* Footer - always rendered to preserve layout, visibility controlled by animated opacity */}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      >
+        <Animated.View style={[styles.footer, buttonStyle]}>
+          <OnboardingButton onPress={showNextButton ? onNext : undefined} title={nextLabel} disabled={!showNextButton} />
+        </Animated.View>
+      </KeyboardAvoidingView>
     </View>
   );
 }
