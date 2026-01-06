@@ -30,7 +30,7 @@ export default function ChildPersonalityScreen() {
         setSelected(prev =>
             prev.includes(id)
                 ? prev.filter(x => x !== id)
-                : prev.length < 3 ? [...prev, id] : prev
+                : [...prev, id]
         );
     };
 
@@ -54,7 +54,7 @@ export default function ChildPersonalityScreen() {
             >
                 <OnboardingTitle>Describe {data.childName || 'your child'}</OnboardingTitle>
                 <OnboardingBody>
-                    Select up to 3 personality traits so we can match the story tone.
+                    Select all that apply.
                 </OnboardingBody>
 
                 <View style={styles.optionsContainer}>

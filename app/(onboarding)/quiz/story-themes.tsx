@@ -36,7 +36,7 @@ export default function StoryThemesScreen() {
         );
     };
 
-    const canProceed = selected.length >= 2;
+    const canProceed = selected.length >= 1;
 
     const handleNext = () => {
         if (canProceed) {
@@ -56,7 +56,7 @@ export default function StoryThemesScreen() {
             >
                 <OnboardingTitle>What does {data.childName || 'your child'} love?</OnboardingTitle>
                 <OnboardingBody>
-                    Select 2 or more favorite themes.
+                    Select all that apply.
                 </OnboardingBody>
 
                 <View style={styles.optionsContainer}>

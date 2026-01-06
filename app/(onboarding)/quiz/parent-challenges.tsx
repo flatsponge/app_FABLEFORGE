@@ -30,7 +30,7 @@ export default function ParentChallengesScreen() {
         setSelected(prev =>
             prev.includes(id)
                 ? prev.filter(x => x !== id)
-                : prev.length < 3 ? [...prev, id] : prev
+                : [...prev, id]
         );
     };
 
@@ -54,7 +54,7 @@ export default function ParentChallengesScreen() {
             >
                 <OnboardingTitle>What's your biggest parenting challenge right now?</OnboardingTitle>
                 <OnboardingBody>
-                    Pick up to 3 that resonate with you.
+                    Select all that apply.
                 </OnboardingBody>
 
                 <View style={styles.optionsContainer}>
