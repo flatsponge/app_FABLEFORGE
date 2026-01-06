@@ -9,6 +9,7 @@ import 'react-native-reanimated';
 import '../global.css';
 
 import { useColorScheme } from '@/components/useColorScheme';
+import { lockToPortrait } from '@/components/useOrientation';
 import { OnboardingProvider } from '../contexts/OnboardingContext';
 
 export { ErrorBoundary } from 'expo-router';
@@ -28,6 +29,11 @@ export default function RootLayout() {
   useEffect(() => {
     if (error) throw error;
   }, [error]);
+
+  // Lock to portrait by default - only specific screens unlock rotation
+  useEffect(() => {
+    lockToPortrait();
+  }, []);
 
   useEffect(() => {
     if (loaded) {

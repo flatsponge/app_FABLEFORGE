@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, ScrollView, Pressable, TextInput, Modal, Vibration, StyleSheet, LayoutAnimation, Platform, UIManager } from 'react-native';
+import { View, Text, ScrollView, Pressable, TextInput, Vibration, StyleSheet, LayoutAnimation, Platform, UIManager } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AnimatePresence, MotiView } from 'moti';
@@ -64,7 +65,6 @@ type AppState = 'studio' | 'generating-outline' | 'outline-review' | 'generating
 type StudioMode = 'creative' | 'situation' | 'auto';
 type StoryVibe = 'energizing' | 'soothing' | 'whimsical' | 'thoughtful';
 type ThemeMode = 'purple' | 'teal' | 'amber';
-type SelectorType = 'location' | 'value' | 'character' | 'voice';
 
 interface FocusValue {
   id: string;
@@ -574,6 +574,15 @@ const CompactElement: React.FC<CompactElementProps> = ({
 
 export const CreateScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
+
+  // Handle selections returned from asset-studio
+  const searchParams = useLocalSearchParams<{
+    selectedLocationId?: string;
+    selectedCharacterId?: string;
+    selectedVoiceId?: string;
+    selectedValueId?: string;
+  }>();
+
   const [appState, setAppState] = useState<AppState>('studio');
   const [studioMode, setStudioMode] = useState<StudioMode>('creative');
   const [showElements, setShowElements] = useState(false);
@@ -585,7 +594,6 @@ export const CreateScreen: React.FC = () => {
   const [overrideValue, setOverrideValue] = useState<FocusValue | null>(null);
   const [overrideCharacter, setOverrideCharacter] = useState<Friend | null>(null);
   const [overrideVoice, setOverrideVoice] = useState<VoicePreset | null>(null);
-  const [activeSelector, setActiveSelector] = useState<SelectorType | null>(null);
   const [viewingWish, setViewingWish] = useState<Wish | null>(null);
   const [crystalBalance, setCrystalBalance] = useState(150);
   const [showCrystalModal, setShowCrystalModal] = useState(false);
@@ -594,6 +602,26 @@ export const CreateScreen: React.FC = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [toggleLayout, setToggleLayout] = useState({ width: 0, height: 0 });
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Handle selections returned from asset-studio
+  useEffect(() => {
+    if (searchParams.selectedLocationId) {
+      const location = PRESET_LOCATIONS.find(l => l.id === searchParams.selectedLocationId);
+      if (location) setOverrideLocation(location);
+    }
+    if (searchParams.selectedCharacterId) {
+      const character = FRIENDS.find(f => f.id === searchParams.selectedCharacterId);
+      if (character) setOverrideCharacter(character);
+    }
+    if (searchParams.selectedVoiceId) {
+      const voice = VOICE_PRESETS.find(v => v.id === searchParams.selectedVoiceId);
+      if (voice) setOverrideVoice(voice);
+    }
+    if (searchParams.selectedValueId) {
+      const value = FOCUS_VALUES.find(v => v.id === searchParams.selectedValueId);
+      if (value) setOverrideValue(value);
+    }
+  }, [searchParams.selectedLocationId, searchParams.selectedCharacterId, searchParams.selectedVoiceId, searchParams.selectedValueId]);
 
   // Enable LayoutAnimation for Android
   if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -718,14 +746,6 @@ export const CreateScreen: React.FC = () => {
 
   const renderStudio = () => {
     const bottomPadding = insets.bottom + 180;
-    const selectorTitle = activeSelector
-      ? {
-        location: 'World',
-        value: 'Lesson',
-        character: 'Sidekick',
-        voice: 'Voice',
-      }[activeSelector]
-      : 'Option';
     const actionBgClass = hasValidPrompt
       ? isAuto
         ? 'bg-amber-500'
@@ -807,9 +827,8 @@ export const CreateScreen: React.FC = () => {
                     <View className="relative bg-white/0 rounded-xl py-3 px-4 flex-row items-center justify-between">
                       <View className="flex-1 shrink flex-row items-center gap-3">
                         <View
-                          className={`w-10 h-10 rounded-full items-center justify-center ${
-                            isAuto ? 'bg-amber-500' : 'bg-slate-100'
-                          }`}
+                          className={`w-10 h-10 rounded-full items-center justify-center ${isAuto ? 'bg-amber-500' : 'bg-slate-100'
+                            }`}
                         >
                           <Infinity size={20} color={isAuto ? '#ffffff' : '#94a3b8'} />
                         </View>
@@ -1042,7 +1061,10 @@ export const CreateScreen: React.FC = () => {
                   {/* Secondary: Voice & Wishes (simple minimal row) */}
                   <View className="flex-row gap-3">
                     <Pressable
-                      onPress={() => setActiveSelector('voice')}
+                      onPress={() => router.push({
+                        pathname: '/asset-studio',
+                        params: { tab: 'voices', selectedVoiceId: overrideVoice?.id || '' },
+                      })}
                       className={`flex-1 flex-row items-center gap-2 px-4 py-3 rounded-xl border ${overrideVoice ? 'bg-primary-50 border-primary-200' : 'bg-slate-50 border-transparent'
                         }`}
                     >
@@ -1210,7 +1232,10 @@ export const CreateScreen: React.FC = () => {
                               icon={MapPin}
                               label="World"
                               value={overrideLocation?.name || null}
-                              onPress={() => setActiveSelector('location')}
+                              onPress={() => router.push({
+                                pathname: '/asset-studio',
+                                params: { tab: 'places', selectedLocationId: overrideLocation?.id || '' },
+                              })}
                               onClear={() => setOverrideLocation(null)}
                               theme={controlsTheme}
                             />
@@ -1218,7 +1243,10 @@ export const CreateScreen: React.FC = () => {
                               icon={User}
                               label="Sidekick"
                               value={overrideCharacter?.name || null}
-                              onPress={() => setActiveSelector('character')}
+                              onPress={() => router.push({
+                                pathname: '/asset-studio',
+                                params: { tab: 'faces', selectedCharacterId: overrideCharacter?.id || '' },
+                              })}
                               onClear={() => setOverrideCharacter(null)}
                               theme={controlsTheme}
                             />
@@ -1226,7 +1254,10 @@ export const CreateScreen: React.FC = () => {
                               icon={Heart}
                               label="Lesson"
                               value={overrideValue?.name || null}
-                              onPress={() => setActiveSelector('value')}
+                              onPress={() => router.push({
+                                pathname: '/asset-studio',
+                                params: { tab: 'values', selectedValueId: overrideValue?.id || '' },
+                              })}
                               onClear={() => setOverrideValue(null)}
                               theme={controlsTheme}
                             />
@@ -1260,140 +1291,6 @@ export const CreateScreen: React.FC = () => {
             ) : null}
           </Pressable>
         </View>
-
-        <Modal
-          visible={Boolean(activeSelector)}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setActiveSelector(null)}
-        >
-          <View style={styles.selectorContainer}>
-            <Pressable style={styles.modalOverlay} onPress={() => setActiveSelector(null)} />
-            <MotiView
-              from={{ translateY: 40, opacity: 0 }}
-              animate={{ translateY: 0, opacity: 1 }}
-              transition={{ type: 'timing', duration: 220 }}
-              className="bg-white rounded-t-[32px] border border-slate-100 shadow-xl max-h-[80%] w-full"
-            >
-              <View className="p-4 border-b border-slate-100 flex-row items-center justify-between">
-                <Text className="font-bold text-slate-800">Select {selectorTitle}</Text>
-                <Pressable onPress={() => setActiveSelector(null)} className="active:scale-95">
-                  <X size={20} color="#94a3b8" />
-                </Pressable>
-              </View>
-              <ScrollView
-                contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 24 }}
-                showsVerticalScrollIndicator={false}
-              >
-                {activeSelector === 'location'
-                  ? PRESET_LOCATIONS.map((loc) => {
-                    const isSelected = overrideLocation?.id === loc.id;
-                    return (
-                      <Pressable
-                        key={loc.id}
-                        onPress={() => {
-                          setOverrideLocation(loc);
-                          setActiveSelector(null);
-                        }}
-                        className={`w-full p-4 rounded-xl flex-row items-center justify-between mb-2 ${isSelected ? 'bg-slate-100' : 'bg-slate-50'
-                          }`}
-                      >
-                        <Text className="font-bold text-slate-700">{loc.name}</Text>
-                        <View className="bg-white px-2 py-1 rounded border border-slate-200">
-                          <Text className="text-xs font-bold text-slate-400">{loc.cost} crystals</Text>
-                        </View>
-                      </Pressable>
-                    );
-                  })
-                  : null}
-
-                {activeSelector === 'value'
-                  ? FOCUS_VALUES.map((val) => {
-                    const isSelected = overrideValue?.id === val.id;
-                    return (
-                      <Pressable
-                        key={val.id}
-                        onPress={() => {
-                          setOverrideValue(val);
-                          setActiveSelector(null);
-                        }}
-                        className={`w-full p-4 rounded-xl flex-row items-center justify-between mb-2 ${isSelected ? 'bg-slate-100' : 'bg-slate-50'
-                          }`}
-                      >
-                        <View className="flex-row items-center gap-3">
-                          <View className={`w-9 h-9 rounded-full items-center justify-center ${val.bgClass}`}>
-                            <val.icon size={18} color={val.iconColor} />
-                          </View>
-                          <Text className="font-bold text-slate-700">{val.name}</Text>
-                        </View>
-                        {isSelected ? <Check size={16} color="#10b981" /> : null}
-                      </Pressable>
-                    );
-                  })
-                  : null}
-
-                {activeSelector === 'character'
-                  ? FRIENDS.map((char) => {
-                    const isSelected = overrideCharacter?.id === char.id;
-                    return (
-                      <Pressable
-                        key={char.id}
-                        onPress={() => {
-                          setOverrideCharacter(char);
-                          setActiveSelector(null);
-                        }}
-                        className={`w-full p-4 rounded-xl flex-row items-center justify-between mb-2 ${isSelected ? 'bg-slate-100' : 'bg-slate-50'
-                          }`}
-                      >
-                        <View className="flex-row items-center gap-3">
-                          <View className={`w-9 h-9 rounded-full items-center justify-center ${char.color}`}>
-                            <Text className="text-lg">{char.icon}</Text>
-                          </View>
-                          <Text className="font-bold text-slate-700">{char.name}</Text>
-                        </View>
-                        <View className="bg-white px-2 py-1 rounded border border-slate-200">
-                          <Text className="text-xs font-bold text-slate-400">{char.cost} crystals</Text>
-                        </View>
-                      </Pressable>
-                    );
-                  })
-                  : null}
-
-                {activeSelector === 'voice'
-                  ? VOICE_PRESETS.map((voice) => {
-                    const isSelected = overrideVoice?.id === voice.id;
-                    return (
-                      <Pressable
-                        key={voice.id}
-                        onPress={() => {
-                          setOverrideVoice(voice);
-                          setActiveSelector(null);
-                        }}
-                        className={`w-full p-4 rounded-xl flex-row items-center justify-between mb-2 ${isSelected ? 'bg-slate-100' : 'bg-slate-50'
-                          }`}
-                      >
-                        <View className="flex-row items-center gap-3">
-                          <View className={`w-9 h-9 rounded-full items-center justify-center ${voice.color}`}>
-                            <Text className="text-base">{voice.icon}</Text>
-                          </View>
-                          <View>
-                            <Text className="font-bold text-slate-700">{voice.name}</Text>
-                            <Text className="text-xs text-slate-400">{voice.style}</Text>
-                          </View>
-                        </View>
-                        <View className="bg-white px-2 py-1 rounded border border-slate-200">
-                          <Text className="text-xs font-bold text-slate-400">
-                            {voice.cost === 0 ? 'Free' : `${voice.cost} crystals`}
-                          </Text>
-                        </View>
-                      </Pressable>
-                    );
-                  })
-                  : null}
-              </ScrollView>
-            </MotiView>
-          </View>
-        </Modal>
 
         <WishDetailModal
           visible={Boolean(viewingWish)}

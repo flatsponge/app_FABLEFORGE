@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
 import { useChildLock } from '@/contexts/ChildLockContext';
+import { useOrientation } from '@/components/useOrientation';
 import ChildBackground from '@/childbackground/childbackground1.png';
 import ChildBackground2 from '@/childbackground/childbackground2.jpg';
 import ChildBackground3 from '@/childbackground/childbackground3.jpg';
@@ -677,6 +678,9 @@ export default function ChildHubScreen() {
   const unlockHintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const insets = useSafeAreaInsets();
+
+  // Enable rotation for this screen (My Room)
+  const { isLandscape, width, height } = useOrientation(true);
 
   // Sync lock state with context for tab bar visibility
   const { setIsChildLocked, setIsOnChildHub } = useChildLock();
