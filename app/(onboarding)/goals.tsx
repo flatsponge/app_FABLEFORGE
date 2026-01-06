@@ -23,15 +23,19 @@ export default function OnboardingStart() {
     const handleSelect = (id: string) => {
         setSelected(id);
         updateData({ primaryGoal: id });
-        setTimeout(() => {
+    };
+
+    const handleNext = () => {
+        if (selected) {
             router.push('/(onboarding)/quiz/child-name');
-        }, 300);
+        }
     };
 
     return (
         <OnboardingLayout
             progress={0.05}
-            showNextButton={false}
+            showNextButton={!!selected}
+            onNext={handleNext}
         >
             <View style={styles.contentContainer}>
                 <OnboardingSubtitle>Welcome</OnboardingSubtitle>
@@ -45,7 +49,7 @@ export default function OnboardingStart() {
                         <OnboardingOptionCard
                             key={goal.id}
                             title={goal.title}
-                            subtitle={goal.description}
+                            description={goal.description}
                             selected={selected === goal.id}
                             onPress={() => handleSelect(goal.id)}
                             icon={

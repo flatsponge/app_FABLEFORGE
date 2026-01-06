@@ -1,17 +1,20 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Text } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody, OnboardingSubtitle } from '../../../components/OnboardingTypography';
 import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
+const ICON_COLOR = '#6b7280';
+
 const TIMELINES = [
-    { id: 'immediate', label: 'Right away', description: 'We need help now', emoji: '🔥', urgency: 'high' },
-    { id: 'month', label: 'Within a month', description: 'Noticeable progress soon', emoji: '📆' },
-    { id: 'gradual', label: 'Gradual improvement', description: 'Long-term development', emoji: '🌱' },
-    { id: 'unsure', label: 'Not sure yet', description: 'Just exploring options', emoji: '🤷' },
+    { id: 'immediate', label: 'Right away', description: 'We need help now', icon: 'flame-outline' },
+    { id: 'month', label: 'Within a month', description: 'Noticeable progress soon', icon: 'calendar-number-outline' },
+    { id: 'gradual', label: 'Gradual improvement', description: 'Long-term development', icon: 'leaf-outline' },
+    { id: 'unsure', label: 'Not sure yet', description: 'Just exploring options', icon: 'help-circle-outline' },
 ];
 
 export default function GoalsTimelineScreen() {
@@ -21,16 +24,19 @@ export default function GoalsTimelineScreen() {
 
     const handleSelect = (id: string) => {
         setSelected(id);
-        // updateData({ goalsTimeline: id }); // Update context if available
-        setTimeout(() => {
+    };
+
+    const handleNext = () => {
+        if (selected) {
             router.push('/(onboarding)/quiz/parenting-style');
-        }, 300);
+        }
     };
 
     return (
         <OnboardingLayout
-            progress={0.2} // Adjusted progress to fit sequence (child-age is 0.15)
-            showNextButton={false}
+            progress={0.2}
+            showNextButton={!!selected}
+            onNext={handleNext}
         >
             <View style={styles.contentContainer}>
                 <OnboardingTitle>How quickly do you want to see changes?</OnboardingTitle>
@@ -43,15 +49,14 @@ export default function GoalsTimelineScreen() {
                         <OnboardingOptionCard
                             key={timeline.id}
                             title={timeline.label}
-                            subtitle={timeline.description}
+                            description={timeline.description}
                             selected={selected === timeline.id}
                             onPress={() => handleSelect(timeline.id)}
-                            icon={<View><OnboardingBody style={{ fontSize: 24 }}>{timeline.emoji}</OnboardingBody></View>}
-                            rightContent={timeline.urgency === 'high' ? (
-                                <View style={styles.badgeUrgent}>
-                                    <Text style={styles.badgeTextUrgent}>Urgent</Text>
+                            icon={
+                                <View style={styles.iconContainer}>
+                                    <Ionicons name={timeline.icon as any} size={24} color={ICON_COLOR} />
                                 </View>
-                            ) : undefined}
+                            }
                         />
                     ))}
                 </View>
@@ -67,15 +72,12 @@ const styles = StyleSheet.create({
     optionsContainer: {
         marginTop: OnboardingTheme.Spacing.xl,
     },
-    badgeUrgent: {
-        backgroundColor: '#fee2e2', // red-100
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 4,
-    },
-    badgeTextUrgent: {
-        color: '#b91c1c', // red-700
-        fontSize: 10,
-        fontWeight: 'bold',
+    iconContainer: {
+        width: 48,
+        height: 48,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#f3f4f6',
     },
 });

@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Text } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody, OnboardingSubtitle } from '../../../components/OnboardingTypography';
 import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
+const ICON_COLOR = '#6b7280';
+
 const MORAL_SKILLS = [
-    { id: 'sharing', label: 'Sharing', emoji: '🤝', question: 'How well does your child share with others?' },
-    { id: 'honesty', label: 'Telling the Truth', emoji: '💬', question: 'How honest is your child typically?' },
-    { id: 'patience', label: 'Patience', emoji: '⏳', question: 'How patient is your child in difficult situations?' },
-    { id: 'kindness', label: 'Kindness to Others', emoji: '❤️', question: 'How kind is your child to others?' },
+    { id: 'sharing', label: 'Sharing', icon: 'people-outline', question: 'How well does your child share with others?' },
+    { id: 'honesty', label: 'Telling the Truth', icon: 'chatbubbles-outline', question: 'How honest is your child typically?' },
+    { id: 'patience', label: 'Patience', icon: 'hourglass-outline', question: 'How patient is your child in difficult situations?' },
+    { id: 'kindness', label: 'Kindness to Others', icon: 'heart-outline', question: 'How kind is your child to others?' },
 ];
 
 const RATING_OPTIONS = [
@@ -27,12 +30,10 @@ export default function MoralBaselineScreen() {
     const { updateData } = useOnboarding();
     const [ratings, setRatings] = useState<Record<string, number>>({});
 
-    // We can use a local state to track which skill we are on
     const currentSkillIndex = Object.keys(ratings).length;
     const currentSkill = MORAL_SKILLS[currentSkillIndex];
     const isComplete = currentSkillIndex >= MORAL_SKILLS.length;
 
-    // Calculate progress based on base progress + skill progress
     const baseProgress = 0.8;
     const stepProgress = 0.1 / MORAL_SKILLS.length;
     const currentProgress = baseProgress + (currentSkillIndex * stepProgress);
@@ -53,7 +54,7 @@ export default function MoralBaselineScreen() {
     };
 
     if (isComplete) {
-        return null; // Or a loading spinner while redirecting
+        return null;
     }
 
     return (
@@ -68,8 +69,8 @@ export default function MoralBaselineScreen() {
                     {currentSkill.question}
                 </OnboardingBody>
 
-                <View style={styles.emojiContainer}>
-                    <Text style={styles.emoji}>{currentSkill.emoji}</Text>
+                <View style={styles.iconContainer}>
+                    <Ionicons name={currentSkill.icon as any} size={48} color={ICON_COLOR} />
                 </View>
 
                 <View style={styles.optionsContainer}>
@@ -91,12 +92,9 @@ const styles = StyleSheet.create({
     contentContainer: {
         width: '100%',
     },
-    emojiContainer: {
+    iconContainer: {
         alignItems: 'center',
         marginVertical: OnboardingTheme.Spacing.md,
-    },
-    emoji: {
-        fontSize: 48,
     },
     optionsContainer: {
         marginTop: OnboardingTheme.Spacing.sm,

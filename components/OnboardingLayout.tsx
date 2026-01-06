@@ -138,8 +138,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: OnboardingTheme.Spacing.lg,
-    paddingVertical: OnboardingTheme.Spacing.md,
-    height: 60,
+    paddingTop: OnboardingTheme.Spacing.xs,
+    paddingBottom: OnboardingTheme.Spacing.md,
+    height: 48,
   },
   backButton: {
     marginRight: OnboardingTheme.Spacing.md,
@@ -170,6 +171,6 @@ const styles = StyleSheet.create({
   footer: {
     paddingHorizontal: OnboardingTheme.Spacing.lg,
     paddingTop: OnboardingTheme.Spacing.md,
-    paddingBottom: OnboardingTheme.Spacing.md,
+    paddingBottom: OnboardingTheme.Spacing.xs,
   },
 });

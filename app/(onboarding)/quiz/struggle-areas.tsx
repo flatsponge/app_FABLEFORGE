@@ -1,21 +1,24 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody, OnboardingSubtitle } from '../../../components/OnboardingTypography';
 import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
+const ICON_COLOR = '#6b7280';
+
 const STRUGGLE_AREAS = [
-    { id: 'sharing', label: 'Sharing toys & belongings', emoji: '🧸', skill: 'empathy' },
-    { id: 'honesty', label: 'Telling the truth', emoji: '💬', skill: 'honesty' },
-    { id: 'patience', label: 'Waiting their turn', emoji: '⏳', skill: 'patience' },
-    { id: 'responsibility', label: 'Cleaning up after themselves', emoji: '🧹', skill: 'responsibility' },
-    { id: 'gratitude', label: 'Saying thank you', emoji: '🙏', skill: 'gratitude' },
-    { id: 'teamwork', label: 'Playing nicely with others', emoji: '👫', skill: 'teamwork' },
-    { id: 'bravery', label: 'Trying new things', emoji: '🦸', skill: 'bravery' },
-    { id: 'problem_solving', label: 'Handling disappointment', emoji: '😤', skill: 'problem_solving' },
+    { id: 'sharing', label: 'Sharing toys & belongings', icon: 'gift-outline' },
+    { id: 'honesty', label: 'Telling the truth', icon: 'chatbubble-outline' },
+    { id: 'patience', label: 'Waiting their turn', icon: 'hourglass-outline' },
+    { id: 'responsibility', label: 'Cleaning up after themselves', icon: 'home-outline' },
+    { id: 'gratitude', label: 'Saying thank you', icon: 'hand-left-outline' },
+    { id: 'teamwork', label: 'Playing nicely with others', icon: 'people-outline' },
+    { id: 'bravery', label: 'Trying new things', icon: 'rocket-outline' },
+    { id: 'problem_solving', label: 'Handling disappointment', icon: 'sad-outline' },
 ];
 
 export default function StruggleAreasScreen() {
@@ -35,7 +38,6 @@ export default function StruggleAreasScreen() {
 
     const handleNext = () => {
         if (canProceed) {
-            // updateData({ struggleAreas: selected }); // Update context if available
             router.push('/(onboarding)/quiz/struggle-frequency');
         }
     };
@@ -67,7 +69,11 @@ export default function StruggleAreasScreen() {
                             title={area.label}
                             selected={selected.includes(area.id)}
                             onPress={() => toggleSelection(area.id)}
-                            icon={<View><OnboardingBody style={{ fontSize: 24 }}>{area.emoji}</OnboardingBody></View>}
+                            icon={
+                                <View style={styles.iconContainer}>
+                                    <Ionicons name={area.icon as any} size={24} color={ICON_COLOR} />
+                                </View>
+                            }
                         />
                     ))}
                 </View>
@@ -91,5 +97,13 @@ const styles = StyleSheet.create({
     },
     optionsContainer: {
         marginTop: OnboardingTheme.Spacing.md,
+    },
+    iconContainer: {
+        width: 48,
+        height: 48,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#f3f4f6',
     },
 });

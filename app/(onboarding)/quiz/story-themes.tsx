@@ -1,23 +1,26 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody, OnboardingSubtitle } from '../../../components/OnboardingTypography';
 import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
+const ICON_COLOR = '#6b7280';
+
 const THEMES = [
-    { id: 'adventure', label: 'Adventure', emoji: '🗺️' },
-    { id: 'animals', label: 'Animals', emoji: '🦁' },
-    { id: 'space', label: 'Space', emoji: '🚀' },
-    { id: 'fantasy', label: 'Fantasy & Magic', emoji: '🧙' },
-    { id: 'dinosaurs', label: 'Dinosaurs', emoji: '🦖' },
-    { id: 'ocean', label: 'Ocean & Sea', emoji: '🌊' },
-    { id: 'superheroes', label: 'Superheroes', emoji: '🦸' },
-    { id: 'nature', label: 'Nature', emoji: '🌳' },
-    { id: 'vehicles', label: 'Vehicles', emoji: '🚗' },
-    { id: 'robots', label: 'Robots & Tech', emoji: '🤖' },
+    { id: 'adventure', label: 'Adventure', icon: 'map-outline' },
+    { id: 'animals', label: 'Animals', icon: 'paw-outline' },
+    { id: 'space', label: 'Space', icon: 'rocket-outline' },
+    { id: 'fantasy', label: 'Fantasy & Magic', icon: 'sparkles-outline' },
+    { id: 'dinosaurs', label: 'Dinosaurs', icon: 'skull-outline' },
+    { id: 'ocean', label: 'Ocean & Sea', icon: 'water-outline' },
+    { id: 'superheroes', label: 'Superheroes', icon: 'flash-outline' },
+    { id: 'nature', label: 'Nature', icon: 'leaf-outline' },
+    { id: 'vehicles', label: 'Vehicles', icon: 'car-outline' },
+    { id: 'robots', label: 'Robots & Tech', icon: 'hardware-chip-outline' },
 ];
 
 export default function StoryThemesScreen() {
@@ -37,7 +40,6 @@ export default function StoryThemesScreen() {
 
     const handleNext = () => {
         if (canProceed) {
-            // updateData({ storyThemes: selected }); // Keeping logic consistent with context not having this field yet
             router.push('/(onboarding)/quiz/previous-attempts');
         }
     };
@@ -69,7 +71,11 @@ export default function StoryThemesScreen() {
                             title={theme.label}
                             selected={selected.includes(theme.id)}
                             onPress={() => toggleSelection(theme.id)}
-                            icon={<View><OnboardingBody style={{ fontSize: 24 }}>{theme.emoji}</OnboardingBody></View>}
+                            icon={
+                                <View style={styles.iconContainer}>
+                                    <Ionicons name={theme.icon as any} size={24} color={ICON_COLOR} />
+                                </View>
+                            }
                         />
                     ))}
                 </View>
@@ -93,5 +99,13 @@ const styles = StyleSheet.create({
     },
     optionsContainer: {
         marginTop: OnboardingTheme.Spacing.md,
+    },
+    iconContainer: {
+        width: 48,
+        height: 48,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#f3f4f6',
     },
 });

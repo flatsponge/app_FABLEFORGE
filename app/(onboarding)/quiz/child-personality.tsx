@@ -1,21 +1,24 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody, OnboardingSubtitle } from '../../../components/OnboardingTypography';
 import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
+const ICON_COLOR = '#6b7280';
+
 const TRAITS = [
-    { id: 'shy', label: 'Shy / Reserved', emoji: '🙈' },
-    { id: 'outgoing', label: 'Outgoing / Social', emoji: '🌟' },
-    { id: 'sensitive', label: 'Sensitive / Emotional', emoji: '💗' },
-    { id: 'stubborn', label: 'Strong-willed', emoji: '🦁' },
-    { id: 'curious', label: 'Curious / Explorer', emoji: '🔍' },
-    { id: 'anxious', label: 'Anxious / Worried', emoji: '😰' },
-    { id: 'energetic', label: 'High Energy', emoji: '⚡' },
-    { id: 'calm', label: 'Calm / Easy-going', emoji: '🧘' },
+    { id: 'shy', label: 'Shy / Reserved', icon: 'eye-off-outline' },
+    { id: 'outgoing', label: 'Outgoing / Social', icon: 'people-outline' },
+    { id: 'sensitive', label: 'Sensitive / Emotional', icon: 'heart-outline' },
+    { id: 'stubborn', label: 'Strong-willed', icon: 'shield-outline' },
+    { id: 'curious', label: 'Curious / Explorer', icon: 'search-outline' },
+    { id: 'anxious', label: 'Anxious / Worried', icon: 'cloud-outline' },
+    { id: 'energetic', label: 'High Energy', icon: 'flash-outline' },
+    { id: 'calm', label: 'Calm / Easy-going', icon: 'leaf-outline' },
 ];
 
 export default function ChildPersonalityScreen() {
@@ -35,8 +38,6 @@ export default function ChildPersonalityScreen() {
 
     const handleNext = () => {
         if (canProceed) {
-            // Note: Not currently saving traits to context as it's not in the type definition,
-            // but keeping logic consistent with existing screen.
             router.push('/(onboarding)/quiz/daily-routine');
         }
     };
@@ -68,7 +69,11 @@ export default function ChildPersonalityScreen() {
                             title={trait.label}
                             selected={selected.includes(trait.id)}
                             onPress={() => toggleSelection(trait.id)}
-                            icon={<View><OnboardingBody style={{ fontSize: 24 }}>{trait.emoji}</OnboardingBody></View>}
+                            icon={
+                                <View style={styles.iconContainer}>
+                                    <Ionicons name={trait.icon as any} size={24} color={ICON_COLOR} />
+                                </View>
+                            }
                         />
                     ))}
                 </View>
@@ -92,5 +97,13 @@ const styles = StyleSheet.create({
     },
     optionsContainer: {
         marginTop: OnboardingTheme.Spacing.md,
+    },
+    iconContainer: {
+        width: 48,
+        height: 48,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#f3f4f6',
     },
 });

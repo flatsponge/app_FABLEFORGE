@@ -1,18 +1,21 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Text } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody, OnboardingSubtitle } from '../../../components/OnboardingTypography';
 import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
+const ICON_COLOR = '#6b7280';
+
 const FREQUENCIES = [
-    { id: 'multiple_daily', label: 'Multiple times a day', emoji: '🔥', severity: 'critical' },
-    { id: 'daily', label: 'Once a day', emoji: '⚠️', severity: 'high' },
-    { id: 'few_weekly', label: 'A few times a week', emoji: '📊', severity: 'moderate' },
-    { id: 'weekly', label: 'Once a week', emoji: '📈', severity: 'low' },
-    { id: 'rarely', label: 'Rarely', emoji: '✨', severity: 'minimal' },
+    { id: 'multiple_daily', label: 'Multiple times a day', icon: 'flame-outline' },
+    { id: 'daily', label: 'Once a day', icon: 'alert-circle-outline' },
+    { id: 'few_weekly', label: 'A few times a week', icon: 'bar-chart-outline' },
+    { id: 'weekly', label: 'Once a week', icon: 'trending-up-outline' },
+    { id: 'rarely', label: 'Rarely', icon: 'sparkles-outline' },
 ];
 
 export default function StruggleFrequencyScreen() {
@@ -22,16 +25,19 @@ export default function StruggleFrequencyScreen() {
 
     const handleSelect = (id: string) => {
         setSelected(id);
-        // updateData({ struggleFrequency: id }); // Update context if available
-        setTimeout(() => {
+    };
+
+    const handleNext = () => {
+        if (selected) {
             router.push('/(onboarding)/quiz/moral-baseline');
-        }, 300);
+        }
     };
 
     return (
         <OnboardingLayout
             progress={0.75}
-            showNextButton={false}
+            showNextButton={!!selected}
+            onNext={handleNext}
         >
             <View style={styles.contentContainer}>
                 <OnboardingTitle>How often do these issues come up?</OnboardingTitle>
@@ -46,17 +52,10 @@ export default function StruggleFrequencyScreen() {
                             title={freq.label}
                             selected={selected === freq.id}
                             onPress={() => handleSelect(freq.id)}
-                            icon={<View><OnboardingBody style={{ fontSize: 24 }}>{freq.emoji}</OnboardingBody></View>}
-                            rightContent={
-                                freq.severity === 'critical' ? (
-                                    <View style={styles.badgeCritical}>
-                                        <Text style={styles.badgeTextCritical}>Critical</Text>
-                                    </View>
-                                ) : freq.severity === 'high' ? (
-                                    <View style={styles.badgeHigh}>
-                                        <Text style={styles.badgeTextHigh}>High</Text>
-                                    </View>
-                                ) : undefined
+                            icon={
+                                <View style={styles.iconContainer}>
+                                    <Ionicons name={freq.icon as any} size={24} color={ICON_COLOR} />
+                                </View>
                             }
                         />
                     ))}
@@ -73,26 +72,12 @@ const styles = StyleSheet.create({
     optionsContainer: {
         marginTop: OnboardingTheme.Spacing.xl,
     },
-    badgeCritical: {
-        backgroundColor: '#fee2e2', // red-100
-        paddingHorizontal: 8,
-        paddingVertical: 4,
+    iconContainer: {
+        width: 48,
+        height: 48,
         borderRadius: 12,
-    },
-    badgeTextCritical: {
-        color: '#b91c1c', // red-700
-        fontSize: 10,
-        fontWeight: 'bold',
-    },
-    badgeHigh: {
-        backgroundColor: '#ffedd5', // orange-100
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 12,
-    },
-    badgeTextHigh: {
-        color: '#c2410c', // orange-700
-        fontSize: 10,
-        fontWeight: 'bold',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#f3f4f6',
     },
 });

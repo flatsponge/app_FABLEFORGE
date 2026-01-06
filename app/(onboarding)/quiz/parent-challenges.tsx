@@ -1,21 +1,24 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody, OnboardingSubtitle } from '../../../components/OnboardingTypography';
 import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
+const ICON_COLOR = '#6b7280';
+
 const CHALLENGES = [
-    { id: 'time', label: 'Not enough time', emoji: '⏰' },
-    { id: 'consistency', label: 'Staying consistent', emoji: '📅' },
-    { id: 'engagement', label: 'Keeping them engaged', emoji: '🎯' },
-    { id: 'tantrums', label: 'Managing tantrums', emoji: '😤' },
-    { id: 'communication', label: 'Getting them to talk', emoji: '💬' },
-    { id: 'patience', label: 'My own patience', emoji: '🧘' },
-    { id: 'partner', label: 'Co-parenting alignment', emoji: '👫' },
-    { id: 'screen', label: 'Screen time battles', emoji: '📱' },
+    { id: 'time', label: 'Not enough time', icon: 'time-outline' },
+    { id: 'consistency', label: 'Staying consistent', icon: 'calendar-outline' },
+    { id: 'engagement', label: 'Keeping them engaged', icon: 'bulb-outline' },
+    { id: 'tantrums', label: 'Managing tantrums', icon: 'thunderstorm-outline' },
+    { id: 'communication', label: 'Getting them to talk', icon: 'chatbubbles-outline' },
+    { id: 'patience', label: 'My own patience', icon: 'leaf-outline' },
+    { id: 'partner', label: 'Co-parenting alignment', icon: 'people-outline' },
+    { id: 'screen', label: 'Screen time battles', icon: 'phone-portrait-outline' },
 ];
 
 export default function ParentChallengesScreen() {
@@ -35,7 +38,6 @@ export default function ParentChallengesScreen() {
 
     const handleNext = () => {
         if (canProceed) {
-            // updateData({ parentChallenges: selected }); // Update context if available
             router.push('/(onboarding)/quiz/diagnosis');
         }
     };
@@ -67,7 +69,11 @@ export default function ParentChallengesScreen() {
                             title={challenge.label}
                             selected={selected.includes(challenge.id)}
                             onPress={() => toggleSelection(challenge.id)}
-                            icon={<View><OnboardingBody style={{ fontSize: 24 }}>{challenge.emoji}</OnboardingBody></View>}
+                            icon={
+                                <View style={styles.iconContainer}>
+                                    <Ionicons name={challenge.icon as any} size={24} color={ICON_COLOR} />
+                                </View>
+                            }
                         />
                     ))}
                 </View>
@@ -91,5 +97,13 @@ const styles = StyleSheet.create({
     },
     optionsContainer: {
         marginTop: OnboardingTheme.Spacing.md,
+    },
+    iconContainer: {
+        width: 48,
+        height: 48,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#f3f4f6',
     },
 });

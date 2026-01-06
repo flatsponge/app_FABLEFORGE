@@ -1,17 +1,20 @@
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody, OnboardingSubtitle } from '../../../components/OnboardingTypography';
 import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
+const ICON_COLOR = '#6b7280';
+
 const OPTIONS = [
-    { id: 'tried_all', label: 'Yes, tried everything', description: 'Books, apps, charts...', emoji: '📚' },
-    { id: 'tried_some', label: 'Tried a few things', description: 'Some worked, some didn\'t', emoji: '🔄' },
-    { id: 'first_time', label: 'This is my first try', description: 'Looking for the right solution', emoji: '🌟' },
-    { id: 'professional', label: 'Working with a professional', description: 'Therapist, counselor, etc.', emoji: '👨‍⚕️' },
+    { id: 'tried_all', label: 'Yes, tried everything', description: 'Books, apps, charts...', icon: 'library-outline' },
+    { id: 'tried_some', label: 'Tried a few things', description: 'Some worked, some didn\'t', icon: 'repeat-outline' },
+    { id: 'first_time', label: 'This is my first try', description: 'Looking for the right solution', icon: 'sparkles-outline' },
+    { id: 'professional', label: 'Working with a professional', description: 'Therapist, counselor, etc.', icon: 'person-outline' },
 ];
 
 export default function PreviousAttemptsScreen() {
@@ -21,17 +24,19 @@ export default function PreviousAttemptsScreen() {
 
     const handleSelect = (id: string) => {
         setSelected(id);
-        // updateData({ previousAttempts: id }); // Update context if available
+    };
 
-        setTimeout(() => {
+    const handleNext = () => {
+        if (selected) {
             router.push('/(onboarding)/quiz/parent-challenges');
-        }, 300);
+        }
     };
 
     return (
         <OnboardingLayout
             progress={0.4}
-            showNextButton={false}
+            showNextButton={!!selected}
+            onNext={handleNext}
         >
             <View style={styles.contentContainer}>
                 <OnboardingTitle>Have you tried other solutions before?</OnboardingTitle>
@@ -44,10 +49,14 @@ export default function PreviousAttemptsScreen() {
                         <OnboardingOptionCard
                             key={option.id}
                             title={option.label}
-                            subtitle={option.description}
+                            description={option.description}
                             selected={selected === option.id}
                             onPress={() => handleSelect(option.id)}
-                            icon={<View><OnboardingBody style={{ fontSize: 24 }}>{option.emoji}</OnboardingBody></View>}
+                            icon={
+                                <View style={styles.iconContainer}>
+                                    <Ionicons name={option.icon as any} size={24} color={ICON_COLOR} />
+                                </View>
+                            }
                         />
                     ))}
                 </View>
@@ -62,5 +71,13 @@ const styles = StyleSheet.create({
     },
     optionsContainer: {
         marginTop: OnboardingTheme.Spacing.xl,
+    },
+    iconContainer: {
+        width: 48,
+        height: 48,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#f3f4f6',
     },
 });

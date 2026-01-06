@@ -8,12 +8,14 @@ import { OnboardingTitle, OnboardingBody, OnboardingSubtitle } from '../../../co
 import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
+const ICON_COLOR = '#6b7280';
+
 const REACTIONS = [
-    { id: 'calm', title: 'I stay calm (mostly)', icon: 'happy', emoji: '😌' },
-    { id: 'yell', title: 'I yell (and feel guilty later)', icon: 'megaphone', emoji: '😤' },
-    { id: 'give_in', title: 'I give in to stop the noise', icon: 'flag', emoji: '🏳️' },
-    { id: 'time_out', title: 'I use time-outs / punishments', icon: 'timer', emoji: '⏱️' },
-    { id: 'distract', title: 'I distract with screens', icon: 'phone-portrait', emoji: '📱' },
+    { id: 'calm', title: 'I stay calm (mostly)', icon: 'happy-outline' },
+    { id: 'yell', title: 'I yell (and feel guilty later)', icon: 'megaphone-outline' },
+    { id: 'give_in', title: 'I give in to stop the noise', icon: 'flag-outline' },
+    { id: 'time_out', title: 'I use time-outs / punishments', icon: 'timer-outline' },
+    { id: 'distract', title: 'I distract with screens', icon: 'phone-portrait-outline' },
 ];
 
 export default function ParentGuiltScreen() {
@@ -23,18 +25,20 @@ export default function ParentGuiltScreen() {
 
     const handleSelect = (id: string) => {
         setSelected(id);
-        // updateData({ parentReaction: id }); // Update context if available
-        setTimeout(() => {
+    };
+
+    const handleNext = () => {
+        if (selected) {
             router.push('/(onboarding)/quiz/commitment');
-        }, 300);
+        }
     };
 
     return (
         <OnboardingLayout
             progress={0.8}
-            showNextButton={false}
+            showNextButton={!!selected}
             isScrollable={true}
-            onNext={() => { }}
+            onNext={handleNext}
         >
             <View style={styles.contentContainer}>
                 <OnboardingTitle>Be honest: how do you usually react?</OnboardingTitle>
@@ -49,7 +53,11 @@ export default function ParentGuiltScreen() {
                             title={reaction.title}
                             selected={selected === reaction.id}
                             onPress={() => handleSelect(reaction.id)}
-                            icon={<View><OnboardingBody style={{ fontSize: 24 }}>{reaction.emoji}</OnboardingBody></View>}
+                            icon={
+                                <View style={styles.iconContainer}>
+                                    <Ionicons name={reaction.icon as any} size={24} color={ICON_COLOR} />
+                                </View>
+                            }
                         />
                     ))}
                 </View>
@@ -71,9 +79,17 @@ const styles = StyleSheet.create({
     optionsContainer: {
         marginTop: OnboardingTheme.Spacing.md,
     },
+    iconContainer: {
+        width: 48,
+        height: 48,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#f3f4f6',
+    },
     reassuranceContainer: {
         marginTop: OnboardingTheme.Spacing.xl,
-        backgroundColor: '#f9fafb', // gray-50
+        backgroundColor: '#f9fafb',
         padding: OnboardingTheme.Spacing.md,
         borderRadius: OnboardingTheme.Radius.lg,
     },

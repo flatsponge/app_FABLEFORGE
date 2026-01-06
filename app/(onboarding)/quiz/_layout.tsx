@@ -6,7 +6,7 @@ export default function QuizLayout() {
         <Stack
             screenOptions={{
                 headerShown: false,
-                animation: 'fade',
+                animation: 'slide_from_right',
                 gestureEnabled: true,
             }}
         />

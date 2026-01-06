@@ -1,21 +1,24 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody, OnboardingSubtitle } from '../../../components/OnboardingTypography';
 import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
+const ICON_COLOR = '#6b7280';
+
 const SITUATIONS = [
-    { id: 'bedtime', label: 'Bedtime resistance', emoji: '🌙' },
-    { id: 'screen_time', label: 'Screen time battles', emoji: '📱' },
-    { id: 'homework', label: 'Homework struggles', emoji: '📚' },
-    { id: 'sibling', label: 'Sibling conflicts', emoji: '👫' },
-    { id: 'meal_time', label: 'Meal time issues', emoji: '🍽️' },
-    { id: 'morning_routine', label: 'Morning routine chaos', emoji: '🌅' },
-    { id: 'public_behavior', label: 'Public meltdowns', emoji: '🏪' },
-    { id: 'transitions', label: 'Difficulty with transitions', emoji: '🔄' },
+    { id: 'bedtime', label: 'Bedtime resistance', icon: 'moon-outline' },
+    { id: 'screen_time', label: 'Screen time battles', icon: 'phone-portrait-outline' },
+    { id: 'homework', label: 'Homework struggles', icon: 'book-outline' },
+    { id: 'sibling', label: 'Sibling conflicts', icon: 'people-outline' },
+    { id: 'meal_time', label: 'Meal time issues', icon: 'restaurant-outline' },
+    { id: 'morning_routine', label: 'Morning routine chaos', icon: 'sunny-outline' },
+    { id: 'public_behavior', label: 'Public meltdowns', icon: 'storefront-outline' },
+    { id: 'transitions', label: 'Difficulty with transitions', icon: 'swap-horizontal-outline' },
 ];
 
 export default function TriggerSituationsScreen() {
@@ -35,7 +38,6 @@ export default function TriggerSituationsScreen() {
 
     const handleNext = () => {
         if (canProceed) {
-            // updateData({ triggerSituations: selected }); // Update context if available
             router.push('/(onboarding)/quiz/struggle-areas');
         }
     };
@@ -67,7 +69,11 @@ export default function TriggerSituationsScreen() {
                             title={situation.label}
                             selected={selected.includes(situation.id)}
                             onPress={() => toggleSelection(situation.id)}
-                            icon={<View><OnboardingBody style={{ fontSize: 24 }}>{situation.emoji}</OnboardingBody></View>}
+                            icon={
+                                <View style={styles.iconContainer}>
+                                    <Ionicons name={situation.icon as any} size={24} color={ICON_COLOR} />
+                                </View>
+                            }
                         />
                     ))}
                 </View>
@@ -91,5 +97,13 @@ const styles = StyleSheet.create({
     },
     optionsContainer: {
         marginTop: OnboardingTheme.Spacing.md,
+    },
+    iconContainer: {
+        width: 48,
+        height: 48,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#f3f4f6',
     },
 });

@@ -1,17 +1,20 @@
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody, OnboardingSubtitle } from '../../../components/OnboardingTypography';
 import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
+const ICON_COLOR = '#6b7280';
+
 const ROUTINES = [
-    { id: 'structured', label: 'Very structured', description: 'Set times for everything', emoji: '📅' },
-    { id: 'flexible', label: 'Flexible', description: 'General routine with wiggle room', emoji: '🌈' },
-    { id: 'chaotic', label: 'Chaotic', description: 'Every day is different', emoji: '🌪️' },
-    { id: 'working', label: 'Working on it', description: 'Trying to build better habits', emoji: '🔨' },
+    { id: 'structured', label: 'Very structured', description: 'Set times for everything', icon: 'calendar-outline' },
+    { id: 'flexible', label: 'Flexible', description: 'General routine with wiggle room', icon: 'color-palette-outline' },
+    { id: 'chaotic', label: 'Chaotic', description: 'Every day is different', icon: 'shuffle-outline' },
+    { id: 'working', label: 'Working on it', description: 'Trying to build better habits', icon: 'construct-outline' },
 ];
 
 export default function DailyRoutineScreen() {
@@ -21,16 +24,19 @@ export default function DailyRoutineScreen() {
 
     const handleSelect = (id: string) => {
         setSelected(id);
-        // updateData({ dailyRoutine: id }); // Update context if available
-        setTimeout(() => {
+    };
+
+    const handleNext = () => {
+        if (selected) {
             router.push('/(onboarding)/quiz/reading-time');
-        }, 300);
+        }
     };
 
     return (
         <OnboardingLayout
             progress={0.35}
-            showNextButton={false}
+            showNextButton={!!selected}
+            onNext={handleNext}
         >
             <View style={styles.contentContainer}>
                 <OnboardingTitle>How would you describe your daily routine?</OnboardingTitle>
@@ -43,10 +49,14 @@ export default function DailyRoutineScreen() {
                         <OnboardingOptionCard
                             key={routine.id}
                             title={routine.label}
-                            subtitle={routine.description}
+                            description={routine.description}
                             selected={selected === routine.id}
                             onPress={() => handleSelect(routine.id)}
-                            icon={<View><OnboardingBody style={{ fontSize: 24 }}>{routine.emoji}</OnboardingBody></View>}
+                            icon={
+                                <View style={styles.iconContainer}>
+                                    <Ionicons name={routine.icon as any} size={24} color={ICON_COLOR} />
+                                </View>
+                            }
                         />
                     ))}
                 </View>
@@ -61,5 +71,13 @@ const styles = StyleSheet.create({
     },
     optionsContainer: {
         marginTop: OnboardingTheme.Spacing.xl,
+    },
+    iconContainer: {
+        width: 48,
+        height: 48,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#f3f4f6',
     },
 });
