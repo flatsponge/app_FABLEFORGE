@@ -18,8 +18,6 @@ import ConfettiCannon from 'react-native-confetti-cannon';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
-const { width, height } = Dimensions.get('window');
-const GRAPH_WIDTH = width - 80;
 const GRAPH_HEIGHT = 100;
 
 // Avatar URLs using DiceBear API
@@ -69,6 +67,13 @@ const AnimatedAvatar = ({ seed, index }: { seed: number, index: number }) => {
 
 export default function IntroSlide4() {
     const router = useRouter();
+    const { width } = Dimensions.get('window'); // Keep this for ConfettiCannon only if needed, or better use useWindowDimensions
+    const windowDim = Dimensions.get('window');
+
+    // Use dynamic width with slightly more padding to prevent cutoff
+    // 24px padding on each side (OnboardingLayout) + 24px internal margin = 96px total reduction
+    const graphWidth = windowDim.width - 96;
+
     const [showButton, setShowButton] = useState(false);
     const confettiRef = useRef<ConfettiCannon>(null);
 
@@ -92,7 +97,7 @@ export default function IntroSlide4() {
             <ConfettiCannon
                 ref={confettiRef}
                 count={80}
-                origin={{ x: width / 2, y: -20 }}
+                origin={{ x: windowDim.width / 2, y: -20 }}
                 autoStart={true}
                 fadeOut={true}
                 fallSpeed={2500}
@@ -138,21 +143,40 @@ export default function IntroSlide4() {
                     entering={FadeIn.delay(500).duration(1000)}
                     style={styles.graphContainer}
                 >
-                    <Svg width={GRAPH_WIDTH} height={GRAPH_HEIGHT}>
+                    <Svg
+                        width={graphWidth}
+                        height={GRAPH_HEIGHT}
+                        viewBox={`0 -4 ${graphWidth} ${GRAPH_HEIGHT + 4}`}
+                        style={{ overflow: 'visible' }}
+                    >
                         <Defs>
                             <SvgGradient id="grad" x1="0" y1="0" x2="0" y2="1">
                                 <Stop offset="0" stopColor="#22c55e" stopOpacity="0.2" />
                                 <Stop offset="1" stopColor="#22c55e" stopOpacity="0" />
                             </SvgGradient>
                         </Defs>
-                        {/* Area */}
+                        {/* 
+                           Curve Logic:
+                           Start at bottom left (0, 100)
+                           Curve up gently, then flatten at the top.
+                           Ex: Bezier from (0,100) -> (W, 0)
+                           We'll use a Cubic Bezier for better control: C cp1x cp1y, cp2x cp2y, endx endy
+                        */}
                         <Path
-                            d={`M0,${GRAPH_HEIGHT} Q${GRAPH_WIDTH * 0.4},${GRAPH_HEIGHT} ${GRAPH_WIDTH * 0.6},${GRAPH_HEIGHT * 0.4} T${GRAPH_WIDTH},0 V${GRAPH_HEIGHT} Z`}
+                            d={`
+                                M0,${GRAPH_HEIGHT} 
+                                C${graphWidth * 0.4},${GRAPH_HEIGHT} ${graphWidth * 0.5},${GRAPH_HEIGHT * 0.2} ${graphWidth},4
+                                V${GRAPH_HEIGHT} 
+                                Z
+                            `}
                             fill="url(#grad)"
                         />
-                        {/* Line */}
+                        {/* Line - ends at 4px from top to avoid clipping top stroke */}
                         <Path
-                            d={`M0,${GRAPH_HEIGHT} Q${GRAPH_WIDTH * 0.4},${GRAPH_HEIGHT} ${GRAPH_WIDTH * 0.6},${GRAPH_HEIGHT * 0.4} T${GRAPH_WIDTH},0`}
+                            d={`
+                                M0,${GRAPH_HEIGHT} 
+                                C${graphWidth * 0.4},${GRAPH_HEIGHT} ${graphWidth * 0.5},${GRAPH_HEIGHT * 0.2} ${graphWidth},4
+                            `}
                             fill="none"
                             stroke="#22c55e"
                             strokeWidth="4"
@@ -161,7 +185,7 @@ export default function IntroSlide4() {
                     </Svg>
 
                     {/* Graph Labels */}
-                    <View style={styles.graphLabels}>
+                    <View style={[styles.graphLabels, { width: graphWidth }]}>
                         <Text style={styles.axisLabel}>Day 1</Text>
                         <Text style={styles.axisLabel}>Day 7</Text>
                         <Text style={styles.axisLabelBold}>Day 14</Text>
@@ -179,7 +203,7 @@ export default function IntroSlide4() {
                     style={styles.guarantee}
                 >
                     <Ionicons name="shield-checkmark-outline" size={16} color="#15803d" />
-                    <Text style={styles.guaranteeText}>Happiness Guarantee Included</Text>
+                    <Text style={styles.guaranteeText}>See results in days</Text>
                 </Animated.View>
 
                 {/* Social Proof */}
@@ -253,7 +277,7 @@ const styles = StyleSheet.create({
     },
     graphLabels: {
         flexDirection: 'row',
-        width: GRAPH_WIDTH,
+        // Width is set dynamically via inline styles
         justifyContent: 'space-between',
         marginTop: 8,
     },
