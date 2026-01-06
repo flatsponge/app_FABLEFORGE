@@ -32,7 +32,7 @@ export default function PositiveOutlookScreen() {
     }));
 
     const handleNext = () => {
-        router.push('/(onboarding)/paywall');
+        router.push('/(onboarding)/parent/review');
     };
 
     return (
@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
         textTransform: 'uppercase',
         letterSpacing: 1.2,
         marginBottom: OnboardingTheme.Spacing.lg,
-        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+
     },
     chartWrapper: {
         height: GRAPH_HEIGHT,
@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
     chartLabelText: {
         fontSize: 10,
         color: OnboardingTheme.Colors.TextSecondary,
-        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+
     },
     benefitsSection: {
         marginBottom: OnboardingTheme.Spacing.xl,
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: OnboardingTheme.Colors.Text,
         marginBottom: OnboardingTheme.Spacing.lg,
-        fontFamily: OnboardingTheme.Typography.Title.fontFamily,
+
     },
     benefitsGrid: {
         flexDirection: 'row',
@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
     benefitTitle: {
         fontWeight: 'bold',
         color: OnboardingTheme.Colors.Text,
-        fontFamily: OnboardingTheme.Typography.Title.fontFamily,
+
     },
     benefitStatus: {
         color: OnboardingTheme.Colors.Success,
@@ -267,19 +267,19 @@ const styles = StyleSheet.create({
         color: 'white',
         fontWeight: 'bold',
         fontSize: 18,
-        fontFamily: OnboardingTheme.Typography.Title.fontFamily,
+
     },
     socialProofQuote: {
         color: '#9ca3af', // gray-400
         fontStyle: 'italic',
         lineHeight: 22,
-        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+
     },
     socialProofAuthor: {
         color: '#6b7280', // gray-500
         fontSize: 14,
         marginTop: OnboardingTheme.Spacing.sm,
         fontWeight: '500',
-        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+
     },
 });

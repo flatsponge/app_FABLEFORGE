@@ -23,6 +23,7 @@
     "expo-screen-orientation": "~9.0.8",
     "expo-splash-screen": "~31.0.13",
     "expo-status-bar": "~3.0.9",
+    "expo-store-review": "~9.0.9",
     "expo-web-browser": "~15.0.10",
     "lucide-react-native": "^0.562.0",
     "moti": "^0.30.0",
