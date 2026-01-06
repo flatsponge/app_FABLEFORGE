@@ -187,9 +187,11 @@ export default function IntroSlide1() {
 
                 <View style={styles.contentArea}>
                     <Animated.View entering={FadeIn.delay(100).duration(400)}>
-                        <Animated.Text style={[styles.emoji, emojiStyle]}>
-                            😫
-                        </Animated.Text>
+                        <Animated.Image
+                            source={require('../../../assets/onbording/angrychild.png')}
+                            style={[styles.emojiImage, emojiStyle]}
+                            resizeMode="contain"
+                        />
                     </Animated.View>
 
                     <Animated.View
@@ -302,8 +304,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         zIndex: 10,
     },
-    emoji: {
-        fontSize: 100,
+    emojiImage: {
+        width: 120,
+        height: 120,
         marginBottom: 16,
     },
     titleContainer: {
