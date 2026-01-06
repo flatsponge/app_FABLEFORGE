@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, {
     FadeIn,
@@ -97,7 +97,7 @@ const CHAOS_ELEMENTS = [
 export default function IntroSlide1() {
     const router = useRouter();
     const [showButton, setShowButton] = useState(false);
-    
+
     const emojiX = useSharedValue(0);
     const emojiRotate = useSharedValue(0);
 
@@ -171,9 +171,7 @@ export default function IntroSlide1() {
         router.push('/(onboarding)/intro/slide-2');
     };
 
-    const handleSkip = () => {
-        router.replace('/(tabs)');
-    };
+
 
     return (
         <OnboardingLayout
@@ -185,9 +183,7 @@ export default function IntroSlide1() {
             backgroundColor="#fff0f0"
         >
             <View style={styles.container}>
-                <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
-                    <Text style={styles.skipButtonText}>SKIP</Text>
-                </TouchableOpacity>
+
 
                 <View style={styles.contentArea}>
                     <Animated.View entering={FadeIn.delay(100).duration(400)}>
@@ -196,7 +192,7 @@ export default function IntroSlide1() {
                         </Animated.Text>
                     </Animated.View>
 
-                    <Animated.View 
+                    <Animated.View
                         entering={FadeIn.delay(200).duration(500)}
                         style={styles.titleContainer}
                     >
@@ -214,7 +210,7 @@ export default function IntroSlide1() {
                                         key={item.id}
                                         entering={ZoomIn.delay(400 + index * 80).duration(400).springify()}
                                         style={[
-                                            styles.chaosCard, 
+                                            styles.chaosCard,
                                             { transform: [{ rotate: `${item.rotate}deg` }] }
                                         ]}
                                     >
@@ -234,7 +230,7 @@ export default function IntroSlide1() {
                                         key={item.id}
                                         entering={ZoomIn.delay(560 + index * 80).duration(400).springify()}
                                         style={[
-                                            styles.chaosCard, 
+                                            styles.chaosCard,
                                             { transform: [{ rotate: `${item.rotate}deg` }] }
                                         ]}
                                     >
@@ -254,7 +250,7 @@ export default function IntroSlide1() {
                                         key={item.id}
                                         entering={ZoomIn.delay(720 + index * 80).duration(400).springify()}
                                         style={[
-                                            styles.chaosCard, 
+                                            styles.chaosCard,
                                             { transform: [{ rotate: `${item.rotate}deg` }] }
                                         ]}
                                     >
@@ -274,7 +270,7 @@ export default function IntroSlide1() {
                                         key={item.id}
                                         entering={ZoomIn.delay(880 + index * 80).duration(400).springify()}
                                         style={[
-                                            styles.chaosCard, 
+                                            styles.chaosCard,
                                             { transform: [{ rotate: `${item.rotate}deg` }] }
                                         ]}
                                     >
@@ -392,17 +388,5 @@ const styles = StyleSheet.create({
         fontWeight: '900',
         color: '#0f172a',
     },
-    skipButton: {
-        position: 'absolute',
-        top: 0,
-        right: 0,
-        zIndex: 50,
-        padding: 10,
-    },
-    skipButtonText: {
-        fontSize: 14,
-        fontWeight: '700',
-        color: '#94a3b8',
-        letterSpacing: 1,
-    },
+
 });

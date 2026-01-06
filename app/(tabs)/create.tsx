@@ -752,12 +752,12 @@ export const CreateScreen: React.FC = () => {
             rightAction={
               <Pressable
                 onPress={() => setShowCrystalModal(true)}
-                className="flex-row items-center gap-2 bg-white px-2 py-1.5 rounded-full border border-slate-200 shadow-sm active:scale-95"
+                className="flex-row items-center gap-2.5 bg-white/90 px-3 py-2 rounded-full border border-slate-200 shadow-sm active:scale-95"
               >
-                <View className="w-5 h-5 rounded-full bg-cyan-100 items-center justify-center">
-                  <Diamond size={10} color="#06b6d4" fill="#06b6d4" />
+                <View className="w-6 h-6 rounded-full bg-cyan-100 items-center justify-center border border-cyan-200">
+                  <Diamond size={12} color="#0891b2" fill="#0891b2" />
                 </View>
-                <Text className="text-sm font-bold text-slate-700 font-mono">{crystalBalance}</Text>
+                <Text className="text-sm font-extrabold text-slate-700">{crystalBalance}</Text>
               </Pressable>
             }
           />
