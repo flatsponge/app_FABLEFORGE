@@ -80,7 +80,7 @@ export default function OnboardingLayout({
       showsVerticalScrollIndicator: false,
       contentContainerStyle: styles.scrollContentContainer,
     }
-    : { 
+    : {
       style: styles.content,
     };
 
@@ -163,7 +163,8 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: OnboardingTheme.Spacing.lg,
-    justifyContent: 'center', // Vertically center content by default
+    paddingTop: OnboardingTheme.Spacing.xl * 2, // Visual balance instead of centering
+    // Using flex-start prevents layout shifts when content animates in
   },
   scrollContentContainer: {
     paddingHorizontal: OnboardingTheme.Spacing.lg,

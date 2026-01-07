@@ -1,18 +1,31 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Text } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
-import Animated, { FadeIn, FadeInDown, useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, withSequence } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, {
+    FadeIn,
+    FadeInDown,
+    useSharedValue,
+    useAnimatedStyle,
+    withRepeat,
+    withTiming,
+    Easing,
+    withSequence
+} from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
-import OnboardingLayout from '../../../components/OnboardingLayout';
-import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
+import { OnboardingTitle } from '../../../components/OnboardingTypography';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function ResultsIntroScreen() {
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const [showContent, setShowContent] = useState(false);
 
     // Pulse animation for the analyzing icon
     const scale = useSharedValue(1);
+    const buttonOpacity = useSharedValue(0);
 
     useEffect(() => {
         scale.value = withRepeat(
@@ -24,7 +37,10 @@ export default function ResultsIntroScreen() {
             true
         );
 
-        const timer = setTimeout(() => setShowContent(true), 2000);
+        const timer = setTimeout(() => {
+            setShowContent(true);
+            buttonOpacity.value = withTiming(1, { duration: 400 });
+        }, 2000);
         return () => clearTimeout(timer);
     }, []);
 
@@ -32,18 +48,18 @@ export default function ResultsIntroScreen() {
         transform: [{ scale: scale.value }],
     }));
 
+    const animatedButtonStyle = useAnimatedStyle(() => ({
+        opacity: buttonOpacity.value,
+    }));
+
     const handleNext = () => {
         router.push('/(onboarding)/parent/stat-reveal-1');
     };
 
     return (
-        <OnboardingLayout
-            showProgressBar={false} progress={1.0} // Transition to results phase
-            showNextButton={showContent}
-            onNext={handleNext}
-            nextLabel="Reveal My Results"
-        >
-            <View style={styles.container}>
+        <View style={[styles.screen, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+            {/* Main content area - centered */}
+            <View style={styles.contentArea}>
                 <Animated.View entering={FadeIn.delay(300)} style={styles.animationContainer}>
                     <View style={styles.iconWrapper}>
                         <Animated.View
@@ -58,7 +74,7 @@ export default function ResultsIntroScreen() {
                     </View>
 
                     <OnboardingTitle style={styles.title}>Analysis Complete</OnboardingTitle>
-                    <Text style={styles.subtitle}>Processing 14 Data Points</Text>
+                    <Text style={styles.subtitle}>PROCESSING 14 DATA POINTS</Text>
                 </Animated.View>
 
                 {showContent && (
@@ -77,17 +93,32 @@ export default function ResultsIntroScreen() {
                     </Animated.View>
                 )}
             </View>
-        </OnboardingLayout>
+
+            {/* Fixed footer - always takes up space, but opacity animates */}
+            <Animated.View style={[styles.footer, animatedButtonStyle]}>
+                <TouchableOpacity
+                    style={styles.button}
+                    onPress={handleNext}
+                    activeOpacity={0.9}
+                    disabled={!showContent}
+                >
+                    <Text style={styles.buttonText}>Reveal My Results</Text>
+                </TouchableOpacity>
+            </Animated.View>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
+    screen: {
+        flex: 1,
+        backgroundColor: OnboardingTheme.Colors.Background,
+    },
+    contentArea: {
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        width: '100%',
-        paddingTop: OnboardingTheme.Spacing.xl,
+        paddingHorizontal: OnboardingTheme.Spacing.lg,
     },
     animationContainer: {
         alignItems: 'center',
@@ -104,17 +135,17 @@ const styles = StyleSheet.create({
         width: 140,
         height: 140,
         borderRadius: 70,
-        backgroundColor: '#f3e8ff', // primary-100
+        backgroundColor: '#f3e8ff',
     },
     iconCircle: {
-        width: 112, // w-28
+        width: 112,
         height: 112,
         backgroundColor: 'white',
         borderRadius: 56,
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 4,
-        borderColor: '#f3e8ff', // primary-100
+        borderColor: '#f3e8ff',
         zIndex: 10,
     },
     title: {
@@ -127,19 +158,18 @@ const styles = StyleSheet.create({
         letterSpacing: 1.2,
         textTransform: 'uppercase',
         fontSize: 12,
-        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
     },
     warningContainer: {
         width: '100%',
-        backgroundColor: '#fef2f2', // red-50
-        borderColor: '#fee2e2', // red-100
+        backgroundColor: '#fef2f2',
+        borderColor: '#fee2e2',
         borderWidth: 1,
         borderRadius: OnboardingTheme.Radius.xl,
         padding: OnboardingTheme.Spacing.lg,
     },
     warningContent: {
         flexDirection: 'row',
-        alignItems: 'start',
+        alignItems: 'flex-start',
     },
     warningIconWrapper: {
         backgroundColor: 'white',
@@ -151,16 +181,31 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     warningTitle: {
-        color: '#7f1d1d', // red-900
+        color: '#7f1d1d',
         fontWeight: 'bold',
         fontSize: 18,
         marginBottom: 4,
-        fontFamily: OnboardingTheme.Typography.Title.fontFamily,
     },
     warningBody: {
-        color: '#991b1b', // red-800
+        color: '#991b1b',
         opacity: 0.8,
         lineHeight: 20,
-        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
+    },
+    footer: {
+        paddingHorizontal: OnboardingTheme.Spacing.lg,
+        paddingTop: OnboardingTheme.Spacing.md,
+        paddingBottom: OnboardingTheme.Spacing.md,
+    },
+    button: {
+        backgroundColor: OnboardingTheme.Colors.Text,
+        borderRadius: OnboardingTheme.Radius.lg,
+        paddingVertical: 18,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    buttonText: {
+        color: 'white',
+        fontSize: 18,
+        fontWeight: 'bold',
     },
 });

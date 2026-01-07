@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import Animated, { FadeIn, FadeInUp, ZoomIn, Easing } from 'react-native-reanimated';
+import Animated, { FadeIn, ZoomIn, Easing, FadeInDown } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
@@ -60,7 +60,7 @@ export default function StatReveal4Screen() {
                 </Animated.View>
 
                 {showContext && (
-                    <Animated.View entering={FadeInUp.duration(600)} style={styles.contextCard}>
+                    <Animated.View entering={FadeInDown.delay(100).duration(500).springify().damping(14).stiffness(100)} style={styles.contextCard}>
                         <Text style={styles.description}>
                             "{content.desc}"
                         </Text>

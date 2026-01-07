@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import Animated, { FadeIn, FadeInUp, ZoomIn, Easing } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, ZoomIn, Easing } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
@@ -52,7 +52,7 @@ export default function SocialWarningScreen() {
                 </Animated.View>
 
                 {showStat && (
-                    <Animated.View entering={FadeInUp.duration(600)} style={styles.contextCard}>
+                    <Animated.View entering={FadeInDown.delay(100).duration(500).springify().damping(14).stiffness(100)} style={styles.contextCard}>
                         <View style={styles.contextHeader}>
                             <Ionicons name="alert-circle" size={24} color="#dc2626" style={styles.contextIcon} />
                             <Text style={styles.contextText}>

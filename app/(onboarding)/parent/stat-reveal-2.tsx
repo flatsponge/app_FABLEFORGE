@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import Animated, { FadeIn, FadeInUp, ZoomIn, Easing } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, ZoomIn, Easing } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
@@ -45,7 +45,7 @@ export default function StatReveal2Screen() {
                 </Animated.View>
 
                 {/* Visual Comparison */}
-                <Animated.View entering={FadeInUp.delay(500)} style={styles.comparisonContainer}>
+                <Animated.View entering={FadeInDown.delay(500)} style={styles.comparisonContainer}>
                     <View style={styles.comparisonItem}>
                         <Text style={styles.itemValueActual}>18%</Text>
                         <View style={styles.barWrapperActual}>
@@ -63,7 +63,7 @@ export default function StatReveal2Screen() {
                 </Animated.View>
 
                 {showContext && (
-                    <Animated.View entering={FadeInUp.duration(600)} style={styles.contextCard}>
+                    <Animated.View entering={FadeInDown.delay(100).duration(500).springify().damping(14).stiffness(100)} style={styles.contextCard}>
                         <View style={styles.contextContent}>
                             <View style={styles.contextIconWrapper}>
                                 <Ionicons name="stats-chart" size={24} color="white" />
