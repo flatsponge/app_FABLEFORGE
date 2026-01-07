@@ -18,6 +18,12 @@ import Animated, {
   interpolate,
   Easing,
   withSequence,
+  FadeIn,
+  FadeOut,
+  ZoomIn,
+  ZoomOut,
+  SlideInDown,
+  SlideInUp,
   runOnJS,
 } from 'react-native-reanimated';
 import {
@@ -645,6 +651,27 @@ export default function ChildHubScreen() {
   const [recordingTime, setRecordingTime] = useState(0);
   const [wishText, setWishText] = useState('');
   const [avatarConfig, setAvatarConfig] = useState<AvatarConfig>(DEFAULT_AVATAR);
+  const [pendingAvatarConfig, setPendingAvatarConfig] = useState<AvatarConfig>(DEFAULT_AVATAR);
+  const [wardrobeState, setWardrobeState] = useState<'selecting' | 'hidden'>('selecting');
+  
+  // Initialize pending config when confirmed config changes (or on mount)
+  useEffect(() => {
+    setPendingAvatarConfig(avatarConfig);
+  }, []);
+
+  const handleCancelSelection = () => {
+    setPendingAvatarConfig(avatarConfig);
+  };
+
+  const handleConfirmSelection = () => {
+    setAvatarConfig(pendingAvatarConfig);
+    setWardrobeState('hidden');
+  };
+
+  const handleRevealWardrobe = () => {
+    setWardrobeState('selecting');
+  };
+
   const [showUnlockHint, setShowUnlockHint] = useState(false);
   const [showBottleAnimation, setShowBottleAnimation] = useState(false);
   const [showGlitter, setShowGlitter] = useState(false);
@@ -833,166 +860,205 @@ export default function ChildHubScreen() {
 
         {activeRoom === 'wardrobe' && (
           <View className="flex-1 relative z-10 pb-24">
-            <View className="flex-1 items-center justify-center pt-8">
-              <View className="bg-white/30 p-8 rounded-full border-4 border-white/50">
-                <Avatar config={avatarConfig} scale={1.2} />
-              </View>
-            </View>
-
-            <View className="px-4 pb-4">
-              <View className="flex-row gap-3 mb-4 justify-center">
-                {tabItems.map(tab => (
-                  <WardrobeTabButton
-                    key={tab.id}
-                    active={wardrobeTab === tab.id}
-                    onPress={() => setWardrobeTab(tab.id)}
-                    icon={tab.icon}
-                    activeColor={tab.bgColor}
-                    activeBorderColor={tab.borderColorValue}
-                  />
-                ))}
-              </View>
-
-              <View className="bg-white rounded-3xl p-4 border-4 border-slate-200">
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                  <View className="flex-row gap-3">
-                    {wardrobeTab === 'clothes' &&
-                      OUTFITS.map(item => (
-                        <Pressable
-                          key={item.id}
-                          onPress={() =>
-                            setAvatarConfig({ ...avatarConfig, outfitId: item.id })
-                          }
-                          style={currentOutfit.id === item.id ? { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4, elevation: 4 } : { opacity: 0.9 }}
-                          className={`w-20 h-20 rounded-2xl items-center justify-center border-4 ${item.color} ${currentOutfit.id === item.id
-                            ? 'border-black/30'
-                            : 'border-transparent'
-                            }`}
-                        >
-                          <Text className="text-4xl">{item.iconName}</Text>
-                        </Pressable>
-                      ))}
-
-                    {wardrobeTab === 'hats' &&
-                      HATS.map(item => (
-                        <Pressable
-                          key={item.id}
-                          onPress={() =>
-                            setAvatarConfig({ ...avatarConfig, hatId: item.id })
-                          }
-                          className={`w-20 h-20 rounded-2xl items-center justify-center bg-slate-100 border-4 ${currentHat?.id === item.id
-                            ? 'border-yellow-400 bg-white'
-                            : 'border-slate-200'
-                            }`}
-                        >
-                          <Text className="text-4xl">{item.id === 'crown' ? '👑' : item.id === 'cap' ? '🧢' : item.id === 'bow' ? '🎀' : '❌'}</Text>
-                        </Pressable>
-                      ))}
-
-                    {wardrobeTab === 'toys' &&
-                      TOYS.map(item => (
-                        <Pressable
-                          key={item.id}
-                          onPress={() =>
-                            setAvatarConfig({ ...avatarConfig, toyId: item.id })
-                          }
-                          className={`w-20 h-20 rounded-2xl items-center justify-center bg-slate-100 border-4 ${currentToy?.id === item.id
-                            ? 'border-purple-400 bg-white'
-                            : 'border-slate-200'
-                            }`}
-                        >
-                          <Text className="text-4xl">{item.id === 'star' ? '⭐' : item.id === 'camera' ? '📷' : item.id === 'game' ? '🎮' : '❌'}</Text>
-                        </Pressable>
-                      ))}
-
-                    {wardrobeTab === 'skin' && (
-                      <View className="h-20 items-center justify-center w-full">
-                        <Text className="text-gray-400">No skin customization for this hero!</Text>
-                      </View>
-                    )}
-
-                    {wardrobeTab === 'background' && (
-                      <>
-                        {/* Default Background */}
-                        <Pressable
-                          onPress={() => setBackgroundSource(ChildBackground)}
-                          style={backgroundSource === ChildBackground ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
-                          className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === ChildBackground
-                            ? 'border-green-500'
-                            : 'border-slate-200'
-                            }`}
-                        >
-                          <Image source={ChildBackground} className="w-full h-full" resizeMode="cover" />
-                        </Pressable>
-
-                        {/* Dreamy Night Background */}
-                        <Pressable
-                          onPress={() => setBackgroundSource(ChildBackground2)}
-                          style={backgroundSource === ChildBackground2 ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
-                          className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === ChildBackground2
-                            ? 'border-green-500'
-                            : 'border-slate-200'
-                            }`}
-                        >
-                          <Image source={ChildBackground2} className="w-full h-full" resizeMode="cover" />
-                        </Pressable>
-
-                        {/* Sunny Meadow Background */}
-                        <Pressable
-                          onPress={() => setBackgroundSource(ChildBackground3)}
-                          style={backgroundSource === ChildBackground3 ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
-                          className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === ChildBackground3
-                            ? 'border-green-500'
-                            : 'border-slate-200'
-                            }`}
-                        >
-                          <Image source={ChildBackground3} className="w-full h-full" resizeMode="cover" />
-                        </Pressable>
-
-                        {/* Ocean Background */}
-                        <Pressable
-                          onPress={() => setBackgroundSource(ChildBackground4)}
-                          style={backgroundSource === ChildBackground4 ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
-                          className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === ChildBackground4
-                            ? 'border-green-500'
-                            : 'border-slate-200'
-                            }`}
-                        >
-                          <Image source={ChildBackground4} className="w-full h-full" resizeMode="cover" />
-                        </Pressable>
-
-                        {/* Forest Background */}
-                        <Pressable
-                          onPress={() => setBackgroundSource(ChildBackground5)}
-                          style={backgroundSource === ChildBackground5 ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
-                          className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === ChildBackground5
-                            ? 'border-green-500'
-                            : 'border-slate-200'
-                            }`}
-                        >
-                          <Image source={ChildBackground5} className="w-full h-full" resizeMode="cover" />
-                        </Pressable>
-
-                        {/* Preset Locations */}
-                        {PRESET_LOCATIONS.map(loc => (
-                          <Pressable
-                            key={loc.id}
-                            onPress={() => setBackgroundSource({ uri: loc.image })}
-                            style={(backgroundSource as any)?.uri === loc.image ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
-                            className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${(backgroundSource as any)?.uri === loc.image
-                              ? 'border-green-500'
-                              : 'border-slate-200'
-                              }`}
-                          >
-                            <Image source={{ uri: loc.image }} className="w-full h-full" resizeMode="cover" />
-                          </Pressable>
-                        ))}
-                      </>
-                    )}
+            {wardrobeState === 'selecting' ? (
+              <Animated.View entering={FadeIn} exiting={FadeOut} className="flex-1">
+                <View className="flex-1 items-center justify-center pt-8">
+                  <View className="bg-white/30 p-8 rounded-full border-4 border-white/50">
+                    <Avatar config={pendingAvatarConfig} scale={1.2} />
                   </View>
-                </ScrollView>
-              </View>
-            </View>
+                </View>
+
+                <View className="px-4 pb-4">
+                  <View className="flex-row gap-3 mb-4 justify-center">
+                    {tabItems.map(tab => (
+                      <WardrobeTabButton
+                        key={tab.id}
+                        active={wardrobeTab === tab.id}
+                        onPress={() => setWardrobeTab(tab.id)}
+                        icon={tab.icon}
+                        activeColor={tab.bgColor}
+                        activeBorderColor={tab.borderColorValue}
+                      />
+                    ))}
+                  </View>
+
+                  <View className="bg-white rounded-3xl p-4 border-4 border-slate-200">
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                      <View className="flex-row gap-3">
+                        {wardrobeTab === 'clothes' &&
+                          OUTFITS.map(item => (
+                            <Pressable
+                              key={item.id}
+                              onPress={() =>
+                                setPendingAvatarConfig({ ...pendingAvatarConfig, outfitId: item.id })
+                              }
+                              style={pendingAvatarConfig.outfitId === item.id ? { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4, elevation: 4 } : { opacity: 0.9 }}
+                              className={`w-20 h-20 rounded-2xl items-center justify-center border-4 ${item.color} ${pendingAvatarConfig.outfitId === item.id
+                                ? 'border-black/30'
+                                : 'border-transparent'
+                                }`}
+                            >
+                              <Text className="text-4xl">{item.iconName}</Text>
+                            </Pressable>
+                          ))}
+
+                        {wardrobeTab === 'hats' &&
+                          HATS.map(item => (
+                            <Pressable
+                              key={item.id}
+                              onPress={() =>
+                                setPendingAvatarConfig({ ...pendingAvatarConfig, hatId: item.id })
+                              }
+                              className={`w-20 h-20 rounded-2xl items-center justify-center bg-slate-100 border-4 ${pendingAvatarConfig.hatId === item.id
+                                ? 'border-yellow-400 bg-white'
+                                : 'border-slate-200'
+                                }`}
+                            >
+                              <Text className="text-4xl">{item.id === 'crown' ? '👑' : item.id === 'cap' ? '🧢' : item.id === 'bow' ? '🎀' : '❌'}</Text>
+                            </Pressable>
+                          ))}
+
+                        {wardrobeTab === 'toys' &&
+                          TOYS.map(item => (
+                            <Pressable
+                              key={item.id}
+                              onPress={() =>
+                                setPendingAvatarConfig({ ...pendingAvatarConfig, toyId: item.id })
+                              }
+                              className={`w-20 h-20 rounded-2xl items-center justify-center bg-slate-100 border-4 ${pendingAvatarConfig.toyId === item.id
+                                ? 'border-purple-400 bg-white'
+                                : 'border-slate-200'
+                                }`}
+                            >
+                              <Text className="text-4xl">{item.id === 'star' ? '⭐' : item.id === 'camera' ? '📷' : item.id === 'game' ? '🎮' : '❌'}</Text>
+                            </Pressable>
+                          ))}
+
+                        {wardrobeTab === 'skin' && (
+                          <View className="h-20 items-center justify-center w-full">
+                            <Text className="text-gray-400">No skin customization for this hero!</Text>
+                          </View>
+                        )}
+
+                        {wardrobeTab === 'background' && (
+                          <>
+                            {/* Default Background */}
+                            <Pressable
+                              onPress={() => setBackgroundSource(ChildBackground)}
+                              style={backgroundSource === ChildBackground ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
+                              className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === ChildBackground
+                                ? 'border-green-500'
+                                : 'border-slate-200'
+                                }`}
+                            >
+                              <Image source={ChildBackground} className="w-full h-full" resizeMode="cover" />
+                            </Pressable>
+
+                            {/* Dreamy Night Background */}
+                            <Pressable
+                              onPress={() => setBackgroundSource(ChildBackground2)}
+                              style={backgroundSource === ChildBackground2 ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
+                              className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === ChildBackground2
+                                ? 'border-green-500'
+                                : 'border-slate-200'
+                                }`}
+                            >
+                              <Image source={ChildBackground2} className="w-full h-full" resizeMode="cover" />
+                            </Pressable>
+
+                            {/* Sunny Meadow Background */}
+                            <Pressable
+                              onPress={() => setBackgroundSource(ChildBackground3)}
+                              style={backgroundSource === ChildBackground3 ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
+                              className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === ChildBackground3
+                                ? 'border-green-500'
+                                : 'border-slate-200'
+                                }`}
+                            >
+                              <Image source={ChildBackground3} className="w-full h-full" resizeMode="cover" />
+                            </Pressable>
+
+                            {/* Ocean Background */}
+                            <Pressable
+                              onPress={() => setBackgroundSource(ChildBackground4)}
+                              style={backgroundSource === ChildBackground4 ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
+                              className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === ChildBackground4
+                                ? 'border-green-500'
+                                : 'border-slate-200'
+                                }`}
+                            >
+                              <Image source={ChildBackground4} className="w-full h-full" resizeMode="cover" />
+                            </Pressable>
+
+                            {/* Forest Background */}
+                            <Pressable
+                              onPress={() => setBackgroundSource(ChildBackground5)}
+                              style={backgroundSource === ChildBackground5 ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
+                              className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === ChildBackground5
+                                ? 'border-green-500'
+                                : 'border-slate-200'
+                                }`}
+                            >
+                              <Image source={ChildBackground5} className="w-full h-full" resizeMode="cover" />
+                            </Pressable>
+
+                            {/* Preset Locations */}
+                            {PRESET_LOCATIONS.map(loc => (
+                              <Pressable
+                                key={loc.id}
+                                onPress={() => setBackgroundSource({ uri: loc.image })}
+                                style={(backgroundSource as any)?.uri === loc.image ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
+                                className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${(backgroundSource as any)?.uri === loc.image
+                                  ? 'border-green-500'
+                                  : 'border-slate-200'
+                                  }`}
+                              >
+                                <Image source={{ uri: loc.image }} className="w-full h-full" resizeMode="cover" />
+                              </Pressable>
+                            ))}
+                          </>
+                        )}
+                      </View>
+                    </ScrollView>
+
+                    <View className="flex-row gap-4 mt-6 h-16">
+                      <BigActionButton
+                        onPress={handleCancelSelection}
+                        bgColor="#f1f5f9"
+                        borderColor="#cbd5e1"
+                        flex={1}
+                      >
+                        <Text className="text-slate-500 font-black text-xl uppercase tracking-wider">Cancel</Text>
+                      </BigActionButton>
+                      <BigActionButton
+                        onPress={handleConfirmSelection}
+                        bgColor="#22c55e"
+                        borderColor="#15803d"
+                        flex={2}
+                      >
+                        <Text className="text-white font-black text-xl uppercase tracking-wider">Change</Text>
+                      </BigActionButton>
+                    </View>
+                  </View>
+                </View>
+              </Animated.View>
+            ) : (
+              <Animated.View entering={FadeIn} exiting={FadeOut} className="flex-1 items-center justify-center px-8 pb-32">
+                <Image
+                  source={require('@/assets/childview/childdoor.png')}
+                  className="w-72 h-80 mb-8"
+                  resizeMode="contain"
+                />
+                <View className="bg-white px-8 py-6 rounded-3xl border-b-8 border-slate-200 items-center transform -rotate-1 shadow-lg w-full max-w-sm">
+                  <Text className="text-2xl font-black text-slate-700 text-center leading-tight mb-2">
+                    ✨ Getting Ready!
+                  </Text>
+                  <Text className="text-base font-bold text-slate-400 text-center uppercase tracking-wide">
+                    Read a story to reveal! 📚
+                  </Text>
+                </View>
+              </Animated.View>
+            )}
           </View>
         )}
 

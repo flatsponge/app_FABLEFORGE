@@ -3,18 +3,14 @@ import {
   View,
   Text,
   Image,
-  TouchableOpacity,
   ScrollView,
   TextInput,
   KeyboardAvoidingView,
   Platform,
-  Dimensions,
   Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import Animated, {
-  FadeIn,
   FadeInDown,
   FadeInUp,
   ZoomIn,
@@ -25,8 +21,6 @@ import Animated, {
   withRepeat,
   withSpring,
   interpolate,
-  useAnimatedScrollHandler,
-  SharedValue,
 } from 'react-native-reanimated';
 import * as ImagePicker from 'expo-image-picker';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
@@ -38,8 +32,6 @@ import { Sparkles, ArrowLeft, Camera, Pencil, Grid3X3, ArrowRight, Star } from '
 // Types
 type SelectionMode = 'select' | 'upload' | 'describe' | null;
 type GenerationStep = 'input' | 'processing' | 'reveal';
-
-const { width } = Dimensions.get('window');
 
 // Chunky 3D button component matching child-hub style
 const ChunkyButton = ({
@@ -135,28 +127,7 @@ export default function AvatarSelectionScreen() {
   // Animations
   const shake = useSharedValue(0);
 
-  // Carousel state (must be at top level to respect Rules of Hooks)
-  const scrollX = useSharedValue(0);
-  const flatListRef = React.useRef<any>(null);
-
-  const onCarouselScroll = useAnimatedScrollHandler({
-    onScroll: (event) => {
-      scrollX.value = event.contentOffset.x;
-    },
-  });
-
-  const viewabilityConfig = React.useRef({
-    itemVisiblePercentThreshold: 50,
-  }).current;
-
-  const onViewableItemsChanged = React.useRef(({ viewableItems }: { viewableItems: any[] }) => {
-    if (viewableItems.length > 0 && viewableItems[0].index !== null) {
-      setCurrentIndex(viewableItems[0].index);
-      setSelectedAvatar(BASE_AVATARS[viewableItems[0].index].id);
-    }
-  }).current;
-
-  // Initial Selection for carousel
+  // Initial selection - set first avatar as default
   useEffect(() => {
     if (!selectedAvatar && BASE_AVATARS.length > 0) {
       setSelectedAvatar(BASE_AVATARS[0].id);
@@ -304,85 +275,13 @@ export default function AvatarSelectionScreen() {
     </Animated.View>
   );
 
-  // Carousel Constants
-  const ITEM_WIDTH = width * 0.85; // Made wider for bigger impact
-  const SPACER = (width - ITEM_WIDTH) / 2;
+  // Get the currently selected avatar data
+  const selectedAvatarData = BASE_AVATARS.find(a => a.id === selectedAvatar) || BASE_AVATARS[0];
 
-  // Carousel Item Component
-  const CarouselItem = ({
-    item,
-    index,
-    scrollX,
-    onPress,
-  }: {
-    item: typeof BASE_AVATARS[0];
-    index: number;
-    scrollX: SharedValue<number>;
-    onPress: () => void;
-  }) => {
-    const animatedStyle = useAnimatedStyle(() => {
-      const inputRange = [
-        (index - 1) * ITEM_WIDTH,
-        index * ITEM_WIDTH,
-        (index + 1) * ITEM_WIDTH,
-      ];
-
-      const scale = interpolate(
-        scrollX.value,
-        inputRange,
-        [0.8, 1.15, 0.8], // Increased scale
-        'clamp'
-      );
-
-      const opacity = interpolate(
-        scrollX.value,
-        inputRange,
-        [0.4, 1, 0.4],
-        'clamp'
-      );
-
-      const translateY = interpolate(
-        scrollX.value,
-        inputRange,
-        [30, 0, 30],
-        'clamp'
-      );
-
-      return {
-        transform: [{ scale }, { translateY }],
-        opacity,
-        zIndex: interpolate(scrollX.value, inputRange, [0, 10, 0], 'clamp'), // Ensure center item is on top
-      };
-    });
-
-    return (
-      <Animated.View style={[{ width: ITEM_WIDTH, alignItems: 'center', justifyContent: 'center', overflow: 'visible' }, animatedStyle]}>
-        <Pressable onPress={onPress} style={{ alignItems: 'center', justifyContent: 'center' }}>
-          <Image
-            source={item.image}
-            style={{ width: 340, height: 340, marginBottom: 20 }} // Bigger Image
-            resizeMode="contain"
-          />
-          <Text style={{
-            fontSize: 42, // Bigger Text
-            fontWeight: '900',
-            color: '#4B5563',
-            textAlign: 'center',
-            textShadowColor: 'rgba(0,0,0,0.1)',
-            textShadowOffset: { width: 0, height: 2 },
-            textShadowRadius: 4,
-          }}>
-            {item.name}
-          </Text>
-        </Pressable>
-      </Animated.View>
-    );
-  };
-
-  // Avatar selection scroll
+  // Avatar selection with grid selector (no swiping - matches child-hub pattern)
   const renderBaseSelection = () => (
     <View style={{ flex: 1, width: '100%', alignItems: 'center' }}>
-      <Animated.View entering={FadeInDown} style={{ marginBottom: 20, alignItems: 'center' }}>
+      <Animated.View entering={FadeInDown} style={{ marginBottom: 16, alignItems: 'center' }}>
         <Text
           style={{
             fontSize: 28,
@@ -401,39 +300,117 @@ export default function AvatarSelectionScreen() {
             color: '#6B7280',
           }}
         >
-          Swipe to pick your friend!
+          Tap to pick your friend!
         </Text>
       </Animated.View>
 
-      <View style={{ height: 480 }}>
-        <Animated.FlatList
-          ref={flatListRef}
-          data={BASE_AVATARS}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item, index }) => (
-            <CarouselItem
-              item={item}
-              index={index}
-              scrollX={scrollX}
-              onPress={() => {
-                flatListRef.current?.scrollToIndex({ index, animated: true });
-                setSelectedAvatar(item.id);
-              }}
-            />
-          )}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          snapToInterval={ITEM_WIDTH}
-          decelerationRate="fast"
-          contentContainerStyle={{
-            paddingHorizontal: SPACER,
-            alignItems: 'center',
-          }}
-          onScroll={onCarouselScroll}
-          scrollEventThrottle={16}
-          onViewableItemsChanged={onViewableItemsChanged}
-          viewabilityConfig={viewabilityConfig}
+      {/* Selected Avatar Display */}
+      <Animated.View
+        entering={ZoomIn.springify()}
+        style={{
+          alignItems: 'center',
+          marginBottom: 20,
+          backgroundColor: 'rgba(255,255,255,0.5)',
+          padding: 24,
+          borderRadius: 40,
+          borderWidth: 4,
+          borderColor: 'rgba(255,255,255,0.8)',
+        }}
+      >
+        <Image
+          source={selectedAvatarData.image}
+          style={{ width: 200, height: 200 }}
+          resizeMode="contain"
         />
+        <Text style={{
+          fontSize: 32,
+          fontWeight: '900',
+          color: '#4B5563',
+          textAlign: 'center',
+          marginTop: 12,
+          textShadowColor: 'rgba(0,0,0,0.1)',
+          textShadowOffset: { width: 0, height: 2 },
+          textShadowRadius: 4,
+        }}>
+          {selectedAvatarData.name}
+        </Text>
+      </Animated.View>
+
+      {/* Avatar Grid Selector */}
+      <View style={{
+        backgroundColor: '#FFFFFF',
+        borderRadius: 24,
+        padding: 16,
+        marginHorizontal: 20,
+        borderWidth: 4,
+        borderColor: '#E5E7EB',
+        width: '100%',
+        maxWidth: 400,
+      }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            {BASE_AVATARS.map((avatar, index) => {
+              const isSelected = selectedAvatar === avatar.id;
+              return (
+                <Animated.View
+                  key={avatar.id}
+                  entering={FadeInDown.delay(index * 50)}
+                >
+                  <Pressable
+                    onPress={() => {
+                      setSelectedAvatar(avatar.id);
+                      setCurrentIndex(index);
+                    }}
+                    style={[
+                      {
+                        width: 80,
+                        height: 80,
+                        borderRadius: 20,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: isSelected ? '#FEF3C7' : '#F3F4F6',
+                        borderWidth: 4,
+                        borderColor: isSelected ? '#F59E0B' : '#E5E7EB',
+                      },
+                      isSelected && {
+                        shadowColor: '#F59E0B',
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowOpacity: 0.3,
+                        shadowRadius: 8,
+                        elevation: 6,
+                      },
+                    ]}
+                  >
+                    <Image
+                      source={avatar.image}
+                      style={{ width: 60, height: 60 }}
+                      resizeMode="contain"
+                    />
+                  </Pressable>
+                </Animated.View>
+              );
+            })}
+          </View>
+        </ScrollView>
+
+        {/* Swipe hint */}
+        <View style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginTop: 12,
+          gap: 6,
+        }}>
+          <Text style={{
+            fontSize: 14,
+            fontWeight: '600',
+            color: '#9CA3AF',
+            letterSpacing: 0.5,
+          }}>
+            Swipe for more
+          </Text>
+          <Text style={{ fontSize: 16 }}>👉</Text>
+        </View>
       </View>
 
       {/* Start Button */}
@@ -442,7 +419,7 @@ export default function AvatarSelectionScreen() {
         style={{
           width: '100%',
           paddingHorizontal: 20,
-          marginTop: 10,
+          marginTop: 24,
         }}
       >
         <ChunkyButton
@@ -453,7 +430,7 @@ export default function AvatarSelectionScreen() {
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 18, gap: 12 }}>
             <Text style={{ fontSize: 24, fontWeight: '800', color: 'white' }}>
-              Pick {BASE_AVATARS[currentIndex]?.name || 'Friend'}!
+              Pick {selectedAvatarData.name}!
             </Text>
             <ArrowRight size={28} color="white" strokeWidth={3} />
           </View>
