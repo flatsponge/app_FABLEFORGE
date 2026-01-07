@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useOnboarding } from '../../contexts/OnboardingContext';
-import OnboardingLayout from '../../components/OnboardingLayout';
-import { OnboardingTitle, OnboardingBody } from '../../components/OnboardingTypography';
-import OnboardingOptionCard from '../../components/OnboardingOptionCard';
-import { OnboardingTheme } from '../../constants/OnboardingTheme';
+import { useOnboarding } from '../../../contexts/OnboardingContext';
+import OnboardingLayout from '../../../components/OnboardingLayout';
+import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
+import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
+import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 import { Ionicons } from '@expo/vector-icons';
 
 const GOALS = [
@@ -33,9 +33,12 @@ export default function OnboardingStart() {
 
     return (
         <OnboardingLayout
+            showProgressBar={false}
+            skipTopSafeArea
             progress={0.05}
             showNextButton={!!selected}
             onNext={handleNext}
+            nextLabel="Continue"
         >
             <View style={styles.contentContainer}>
                 <OnboardingTitle>What is your ultimate goal for your child?</OnboardingTitle>

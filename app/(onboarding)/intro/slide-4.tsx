@@ -83,7 +83,7 @@ export default function IntroSlide4() {
     }, []);
 
     const handleNext = () => {
-        router.replace('/(onboarding)/goals');
+        router.replace('/(onboarding)/quiz/goals');
     };
 
     return (

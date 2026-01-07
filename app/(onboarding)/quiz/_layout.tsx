@@ -7,6 +7,7 @@ import { ArrowLeft } from 'lucide-react-native';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
 const PROGRESS_MAP: Record<string, number> = {
+    'goals': 0.02,
     'child-name': 0.05,
     'child-age': 0.10,
     'child-gender': 0.12,

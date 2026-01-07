@@ -123,7 +123,7 @@ export default function ProcessingScreen() {
         <OnboardingLayout
             showProgressBar={false} skipTopSafeArea
             showNextButton={false}
-            showBackButton={false}
+            showBack={false}
         >
             <View style={styles.container}>
                 <View style={styles.progressSection}>

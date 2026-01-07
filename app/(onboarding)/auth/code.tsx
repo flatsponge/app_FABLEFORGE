@@ -46,7 +46,7 @@ export default function CodeScreen() {
             progress={0.99}
             onNext={handleNext}
             nextLabel="Verify"
-            valid={isComplete}
+            showNextButton={isComplete}
         >
             <View style={styles.contentContainer}>
                 {/* Icon */}

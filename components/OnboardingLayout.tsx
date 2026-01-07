@@ -78,7 +78,7 @@ export default function OnboardingLayout({
   };
 
   const containerPaddingTop = skipTopSafeArea ? 0 : insets.top;
-  const contentPaddingTop = skipTopSafeArea ? OnboardingTheme.Spacing.lg : OnboardingTheme.Spacing.xl * 2;
+  const contentPaddingTop = OnboardingTheme.Spacing.lg;
 
   const contentWrapperProps = isScrollable
     ? {

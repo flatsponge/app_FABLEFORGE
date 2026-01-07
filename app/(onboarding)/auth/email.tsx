@@ -25,7 +25,7 @@ export default function EmailScreen() {
             progress={0.98}
             onNext={handleNext}
             nextLabel="Continue"
-            valid={isValidEmail}
+            showNextButton={isValidEmail}
         >
             <View style={styles.contentContainer}>
                 {/* Icon */}
