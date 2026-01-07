@@ -90,23 +90,28 @@ const ChunkyButton = ({
       }}
       style={style}
     >
-      <Animated.View
-        style={[
-          animatedStyle,
-          animatedBorderStyle,
-          {
-            borderTopWidth: s.borderTop,
-            borderLeftWidth: s.borderSide,
-            borderRightWidth: s.borderSide,
-            borderColor: borderColor,
-            backgroundColor: bgColor,
-            borderRadius: 20,
-            opacity: disabled ? 0.5 : 1,
-          },
-        ]}
-      >
-        {children}
-      </Animated.View>
+      {/* Fixed-height wrapper to prevent layout shifts during animation */}
+      <View style={{ paddingBottom: s.borderBottom }}>
+        <Animated.View
+          style={[
+            animatedStyle,
+            animatedBorderStyle,
+            {
+              borderTopWidth: s.borderTop,
+              borderLeftWidth: s.borderSide,
+              borderRightWidth: s.borderSide,
+              borderColor: borderColor,
+              backgroundColor: bgColor,
+              borderRadius: 20,
+              opacity: disabled ? 0.5 : 1,
+              // Negative margin to offset the paddingBottom of the wrapper
+              marginBottom: -s.borderBottom,
+            },
+          ]}
+        >
+          {children}
+        </Animated.View>
+      </View>
     </Pressable>
   );
 };

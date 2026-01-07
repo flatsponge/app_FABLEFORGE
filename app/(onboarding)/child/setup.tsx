@@ -90,7 +90,7 @@ export default function ChildSetupScreen() {
 
     return (
         <LinearGradient
-            colors={['#F5F3FF', '#EDE9FE', '#E9D5FF']}
+            colors={['#FEF7ED', '#FFF7ED', '#FFFBEB']}
             style={{ flex: 1 }}
         >
             <View style={{ flex: 1, paddingTop: insets.top }}>
