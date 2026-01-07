@@ -4,26 +4,23 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
-import { OnboardingTitle, OnboardingBody, OnboardingSubtitle } from '../../../components/OnboardingTypography';
+import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
 import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
-const ICON_COLOR = '#6b7280';
-
-const TRAITS = [
-    { id: 'shy', label: 'Shy / Reserved', icon: 'eye-off-outline' },
-    { id: 'outgoing', label: 'Outgoing / Social', icon: 'people-outline' },
-    { id: 'sensitive', label: 'Sensitive / Emotional', icon: 'heart-outline' },
-    { id: 'stubborn', label: 'Strong-willed', icon: 'shield-outline' },
-    { id: 'curious', label: 'Curious / Explorer', icon: 'search-outline' },
-    { id: 'anxious', label: 'Anxious / Worried', icon: 'cloud-outline' },
-    { id: 'energetic', label: 'High Energy', icon: 'flash-outline' },
-    { id: 'calm', label: 'Calm / Easy-going', icon: 'leaf-outline' },
+const PERSONALITIES = [
+    { id: 'sensitive', label: 'Sensitive & Empathetic', icon: 'heart-outline' },
+    { id: 'energetic', label: 'High Energy & Active', icon: 'flash-outline' },
+    { id: 'strong_willed', label: 'Strong-willed & Determined', icon: 'flower-outline' },
+    { id: 'curious', label: 'Curious & Analytical', icon: 'search-outline' },
+    { id: 'social', label: 'Social & Outgoing', icon: 'people-outline' },
+    { id: 'cautious', label: 'Cautious & Observant', icon: 'eye-outline' },
+    { id: 'imaginative', label: 'Creative & Imaginative', icon: 'color-palette-outline' },
 ];
 
 export default function ChildPersonalityScreen() {
     const router = useRouter();
-    const { data } = useOnboarding();
+    const { data, updateData } = useOnboarding();
     const [selected, setSelected] = useState<string[]>([]);
 
     const toggleSelection = (id: string) => {
@@ -44,7 +41,7 @@ export default function ChildPersonalityScreen() {
 
     return (
         <OnboardingLayout
-            showProgressBar={false} progress={0.2}
+            showProgressBar={false} progress={0.15}
             onNext={handleNext}
             nextLabel="Continue"
             isScrollable={true}
@@ -56,7 +53,7 @@ export default function ChildPersonalityScreen() {
                 </OnboardingBody>
 
                 <View style={styles.optionsContainer}>
-                    {TRAITS.map((trait) => (
+                    {PERSONALITIES.map((trait) => (
                         <OnboardingOptionCard
                             key={trait.id}
                             title={trait.label}
@@ -64,7 +61,7 @@ export default function ChildPersonalityScreen() {
                             onPress={() => toggleSelection(trait.id)}
                             icon={
                                 <View style={styles.iconContainer}>
-                                    <Ionicons name={trait.icon as any} size={24} color={ICON_COLOR} />
+                                    <Ionicons name={trait.icon as any} size={24} color={OnboardingTheme.Colors.IconColor} />
                                 </View>
                             }
                         />
@@ -80,7 +77,7 @@ const styles = StyleSheet.create({
         width: '100%',
     },
     optionsContainer: {
-        marginTop: OnboardingTheme.Spacing.md,
+        marginTop: OnboardingTheme.Spacing.xl,
     },
     iconContainer: {
         width: 48,
@@ -88,6 +85,6 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#f3f4f6',
+        backgroundColor: OnboardingTheme.Colors.IconBackground,
     },
 });

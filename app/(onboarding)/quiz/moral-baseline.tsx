@@ -4,11 +4,9 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
-import { OnboardingTitle, OnboardingBody, OnboardingSubtitle } from '../../../components/OnboardingTypography';
+import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
 import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
-
-const ICON_COLOR = '#6b7280';
 
 const MORAL_SKILLS = [
     { id: 'sharing', label: 'Sharing', icon: 'people-outline', question: 'How well does your child share with others?' },
@@ -48,7 +46,7 @@ export default function MoralBaselineScreen() {
             const newRatings = { ...ratings, [currentSkill.id]: currentSelection };
             setRatings(newRatings);
             setCurrentSelection(null);
-            
+
             if (Object.keys(newRatings).length >= MORAL_SKILLS.length) {
                 const avg = Object.values(newRatings).reduce((a, b) => a + b, 0) / MORAL_SKILLS.length;
                 updateData({ moralScore: avg * 20 });
@@ -75,7 +73,7 @@ export default function MoralBaselineScreen() {
                 </OnboardingBody>
 
                 <View style={styles.iconContainer}>
-                    <Ionicons name={currentSkill.icon as any} size={48} color={ICON_COLOR} />
+                    <Ionicons name={currentSkill.icon as any} size={48} color={OnboardingTheme.Colors.IconColor} />
                 </View>
 
                 <View style={styles.optionsContainer}>
@@ -104,6 +102,6 @@ const styles = StyleSheet.create({
         marginVertical: OnboardingTheme.Spacing.md,
     },
     optionsContainer: {
-        marginTop: OnboardingTheme.Spacing.sm,
+        marginTop: OnboardingTheme.Spacing.xl,
     },
 });

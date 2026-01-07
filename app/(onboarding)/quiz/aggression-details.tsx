@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
-import { OnboardingTitle, OnboardingBody, OnboardingSubtitle } from '../../../components/OnboardingTypography';
+import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
 import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
@@ -56,7 +56,7 @@ export default function AggressionDetailsScreen() {
                                     <Ionicons
                                         name={target.icon as any}
                                         size={24}
-                                        color={selected === target.id ? OnboardingTheme.Colors.Primary : '#6b7280'}
+                                        color={selected === target.id ? OnboardingTheme.Colors.Primary : OnboardingTheme.Colors.IconColor}
                                     />
                                 </View>
                             }
@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#f9fafb', // gray-50
+        backgroundColor: OnboardingTheme.Colors.IconBackground,
     },
     iconContainerSelected: {
         backgroundColor: '#f3e8ff', // primary-100 (approx)

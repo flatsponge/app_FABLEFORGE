@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
@@ -8,8 +9,8 @@ import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
 const GENDER_OPTIONS = [
-    { id: 'boy', title: 'Boy', icon: '👦' },
-    { id: 'girl', title: 'Girl', icon: '👧' },
+    { id: 'boy', title: 'Boy', icon: 'male' as const },
+    { id: 'girl', title: 'Girl', icon: 'female' as const },
 ];
 
 export default function ChildGenderScreen() {
@@ -46,7 +47,11 @@ export default function ChildGenderScreen() {
                             title={option.title}
                             icon={
                                 <View style={styles.iconContainer}>
-                                    <Text style={styles.emojiText}>{option.icon}</Text>
+                                    <Ionicons
+                                        name={option.icon}
+                                        size={24}
+                                        color={OnboardingTheme.Colors.IconColor}
+                                    />
                                 </View>
                             }
                             selected={selectedGender === option.id}
@@ -69,12 +74,9 @@ const styles = StyleSheet.create({
     iconContainer: {
         width: 48,
         height: 48,
-        borderRadius: 24,
-        backgroundColor: OnboardingTheme.Colors.Surface,
+        borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
-    },
-    emojiText: {
-        fontSize: 28,
+        backgroundColor: OnboardingTheme.Colors.IconBackground,
     },
 });

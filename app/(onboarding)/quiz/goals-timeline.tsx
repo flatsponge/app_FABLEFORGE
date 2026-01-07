@@ -4,11 +4,9 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
-import { OnboardingTitle, OnboardingBody, OnboardingSubtitle } from '../../../components/OnboardingTypography';
+import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
 import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
-
-const ICON_COLOR = '#6b7280';
 
 const TIMELINES = [
     { id: 'immediate', label: 'Right away', description: 'We need help now', icon: 'flame-outline' },
@@ -55,7 +53,7 @@ export default function GoalsTimelineScreen() {
                             onPress={() => handleSelect(timeline.id)}
                             icon={
                                 <View style={styles.iconContainer}>
-                                    <Ionicons name={timeline.icon as any} size={24} color={ICON_COLOR} />
+                                    <Ionicons name={timeline.icon as any} size={24} color={OnboardingTheme.Colors.IconColor} />
                                 </View>
                             }
                         />
@@ -79,6 +77,6 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#f3f4f6',
+        backgroundColor: OnboardingTheme.Colors.IconBackground,
     },
 });

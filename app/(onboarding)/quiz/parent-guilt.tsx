@@ -4,11 +4,9 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
-import { OnboardingTitle, OnboardingBody, OnboardingSubtitle } from '../../../components/OnboardingTypography';
+import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
 import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
-
-const ICON_COLOR = '#6b7280';
 
 const REACTIONS = [
     { id: 'calm', title: 'I stay calm (mostly)', icon: 'happy-outline' },
@@ -56,7 +54,7 @@ export default function ParentGuiltScreen() {
                             onPress={() => handleSelect(reaction.id)}
                             icon={
                                 <View style={styles.iconContainer}>
-                                    <Ionicons name={reaction.icon as any} size={24} color={ICON_COLOR} />
+                                    <Ionicons name={reaction.icon as any} size={24} color={OnboardingTheme.Colors.IconColor} />
                                 </View>
                             }
                         />
@@ -78,7 +76,7 @@ const styles = StyleSheet.create({
         width: '100%',
     },
     optionsContainer: {
-        marginTop: OnboardingTheme.Spacing.md,
+        marginTop: OnboardingTheme.Spacing.xl,
     },
     iconContainer: {
         width: 48,
@@ -86,11 +84,11 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#f3f4f6',
+        backgroundColor: OnboardingTheme.Colors.IconBackground,
     },
     reassuranceContainer: {
         marginTop: OnboardingTheme.Spacing.xl,
-        backgroundColor: '#f9fafb',
+        backgroundColor: OnboardingTheme.Colors.Surface,
         padding: OnboardingTheme.Spacing.md,
         borderRadius: OnboardingTheme.Radius.lg,
     },

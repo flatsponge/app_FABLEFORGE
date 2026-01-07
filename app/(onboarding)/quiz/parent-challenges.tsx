@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
-import { OnboardingTitle, OnboardingBody, OnboardingSubtitle } from '../../../components/OnboardingTypography';
+import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
 import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
-
-const ICON_COLOR = '#6b7280';
 
 const CHALLENGES = [
     { id: 'time', label: 'Not enough time', icon: 'time-outline' },
@@ -47,11 +45,9 @@ export default function ParentChallengesScreen() {
             showProgressBar={false} progress={0.45}
             onNext={handleNext}
             nextLabel="Continue"
+            isScrollable={true}
         >
-            <ScrollView
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.scrollContent}
-            >
+            <View style={styles.contentContainer}>
                 <OnboardingTitle>What's your biggest parenting challenge right now?</OnboardingTitle>
                 <OnboardingBody>
                     Select all that apply.
@@ -66,23 +62,23 @@ export default function ParentChallengesScreen() {
                             onPress={() => toggleSelection(challenge.id)}
                             icon={
                                 <View style={styles.iconContainer}>
-                                    <Ionicons name={challenge.icon as any} size={24} color={ICON_COLOR} />
+                                    <Ionicons name={challenge.icon as any} size={24} color={OnboardingTheme.Colors.IconColor} />
                                 </View>
                             }
                         />
                     ))}
                 </View>
-            </ScrollView>
+            </View>
         </OnboardingLayout>
     );
 }
 
 const styles = StyleSheet.create({
-    scrollContent: {
-        paddingBottom: OnboardingTheme.Spacing.xl,
+    contentContainer: {
+        width: '100%',
     },
     optionsContainer: {
-        marginTop: OnboardingTheme.Spacing.md,
+        marginTop: OnboardingTheme.Spacing.xl,
     },
     iconContainer: {
         width: 48,
@@ -90,6 +86,6 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#f3f4f6',
+        backgroundColor: OnboardingTheme.Colors.IconBackground,
     },
 });

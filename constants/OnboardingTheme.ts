@@ -11,6 +11,8 @@ export const OnboardingTheme = {
     White: '#FFFFFF',
     Error: '#EF4444', // Red 500
     Success: '#22C55E', // Green 500
+    IconColor: '#6B7280', // Gray 500 - Icon color
+    IconBackground: '#F3F4F6', // Gray 100 - Icon container background
   },
   Radius: {
     sm: 4,
