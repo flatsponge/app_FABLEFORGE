@@ -29,7 +29,7 @@ export default function ChildGenderScreen() {
 
     return (
         <OnboardingLayout
-            showProgressBar={false}
+            showProgressBar={false} skipTopSafeArea
             progress={0.12}
             onNext={handleNext}
             nextLabel="Continue"

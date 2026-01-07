@@ -33,7 +33,7 @@ export default function AggressionDetailsScreen() {
 
     return (
         <OnboardingLayout
-            showProgressBar={false} progress={0.55}
+            showProgressBar={false} skipTopSafeArea progress={0.55}
             showNextButton={!!selected}
             onNext={handleNext}
             nextLabel="Continue"

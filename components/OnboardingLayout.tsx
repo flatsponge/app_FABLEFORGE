@@ -21,6 +21,7 @@ interface OnboardingLayoutProps {
   progressBarTrackColor?: string;
   backButtonColor?: string;
   isScrollable?: boolean;
+  skipTopSafeArea?: boolean; // When true, skip top safe area padding (for screens inside parent layouts that handle it)
 }
 
 export default function OnboardingLayout({
@@ -37,6 +38,7 @@ export default function OnboardingLayout({
   progressBarTrackColor = '#E5E7EB',
   backButtonColor = OnboardingTheme.Colors.Text,
   isScrollable = false,
+  skipTopSafeArea = false,
 }: OnboardingLayoutProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -75,17 +77,26 @@ export default function OnboardingLayout({
     }
   };
 
+  const containerPaddingTop = skipTopSafeArea ? 0 : insets.top;
+  const contentPaddingTop = skipTopSafeArea ? OnboardingTheme.Spacing.lg : OnboardingTheme.Spacing.xl * 2;
+
   const contentWrapperProps = isScrollable
     ? {
       showsVerticalScrollIndicator: false,
-      contentContainerStyle: styles.scrollContentContainer,
+      contentContainerStyle: [
+        styles.scrollContentContainer,
+        { paddingTop: contentPaddingTop }
+      ],
     }
     : {
-      style: styles.content,
+      style: [
+        styles.content,
+        { paddingTop: contentPaddingTop }
+      ],
     };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom, backgroundColor }]}>
+    <View style={[styles.container, { paddingTop: containerPaddingTop, paddingBottom: insets.bottom, backgroundColor }]}>
       {/* Header */}
       {showProgressBar && (
         <View style={styles.header}>

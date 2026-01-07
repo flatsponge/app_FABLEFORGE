@@ -3,7 +3,7 @@ import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 import OnboardingLayout from '../../components/OnboardingLayout';
-import { OnboardingTitle, OnboardingBody, OnboardingSubtitle } from '../../components/OnboardingTypography';
+import { OnboardingTitle, OnboardingBody } from '../../components/OnboardingTypography';
 import OnboardingOptionCard from '../../components/OnboardingOptionCard';
 import { OnboardingTheme } from '../../constants/OnboardingTheme';
 import { Ionicons } from '@expo/vector-icons';
@@ -38,7 +38,6 @@ export default function OnboardingStart() {
             onNext={handleNext}
         >
             <View style={styles.contentContainer}>
-                <OnboardingSubtitle>Welcome</OnboardingSubtitle>
                 <OnboardingTitle>What is your ultimate goal for your child?</OnboardingTitle>
                 <OnboardingBody>
                     We'll tailor the stories to help them grow in this direction.

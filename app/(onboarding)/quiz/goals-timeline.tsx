@@ -32,7 +32,7 @@ export default function GoalsTimelineScreen() {
 
     return (
         <OnboardingLayout
-            showProgressBar={false} progress={0.2}
+            showProgressBar={false} skipTopSafeArea progress={0.2}
             showNextButton={!!selected}
             onNext={handleNext}
         >

@@ -33,7 +33,7 @@ export default function ParentGuiltScreen() {
 
     return (
         <OnboardingLayout
-            showProgressBar={false} progress={0.8}
+            showProgressBar={false} skipTopSafeArea progress={0.8}
             showNextButton={!!selected}
             isScrollable={true}
             onNext={handleNext}

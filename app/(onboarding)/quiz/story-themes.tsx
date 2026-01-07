@@ -44,7 +44,7 @@ export default function StoryThemesScreen() {
 
     return (
         <OnboardingLayout
-            showProgressBar={false} progress={0.35}
+            showProgressBar={false} skipTopSafeArea progress={0.35}
             onNext={handleNext}
             nextLabel="Continue"
             isScrollable={true}

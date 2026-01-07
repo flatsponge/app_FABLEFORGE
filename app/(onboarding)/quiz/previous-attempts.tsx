@@ -32,7 +32,7 @@ export default function PreviousAttemptsScreen() {
 
     return (
         <OnboardingLayout
-            showProgressBar={false} progress={0.4}
+            showProgressBar={false} skipTopSafeArea progress={0.4}
             showNextButton={!!selected}
             onNext={handleNext}
         >

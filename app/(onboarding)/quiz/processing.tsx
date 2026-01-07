@@ -1,94 +1,180 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, TextInput, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import Animated, {
+    FadeInDown,
+    useAnimatedStyle,
+    withTiming,
+    useSharedValue,
+    Easing,
+    useAnimatedProps,
+    withDelay
+} from 'react-native-reanimated';
+import Svg, { Circle } from 'react-native-svg';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
-const MESSAGES = [
-    { text: "Analyzing behavioral patterns...", icon: "analytics" },
-    { text: "Cross-referencing with child development research...", icon: "library" },
-    { text: "Identifying key intervention points...", icon: "bulb" },
-    { text: "Matching with proven story frameworks...", icon: "book" },
-    { text: "Building personalized character model...", icon: "person" },
-    { text: "Preparing your child's hero journey...", icon: "rocket" },
+const TEXT_COLOR = '#1f2937'; // gray-800
+const MUTED_COLOR = '#9ca3af'; // gray-400
+const PRIMARY_COLOR = OnboardingTheme.Colors.Primary;
+
+const STEPS = [
+    { text: "Analyzing behavioral patterns" },
+    { text: "Mapping developmental milestones" },
+    { text: "Identifying key growth opportunities" },
+    { text: "Structuring personalized curriculum" },
+    { text: "Finalizing custom plan" },
 ];
+
+const STEP_DURATION = 1200;
+const TOTAL_DURATION = STEPS.length * STEP_DURATION + 1000;
+const CIRCLE_SIZE = 180;
+const STROKE_WIDTH = 8;
+const RADIUS = (CIRCLE_SIZE - STROKE_WIDTH) / 2;
+const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+
+// Animated Components
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+const AnimatedTextInput = Animated.createAnimatedComponent(TextInput);
+
+function ProcessingStep({ item, index, activeIndex }: { item: typeof STEPS[0], index: number, activeIndex: number }) {
+    const isActive = index === activeIndex;
+    const isCompleted = index < activeIndex;
+
+    const animatedStyle = useAnimatedStyle(() => {
+        return {
+            opacity: withTiming(isActive || isCompleted ? 1 : 0.4, { duration: 300 }),
+        };
+    });
+
+    return (
+        <Animated.View
+            entering={FadeInDown.delay(index * 150).springify()}
+            style={[styles.stepContainer, animatedStyle]}
+        >
+            <View style={styles.statusIndicator}>
+                {isCompleted ? (
+                    <Ionicons name="checkmark-circle" size={20} color={PRIMARY_COLOR} />
+                ) : isActive ? (
+                    <View style={styles.activeDotOuter}>
+                        <View style={styles.activeDotInner} />
+                    </View>
+                ) : (
+                    <View style={styles.pendingDot} />
+                )}
+            </View>
+            <OnboardingBody style={[
+                styles.stepText,
+                (isActive || isCompleted) && styles.stepTextActive
+            ]}>
+                {item.text}
+            </OnboardingBody>
+        </Animated.View>
+    );
+}
 
 export default function ProcessingScreen() {
     const router = useRouter();
-    const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+    const [activeIndex, setActiveIndex] = useState(0);
+    const progress = useSharedValue(0);
 
     useEffect(() => {
-        const messageInterval = setInterval(() => {
-            setCurrentMessageIndex((prev) => {
-                if (prev < MESSAGES.length - 1) return prev + 1;
-                return prev;
+        // Step timer
+        const interval = setInterval(() => {
+            setActiveIndex(current => {
+                if (current < STEPS.length) return current + 1;
+                return current;
             });
-        }, 1200);
+        }, STEP_DURATION);
 
+        // Circular progress animation
+        progress.value = withTiming(1, {
+            duration: TOTAL_DURATION,
+            easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+        });
+
+        // Navigation
         const navigationTimer = setTimeout(() => {
             router.push('/(onboarding)/parent/results-intro');
-        }, 1200 * MESSAGES.length + 800);
+        }, TOTAL_DURATION + 500);
 
         return () => {
-            clearInterval(messageInterval);
+            clearInterval(interval);
             clearTimeout(navigationTimer);
         };
     }, []);
 
-    const progress = ((currentMessageIndex + 1) / MESSAGES.length) * 100;
+    const animatedCircleProps = useAnimatedProps(() => {
+        const strokeDashoffset = CIRCUMFERENCE * (1 - progress.value);
+        return {
+            strokeDashoffset,
+        };
+    });
+
+    const animatedTextProps = useAnimatedProps(() => {
+        return {
+            text: `${Math.round(progress.value * 100)}%`
+        } as any;
+    });
 
     return (
         <OnboardingLayout
-            showProgressBar={false} progress={0.95}
+            showProgressBar={false} skipTopSafeArea
             showNextButton={false}
+            showBackButton={false}
         >
-            <View style={styles.contentContainer}>
-                <View style={styles.spinnerContainer}>
-                    <ActivityIndicator size="large" color={OnboardingTheme.Colors.Primary} />
-                </View>
-
-                <OnboardingTitle style={styles.centerText}>Analyzing Your Responses</OnboardingTitle>
-                <OnboardingBody style={[styles.centerText, styles.subtitle]}>
-                    Creating your personalized plan...
-                </OnboardingBody>
-
-                <View style={styles.messageWrapper}>
-                    <Animated.View
-                        key={currentMessageIndex}
-                        entering={FadeIn.duration(300)}
-                        exiting={FadeOut.duration(300)}
-                        style={styles.messageContainer}
-                    >
-                        <Ionicons
-                            name={MESSAGES[currentMessageIndex].icon as any}
-                            size={24}
-                            color={OnboardingTheme.Colors.Primary}
-                            style={styles.icon}
-                        />
-                        <OnboardingBody style={styles.messageText}>
-                            {MESSAGES[currentMessageIndex].text}
-                        </OnboardingBody>
-                    </Animated.View>
-                </View>
-
-                <View style={styles.progressBarContainer}>
-                    <View style={styles.progressBarBackground}>
-                        <View
-                            style={[styles.progressBarFill, { width: `${progress}%` }]}
-                        />
+            <View style={styles.container}>
+                <View style={styles.progressSection}>
+                    <View style={styles.circleContainer}>
+                        <Svg width={CIRCLE_SIZE} height={CIRCLE_SIZE}>
+                            {/* Background Circle */}
+                            <Circle
+                                cx={CIRCLE_SIZE / 2}
+                                cy={CIRCLE_SIZE / 2}
+                                r={RADIUS}
+                                stroke="#f3f4f6"
+                                strokeWidth={STROKE_WIDTH}
+                                fill="transparent"
+                            />
+                            {/* Foreground Circle */}
+                            <AnimatedCircle
+                                cx={CIRCLE_SIZE / 2}
+                                cy={CIRCLE_SIZE / 2}
+                                r={RADIUS}
+                                stroke={PRIMARY_COLOR}
+                                strokeWidth={STROKE_WIDTH}
+                                fill="transparent"
+                                strokeDasharray={CIRCUMFERENCE}
+                                strokeLinecap="round"
+                                rotation="-90"
+                                origin={`${CIRCLE_SIZE / 2}, ${CIRCLE_SIZE / 2}`}
+                                animatedProps={animatedCircleProps}
+                            />
+                        </Svg>
+                        <View style={styles.absoluteCenter}>
+                            <AnimatedTextInput
+                                underlineColorAndroid="transparent"
+                                editable={false}
+                                value="0%"
+                                style={styles.percentageText}
+                                animatedProps={animatedTextProps}
+                            />
+                            <OnboardingBody style={styles.analyzingLabel}>Complete</OnboardingBody>
+                        </View>
                     </View>
-                    <View style={styles.progressTextContainer}>
-                        <OnboardingBody style={styles.progressLabel}>Processing...</OnboardingBody>
-                        <OnboardingBody style={styles.progressValue}>{Math.round(progress)}%</OnboardingBody>
-                    </View>
                 </View>
 
-                <View style={styles.trustContainer}>
-                    <Ionicons name="shield-checkmark" size={16} color="#4ade80" />
-                    <OnboardingBody style={styles.trustText}>Your data is encrypted and secure</OnboardingBody>
+                <View style={styles.stepsWrapper}>
+                    {STEPS.map((step, index) => (
+                        <ProcessingStep
+                            key={index}
+                            item={step}
+                            index={index}
+                            activeIndex={activeIndex}
+                        />
+                    ))}
                 </View>
             </View>
         </OnboardingLayout>
@@ -96,93 +182,87 @@ export default function ProcessingScreen() {
 }
 
 const styles = StyleSheet.create({
-    contentContainer: {
+    container: {
+        flex: 1,
+        paddingHorizontal: OnboardingTheme.Spacing.md,
+    },
+    progressSection: {
         alignItems: 'center',
-        width: '100%',
-        paddingTop: OnboardingTheme.Spacing.xl,
+        justifyContent: 'center',
+        marginTop: OnboardingTheme.Spacing.xl,
+        marginBottom: OnboardingTheme.Spacing.xl * 2,
     },
-    spinnerContainer: {
-        marginBottom: OnboardingTheme.Spacing.xl,
-        padding: 24,
-        backgroundColor: '#f3e8ff', // primary-50
-        borderRadius: 9999,
-        borderWidth: 1,
-        borderColor: '#e9d5ff', // primary-100
-    },
-    centerText: {
-        textAlign: 'center',
-    },
-    subtitle: {
-        marginBottom: OnboardingTheme.Spacing.xl,
-        color: OnboardingTheme.Colors.TextSecondary,
-    },
-    messageWrapper: {
-        height: 80,
-        width: '100%',
+    circleContainer: {
+        width: CIRCLE_SIZE,
+        height: CIRCLE_SIZE,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    messageContainer: {
-        flexDirection: 'row',
+    absoluteCenter: {
+        position: 'absolute',
         alignItems: 'center',
-        backgroundColor: 'white',
-        paddingHorizontal: OnboardingTheme.Spacing.lg,
-        paddingVertical: OnboardingTheme.Spacing.md,
-        borderRadius: OnboardingTheme.Radius.lg,
-        borderWidth: 1,
-        borderColor: OnboardingTheme.Colors.Border,
-        width: '100%',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-        elevation: 2,
+        justifyContent: 'center',
     },
-    icon: {
-        marginRight: OnboardingTheme.Spacing.md,
+    percentageText: {
+        fontSize: 48,
+        fontWeight: '700',
+        color: TEXT_COLOR,
+        fontFamily: 'System',
+        textAlign: 'center',
+        // Note: Resetting default input styles
+        padding: 0,
+        margin: 0,
     },
-    messageText: {
-        flex: 1,
+    analyzingLabel: {
         fontSize: 14,
+        color: MUTED_COLOR,
+        marginTop: 4,
+        fontWeight: '500',
     },
-    progressBarContainer: {
-        width: '100%',
-        marginTop: OnboardingTheme.Spacing.xl,
+    stepsWrapper: {
+        flex: 1,
+        paddingHorizontal: OnboardingTheme.Spacing.sm,
     },
-    progressBarBackground: {
-        width: '100%',
-        height: 8,
-        backgroundColor: '#e5e7eb', // gray-200
-        borderRadius: 9999,
-        overflow: 'hidden',
-    },
-    progressBarFill: {
-        height: '100%',
-        backgroundColor: OnboardingTheme.Colors.Primary,
-        borderRadius: 9999,
-    },
-    progressTextContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginTop: OnboardingTheme.Spacing.xs,
-    },
-    progressLabel: {
-        fontSize: 12,
-        color: OnboardingTheme.Colors.TextSecondary,
-    },
-    progressValue: {
-        fontSize: 12,
-        color: OnboardingTheme.Colors.Primary,
-        fontWeight: 'bold',
-    },
-    trustContainer: {
+    stepContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: OnboardingTheme.Spacing.xl * 2,
+        marginBottom: 20,
+        height: 24,
     },
-    trustText: {
-        marginLeft: OnboardingTheme.Spacing.xs,
-        fontSize: 12,
-        color: OnboardingTheme.Colors.TextSecondary,
+    statusIndicator: {
+        width: 24,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 16,
+    },
+    activeDotOuter: {
+        width: 16,
+        height: 16,
+        borderRadius: 8,
+        borderWidth: 2,
+        borderColor: PRIMARY_COLOR,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    activeDotInner: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: PRIMARY_COLOR,
+    },
+    pendingDot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: '#e5e7eb', // gray-200
+    },
+    stepText: {
+        fontSize: 16,
+        color: TEXT_COLOR,
+        fontWeight: '500',
+    },
+    stepTextActive: {
+        color: TEXT_COLOR,
+        fontWeight: '600',
     },
 });

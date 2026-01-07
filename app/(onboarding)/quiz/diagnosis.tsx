@@ -37,7 +37,7 @@ export default function DiagnosisScreen() {
 
     return (
         <OnboardingLayout
-            showProgressBar={false} progress={0.5}
+            showProgressBar={false} skipTopSafeArea progress={0.5}
             showNextButton={!!selected}
             onNext={handleNext}
             nextLabel="Continue"

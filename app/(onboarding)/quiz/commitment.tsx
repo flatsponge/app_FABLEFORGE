@@ -15,7 +15,7 @@ export default function CommitmentScreen() {
 
     return (
         <OnboardingLayout
-            showProgressBar={false} progress={0.85}
+            showProgressBar={false} skipTopSafeArea progress={0.85}
             onNext={handleNext}
             nextLabel="Yes, I'm Ready!"
         >

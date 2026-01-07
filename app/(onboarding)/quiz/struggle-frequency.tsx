@@ -33,7 +33,7 @@ export default function StruggleFrequencyScreen() {
 
     return (
         <OnboardingLayout
-            showProgressBar={false} progress={0.75}
+            showProgressBar={false} skipTopSafeArea progress={0.75}
             showNextButton={!!selected}
             onNext={handleNext}
         >

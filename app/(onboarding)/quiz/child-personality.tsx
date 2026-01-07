@@ -41,7 +41,7 @@ export default function ChildPersonalityScreen() {
 
     return (
         <OnboardingLayout
-            showProgressBar={false} progress={0.15}
+            showProgressBar={false} skipTopSafeArea progress={0.15}
             onNext={handleNext}
             nextLabel="Continue"
             isScrollable={true}

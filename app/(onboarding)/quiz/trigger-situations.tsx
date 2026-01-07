@@ -42,7 +42,7 @@ export default function TriggerSituationsScreen() {
 
     return (
         <OnboardingLayout
-            showProgressBar={false} progress={0.65}
+            showProgressBar={false} skipTopSafeArea progress={0.65}
             onNext={handleNext}
             nextLabel="Continue"
             isScrollable={true}

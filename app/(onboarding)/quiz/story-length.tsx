@@ -32,7 +32,7 @@ export default function StoryLengthScreen() {
 
     return (
         <OnboardingLayout
-            showProgressBar={false} progress={0.3}
+            showProgressBar={false} skipTopSafeArea progress={0.3}
             showNextButton={!!selected}
             onNext={handleNext}
         >

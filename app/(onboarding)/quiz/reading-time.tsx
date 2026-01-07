@@ -32,7 +32,7 @@ export default function ReadingTimeScreen() {
 
     return (
         <OnboardingLayout
-            showProgressBar={false} progress={0.25}
+            showProgressBar={false} skipTopSafeArea progress={0.25}
             showNextButton={!!selected}
             onNext={handleNext}
         >

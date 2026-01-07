@@ -42,7 +42,7 @@ export default function ParentChallengesScreen() {
 
     return (
         <OnboardingLayout
-            showProgressBar={false} progress={0.45}
+            showProgressBar={false} skipTopSafeArea progress={0.45}
             onNext={handleNext}
             nextLabel="Continue"
             isScrollable={true}

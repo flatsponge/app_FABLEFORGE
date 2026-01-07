@@ -32,7 +32,7 @@ export default function AggressionFrequencyScreen() {
 
     return (
         <OnboardingLayout
-            showProgressBar={false} progress={0.6}
+            showProgressBar={false} skipTopSafeArea progress={0.6}
             showNextButton={!!selected}
             onNext={handleNext}
             nextLabel="Continue"
