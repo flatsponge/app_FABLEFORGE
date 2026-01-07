@@ -1,18 +1,17 @@
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
-import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
+import OnboardingSingleSelect, { SelectOption } from '../../../components/OnboardingSingleSelect';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
-const OPTIONS = [
-    { id: 'tried_all', label: 'Yes, tried everything', description: 'Books, apps, charts...', icon: 'library-outline' },
-    { id: 'tried_some', label: 'Tried a few things', description: 'Some worked, some didn\'t', icon: 'repeat-outline' },
-    { id: 'first_time', label: 'This is my first try', description: 'Looking for the right solution', icon: 'sparkles-outline' },
-    { id: 'professional', label: 'Working with a professional', description: 'Therapist, counselor, etc.', icon: 'person-outline' },
+const OPTIONS: SelectOption[] = [
+    { id: 'tried_all', title: 'Yes, tried everything', description: 'Books, apps, charts...', icon: 'library-outline' },
+    { id: 'tried_some', title: 'Tried a few things', description: 'Some worked, some didn\'t', icon: 'repeat-outline' },
+    { id: 'first_time', title: 'This is my first try', description: 'Looking for the right solution', icon: 'sparkles-outline' },
+    { id: 'professional', title: 'Working with a professional', description: 'Therapist, counselor, etc.', icon: 'person-outline' },
 ];
 
 export default function PreviousAttemptsScreen() {
@@ -42,23 +41,12 @@ export default function PreviousAttemptsScreen() {
                     Understanding your journey helps us help you.
                 </OnboardingBody>
 
-                <View style={styles.optionsContainer}>
-                    {OPTIONS.map((option) => (
-                        <OnboardingOptionCard
-                            key={option.id}
-                            title={option.label}
-                            description={option.description}
-                            selected={selected === option.id}
-                            showCheckbox={false}
-                            onPress={() => handleSelect(option.id)}
-                            icon={
-                                <View style={styles.iconContainer}>
-                                    <Ionicons name={option.icon as any} size={24} color={OnboardingTheme.Colors.IconColor} />
-                                </View>
-                            }
-                        />
-                    ))}
-                </View>
+                <OnboardingSingleSelect
+                    options={OPTIONS}
+                    selectedId={selected}
+                    onSelect={handleSelect}
+                    showCheckbox={false}
+                />
             </View>
         </OnboardingLayout>
     );
@@ -67,16 +55,5 @@ export default function PreviousAttemptsScreen() {
 const styles = StyleSheet.create({
     contentContainer: {
         width: '100%',
-    },
-    optionsContainer: {
-        marginTop: OnboardingTheme.Spacing.xl,
-    },
-    iconContainer: {
-        width: 48,
-        height: 48,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: OnboardingTheme.Colors.IconBackground,
     },
 });

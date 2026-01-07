@@ -1,22 +1,21 @@
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
-import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
+import OnboardingMultiSelect, { SelectOption } from '../../../components/OnboardingMultiSelect';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
-const CHALLENGES = [
-    { id: 'time', label: 'Not enough time', icon: 'time-outline' },
-    { id: 'consistency', label: 'Staying consistent', icon: 'calendar-outline' },
-    { id: 'engagement', label: 'Keeping them engaged', icon: 'bulb-outline' },
-    { id: 'tantrums', label: 'Managing tantrums', icon: 'thunderstorm-outline' },
-    { id: 'communication', label: 'Getting them to talk', icon: 'chatbubbles-outline' },
-    { id: 'patience', label: 'My own patience', icon: 'leaf-outline' },
-    { id: 'partner', label: 'Co-parenting alignment', icon: 'people-outline' },
-    { id: 'screen', label: 'Screen time battles', icon: 'phone-portrait-outline' },
+const CHALLENGES: SelectOption[] = [
+    { id: 'time', title: 'Not enough time', icon: 'time-outline' },
+    { id: 'consistency', title: 'Staying consistent', icon: 'calendar-outline' },
+    { id: 'engagement', title: 'Keeping them engaged', icon: 'bulb-outline' },
+    { id: 'tantrums', title: 'Managing tantrums', icon: 'thunderstorm-outline' },
+    { id: 'communication', title: 'Getting them to talk', icon: 'chatbubbles-outline' },
+    { id: 'patience', title: 'My own patience', icon: 'leaf-outline' },
+    { id: 'partner', title: 'Co-parenting alignment', icon: 'people-outline' },
+    { id: 'screen', title: 'Screen time battles', icon: 'phone-portrait-outline' },
 ];
 
 export default function ParentChallengesScreen() {
@@ -53,21 +52,11 @@ export default function ParentChallengesScreen() {
                     Select all that apply.
                 </OnboardingBody>
 
-                <View style={styles.optionsContainer}>
-                    {CHALLENGES.map((challenge) => (
-                        <OnboardingOptionCard
-                            key={challenge.id}
-                            title={challenge.label}
-                            selected={selected.includes(challenge.id)}
-                            onPress={() => toggleSelection(challenge.id)}
-                            icon={
-                                <View style={styles.iconContainer}>
-                                    <Ionicons name={challenge.icon as any} size={24} color={OnboardingTheme.Colors.IconColor} />
-                                </View>
-                            }
-                        />
-                    ))}
-                </View>
+                <OnboardingMultiSelect
+                    options={CHALLENGES}
+                    selectedValues={selected}
+                    onToggle={toggleSelection}
+                />
             </View>
         </OnboardingLayout>
     );
@@ -76,16 +65,5 @@ export default function ParentChallengesScreen() {
 const styles = StyleSheet.create({
     contentContainer: {
         width: '100%',
-    },
-    optionsContainer: {
-        marginTop: OnboardingTheme.Spacing.xl,
-    },
-    iconContainer: {
-        width: 48,
-        height: 48,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: OnboardingTheme.Colors.IconBackground,
     },
 });

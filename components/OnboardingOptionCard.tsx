@@ -2,11 +2,14 @@ import React from 'react';
 import { TouchableOpacity, Text, View, StyleSheet, TouchableOpacityProps } from 'react-native';
 import { OnboardingTheme } from '../constants/OnboardingTheme';
 
+import { Ionicons } from '@expo/vector-icons';
+
 interface OnboardingOptionCardProps extends TouchableOpacityProps {
   title: string;
   description?: string;
   selected?: boolean;
   icon?: React.ReactNode;
+  iconName?: keyof typeof Ionicons.glyphMap;
   rightContent?: React.ReactNode;
   showCheckbox?: boolean;
 }
@@ -16,11 +19,28 @@ export default function OnboardingOptionCard({
   description,
   selected = false,
   icon,
+  iconName,
   rightContent,
   style,
   showCheckbox = true,
   ...props
 }: OnboardingOptionCardProps) {
+  const renderIcon = () => {
+    if (icon) return <View style={styles.iconContainer}>{icon}</View>;
+    if (iconName) {
+      return (
+        <View style={[styles.iconContainer, styles.stdIconContainer, selected && styles.stdIconContainerSelected]}>
+          <Ionicons 
+            name={iconName} 
+            size={24} 
+            color={selected ? OnboardingTheme.Colors.Primary : OnboardingTheme.Colors.IconColor} 
+          />
+        </View>
+      );
+    }
+    return null;
+  };
+
   return (
     <TouchableOpacity
       style={[
@@ -32,7 +52,7 @@ export default function OnboardingOptionCard({
       {...props}
     >
       <View style={styles.content}>
-        {icon && <View style={styles.iconContainer}>{icon}</View>}
+        {renderIcon()}
         <View style={styles.textContainer}>
           <Text style={[styles.title, selected && styles.titleSelected]}>{title}</Text>
           {description && (
@@ -82,6 +102,17 @@ const styles = StyleSheet.create({
   },
   iconContainer: {
     marginRight: OnboardingTheme.Spacing.md,
+  },
+  stdIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: OnboardingTheme.Colors.IconBackground,
+  },
+  stdIconContainerSelected: {
+    backgroundColor: '#E0E7FF', // Light indigo/primary tint - Adjust as needed
   },
   textContainer: {
     flex: 1,

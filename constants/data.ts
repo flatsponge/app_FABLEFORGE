@@ -1,5 +1,20 @@
 import { Book, Category, AvatarItem, PresetLocation, Friend, VoicePreset, Wish } from '../types';
 
+import { Heart, Shield, Gift, Scale, Hourglass, Users, Search, Sun, ClipboardList, Puzzle } from 'lucide-react-native';
+
+export const FOCUS_VALUES = [
+  { id: 'compassion', name: 'Compassion', icon: Heart, bgColor: '#fff1f2', iconColor: '#f43f5e', desc: 'Understanding feelings' },
+  { id: 'bravery', name: 'Bravery', icon: Shield, bgColor: '#fffbeb', iconColor: '#f59e0b', desc: 'Finding courage' },
+  { id: 'sharing', name: 'Sharing', icon: Gift, bgColor: '#faf5ff', iconColor: '#a855f7', desc: 'The joy of giving' },
+  { id: 'honesty', name: 'Honesty', icon: Scale, bgColor: '#eff6ff', iconColor: '#3b82f6', desc: 'Telling the truth' },
+  { id: 'patience', name: 'Patience', icon: Hourglass, bgColor: '#ecfdf5', iconColor: '#10b981', desc: 'Waiting calmly' },
+  { id: 'teamwork', name: 'Teamwork', icon: Users, bgColor: '#eef2ff', iconColor: '#6366f1', desc: 'Working together' },
+  { id: 'curiosity', name: 'Curiosity', icon: Search, bgColor: '#ecfeff', iconColor: '#06b6d4', desc: 'Discovering new things' },
+  { id: 'gratitude', name: 'Gratitude', icon: Sun, bgColor: '#fefce8', iconColor: '#eab308', desc: 'Being thankful' },
+  { id: 'responsibility', name: 'Responsibility', icon: ClipboardList, bgColor: '#f8fafc', iconColor: '#64748b', desc: 'Doing your part' },
+  { id: 'problem_solving', name: 'Problem Solving', icon: Puzzle, bgColor: '#f0fdfa', iconColor: '#14b8a6', desc: 'Finding solutions' },
+];
+
 export const CATEGORIES: Category[] = [
   { id: 'animals', name: 'Animals', color: 'bg-orange-50', text: 'text-orange-600', iconName: 'Star' },
   { id: 'space', name: 'Space', color: 'bg-indigo-50', text: 'text-indigo-600', iconName: 'Moon' },

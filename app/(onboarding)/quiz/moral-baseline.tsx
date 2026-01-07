@@ -6,7 +6,7 @@ import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
-import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
+import OnboardingSingleSelect, { SelectOption } from '../../../components/OnboardingSingleSelect';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
 const MORAL_SKILLS = [
@@ -16,19 +16,19 @@ const MORAL_SKILLS = [
     { id: 'kindness', label: 'Kindness to Others', icon: 'heart-outline', question: 'How kind is your child to others?' },
 ];
 
-const RATING_OPTIONS = [
-    { value: 1, label: 'Needs work', description: 'This is a growth area' },
-    { value: 2, label: 'Sometimes', description: 'Depends on the day' },
-    { value: 3, label: 'Usually good', description: 'More often than not' },
-    { value: 4, label: 'Very good', description: 'Rarely an issue' },
-    { value: 5, label: 'Excellent', description: 'A real strength!' },
+const RATING_OPTIONS: SelectOption[] = [
+    { id: '1', title: 'Needs work', description: 'This is a growth area' },
+    { id: '2', title: 'Sometimes', description: 'Depends on the day' },
+    { id: '3', title: 'Usually good', description: 'More often than not' },
+    { id: '4', title: 'Very good', description: 'Rarely an issue' },
+    { id: '5', title: 'Excellent', description: 'A real strength!' },
 ];
 
 export default function MoralBaselineScreen() {
     const router = useRouter();
     const { updateData } = useOnboarding();
     const [ratings, setRatings] = useState<Record<string, number>>({});
-    const [currentSelection, setCurrentSelection] = useState<number | null>(null);
+    const [currentSelection, setCurrentSelection] = useState<string | null>(null);
 
     const currentSkillIndex = Object.keys(ratings).length;
     const currentSkill = MORAL_SKILLS[currentSkillIndex];
@@ -38,13 +38,13 @@ export default function MoralBaselineScreen() {
     const stepProgress = 0.1 / MORAL_SKILLS.length;
     const currentProgress = baseProgress + (currentSkillIndex * stepProgress);
 
-    const handleSelect = (value: number) => {
-        setCurrentSelection(value);
+    const handleSelect = (id: string) => {
+        setCurrentSelection(id);
     };
 
     const handleNext = () => {
         if (currentSelection !== null && currentSkill) {
-            const newRatings = { ...ratings, [currentSkill.id]: currentSelection };
+            const newRatings = { ...ratings, [currentSkill.id]: parseInt(currentSelection, 10) };
             setRatings(newRatings);
             setCurrentSelection(null);
 
@@ -82,18 +82,12 @@ export default function MoralBaselineScreen() {
                     <Ionicons name={currentSkill.icon as any} size={48} color={OnboardingTheme.Colors.IconColor} />
                 </View>
 
-                <View style={styles.optionsContainer}>
-                    {RATING_OPTIONS.map((option) => (
-                        <OnboardingOptionCard
-                            key={option.value}
-                            title={option.label}
-                            description={option.description}
-                            selected={currentSelection === option.value}
-                            showCheckbox={false}
-                            onPress={() => handleSelect(option.value)}
-                        />
-                    ))}
-                </View>
+                <OnboardingSingleSelect
+                    options={RATING_OPTIONS}
+                    selectedId={currentSelection}
+                    onSelect={handleSelect}
+                    showCheckbox={false}
+                />
             </Animated.View>
         </OnboardingLayout>
     );
@@ -106,8 +100,5 @@ const styles = StyleSheet.create({
     iconContainer: {
         alignItems: 'center',
         marginVertical: OnboardingTheme.Spacing.md,
-    },
-    optionsContainer: {
-        marginTop: OnboardingTheme.Spacing.xl,
     },
 });

@@ -5,10 +5,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
-import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
+import OnboardingSingleSelect, { SelectOption } from '../../../components/OnboardingSingleSelect';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
-const BEHAVIORS = [
+const BEHAVIORS: (SelectOption & { severity: string })[] = [
     { id: 'arguing', title: 'Verbal Defiance', description: 'Argues back or refuses to listen', icon: 'chatbox-ellipses', severity: 'common' },
     { id: 'aggression', title: 'Physical Aggression', description: 'Hitting, throwing, or biting', icon: 'hand-left', severity: 'urgent' },
     { id: 'shut_down', title: 'Shuts Down', description: 'Goes silent or ignores you', icon: 'moon', severity: 'moderate' },
@@ -35,6 +35,16 @@ export default function DiagnosisScreen() {
         }
     };
 
+    // Prepare options with rightContent
+    const optionsWithContent = BEHAVIORS.map(b => ({
+        ...b,
+        rightContent: b.severity === 'urgent' ? (
+            <View style={styles.priorityBadge}>
+                <Text style={styles.priorityText}>Priority</Text>
+            </View>
+        ) : undefined
+    }));
+
     return (
         <OnboardingLayout
             showProgressBar={false} skipTopSafeArea progress={0.5}
@@ -55,31 +65,12 @@ export default function DiagnosisScreen() {
                     </Text>
                 </View>
 
-                <View style={styles.optionsContainer}>
-                    {BEHAVIORS.map((behavior) => (
-                        <OnboardingOptionCard
-                            key={behavior.id}
-                            title={behavior.title}
-                            description={behavior.description}
-                            selected={selected === behavior.id}
-                            onPress={() => handleSelect(behavior.id)}
-                            icon={
-                                <View style={[styles.iconContainer, selected === behavior.id && styles.iconContainerSelected]}>
-                                    <Ionicons
-                                        name={behavior.icon as any}
-                                        size={24}
-                                        color={selected === behavior.id ? OnboardingTheme.Colors.Primary : OnboardingTheme.Colors.IconColor}
-                                    />
-                                </View>
-                            }
-                            rightContent={behavior.severity === 'urgent' ? (
-                                <View style={styles.priorityBadge}>
-                                    <Text style={styles.priorityText}>Priority</Text>
-                                </View>
-                            ) : undefined}
-                        />
-                    ))}
-                </View>
+                <OnboardingSingleSelect
+                    options={optionsWithContent}
+                    selectedId={selected}
+                    onSelect={handleSelect}
+                    showCheckbox={false}
+                />
             </View>
         </OnboardingLayout>
     );
@@ -107,20 +98,6 @@ const styles = StyleSheet.create({
         flex: 1,
         color: '#92400e', // amber-800
         fontSize: 14,
-    },
-    optionsContainer: {
-        marginTop: OnboardingTheme.Spacing.xl,
-    },
-    iconContainer: {
-        width: 48,
-        height: 48,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: OnboardingTheme.Colors.IconBackground,
-    },
-    iconContainerSelected: {
-        backgroundColor: '#f3e8ff', // primary-100 (approx)
     },
     priorityBadge: {
         backgroundColor: '#fee2e2', // red-100

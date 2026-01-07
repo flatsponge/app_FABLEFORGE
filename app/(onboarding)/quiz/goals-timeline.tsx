@@ -1,18 +1,17 @@
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
-import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
+import OnboardingSingleSelect, { SelectOption } from '../../../components/OnboardingSingleSelect';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
-const TIMELINES = [
-    { id: 'immediate', label: 'Right away', description: 'We need help now', icon: 'flame-outline' },
-    { id: 'month', label: 'Within a month', description: 'Noticeable progress soon', icon: 'calendar-number-outline' },
-    { id: 'gradual', label: 'Gradual improvement', description: 'Long-term development', icon: 'leaf-outline' },
-    { id: 'unsure', label: 'Not sure yet', description: 'Just exploring options', icon: 'help-circle-outline' },
+const TIMELINES: SelectOption[] = [
+    { id: 'immediate', title: 'Right away', description: 'We need help now', icon: 'flame-outline' },
+    { id: 'month', title: 'Within a month', description: 'Noticeable progress soon', icon: 'calendar-number-outline' },
+    { id: 'gradual', title: 'Gradual improvement', description: 'Long-term development', icon: 'leaf-outline' },
+    { id: 'unsure', title: 'Not sure yet', description: 'Just exploring options', icon: 'help-circle-outline' },
 ];
 
 export default function GoalsTimelineScreen() {
@@ -42,23 +41,12 @@ export default function GoalsTimelineScreen() {
                     This helps us set realistic milestones.
                 </OnboardingBody>
 
-                <View style={styles.optionsContainer}>
-                    {TIMELINES.map((timeline) => (
-                        <OnboardingOptionCard
-                            key={timeline.id}
-                            title={timeline.label}
-                            description={timeline.description}
-                            selected={selected === timeline.id}
-                            showCheckbox={false}
-                            onPress={() => handleSelect(timeline.id)}
-                            icon={
-                                <View style={styles.iconContainer}>
-                                    <Ionicons name={timeline.icon as any} size={24} color={OnboardingTheme.Colors.IconColor} />
-                                </View>
-                            }
-                        />
-                    ))}
-                </View>
+                <OnboardingSingleSelect
+                    options={TIMELINES}
+                    selectedId={selected}
+                    onSelect={handleSelect}
+                    showCheckbox={false}
+                />
             </View>
         </OnboardingLayout>
     );
@@ -67,16 +55,5 @@ export default function GoalsTimelineScreen() {
 const styles = StyleSheet.create({
     contentContainer: {
         width: '100%',
-    },
-    optionsContainer: {
-        marginTop: OnboardingTheme.Spacing.xl,
-    },
-    iconContainer: {
-        width: 48,
-        height: 48,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: OnboardingTheme.Colors.IconBackground,
     },
 });

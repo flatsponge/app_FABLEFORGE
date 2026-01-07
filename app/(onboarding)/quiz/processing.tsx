@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, TextInput, Dimensions } from 'react-native';
+import { View, StyleSheet, Text, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
@@ -16,8 +16,8 @@ import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
-const TEXT_COLOR = '#1f2937'; // gray-800
-const MUTED_COLOR = '#9ca3af'; // gray-400
+const TEXT_COLOR = '#111827'; // gray-900 (High contrast)
+const MUTED_COLOR = '#6B7280'; // gray-500
 const PRIMARY_COLOR = OnboardingTheme.Colors.Primary;
 
 const STEPS = [
@@ -37,7 +37,6 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 // Animated Components
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
-const AnimatedTextInput = Animated.createAnimatedComponent(TextInput);
 
 function ProcessingStep({ item, index, activeIndex }: { item: typeof STEPS[0], index: number, activeIndex: number }) {
     const isActive = index === activeIndex;
@@ -45,7 +44,7 @@ function ProcessingStep({ item, index, activeIndex }: { item: typeof STEPS[0], i
 
     const animatedStyle = useAnimatedStyle(() => {
         return {
-            opacity: withTiming(isActive || isCompleted ? 1 : 0.4, { duration: 300 }),
+            opacity: withTiming(isActive || isCompleted ? 1 : 0.5, { duration: 300 }),
         };
     });
 
@@ -56,7 +55,7 @@ function ProcessingStep({ item, index, activeIndex }: { item: typeof STEPS[0], i
         >
             <View style={styles.statusIndicator}>
                 {isCompleted ? (
-                    <Ionicons name="checkmark-circle" size={20} color={PRIMARY_COLOR} />
+                    <Ionicons name="checkmark-circle" size={20} color={OnboardingTheme.Colors.Success} />
                 ) : isActive ? (
                     <View style={styles.activeDotOuter}>
                         <View style={styles.activeDotInner} />
@@ -65,12 +64,12 @@ function ProcessingStep({ item, index, activeIndex }: { item: typeof STEPS[0], i
                     <View style={styles.pendingDot} />
                 )}
             </View>
-            <OnboardingBody style={[
+            <Text style={[
                 styles.stepText,
                 (isActive || isCompleted) && styles.stepTextActive
             ]}>
                 {item.text}
-            </OnboardingBody>
+            </Text>
         </Animated.View>
     );
 }
@@ -78,6 +77,7 @@ function ProcessingStep({ item, index, activeIndex }: { item: typeof STEPS[0], i
 export default function ProcessingScreen() {
     const router = useRouter();
     const [activeIndex, setActiveIndex] = useState(0);
+    const [percentage, setPercentage] = useState(0);
     const progress = useSharedValue(0);
 
     useEffect(() => {
@@ -95,6 +95,21 @@ export default function ProcessingScreen() {
             easing: Easing.bezier(0.25, 0.1, 0.25, 1),
         });
 
+        // Percentage text animation (JS driven for stability)
+        const startTime = Date.now();
+        const textInterval = setInterval(() => {
+            const now = Date.now();
+            const elapsed = now - startTime;
+            const p = Math.min(1, elapsed / TOTAL_DURATION);
+            
+            // Cubic ease out approximation
+            const eased = 1 - Math.pow(1 - p, 3);
+            
+            setPercentage(Math.round(eased * 100));
+
+            if (p >= 1) clearInterval(textInterval);
+        }, 32);
+
         // Navigation
         const navigationTimer = setTimeout(() => {
             router.push('/(onboarding)/parent/results-intro');
@@ -102,6 +117,7 @@ export default function ProcessingScreen() {
 
         return () => {
             clearInterval(interval);
+            clearInterval(textInterval);
             clearTimeout(navigationTimer);
         };
     }, []);
@@ -111,12 +127,6 @@ export default function ProcessingScreen() {
         return {
             strokeDashoffset,
         };
-    });
-
-    const animatedTextProps = useAnimatedProps(() => {
-        return {
-            text: `${Math.round(progress.value * 100)}%`
-        } as any;
     });
 
     return (
@@ -154,14 +164,10 @@ export default function ProcessingScreen() {
                             />
                         </Svg>
                         <View style={styles.absoluteCenter}>
-                            <AnimatedTextInput
-                                underlineColorAndroid="transparent"
-                                editable={false}
-                                value="0%"
-                                style={styles.percentageText}
-                                animatedProps={animatedTextProps}
-                            />
-                            <OnboardingBody style={styles.analyzingLabel}>Complete</OnboardingBody>
+                            <Text style={styles.percentageText}>
+                                {percentage}%
+                            </Text>
+                            <Text style={styles.analyzingLabel}>Complete</Text>
                         </View>
                     </View>
                 </View>
@@ -207,11 +213,8 @@ const styles = StyleSheet.create({
         fontSize: 48,
         fontWeight: '700',
         color: TEXT_COLOR,
-        fontFamily: 'System',
         textAlign: 'center',
-        // Note: Resetting default input styles
-        padding: 0,
-        margin: 0,
+        fontVariant: ['tabular-nums'], // Prevents jitter
     },
     analyzingLabel: {
         fontSize: 14,
@@ -260,9 +263,10 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: TEXT_COLOR,
         fontWeight: '500',
+        flex: 1, // Ensure text takes available width
     },
     stepTextActive: {
-        color: TEXT_COLOR,
-        fontWeight: '600',
+        fontWeight: '700',
+        color: '#000000',
     },
 });

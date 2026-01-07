@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
-import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
+import OnboardingSingleSelect, { SelectOption } from '../../../components/OnboardingSingleSelect';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
-const REACTIONS = [
+const REACTIONS: SelectOption[] = [
     { id: 'calm', title: 'I stay calm (mostly)', icon: 'happy-outline' },
     { id: 'yell', title: 'I yell (and feel guilty later)', icon: 'megaphone-outline' },
     { id: 'give_in', title: 'I give in to stop the noise', icon: 'flag-outline' },
@@ -44,22 +43,12 @@ export default function ParentGuiltScreen() {
                     There's no judgment here—this is a safe space.
                 </OnboardingBody>
 
-                <View style={styles.optionsContainer}>
-                    {REACTIONS.map((reaction) => (
-                        <OnboardingOptionCard
-                            key={reaction.id}
-                            title={reaction.title}
-                            selected={selected === reaction.id}
-                            showCheckbox={false}
-                            onPress={() => handleSelect(reaction.id)}
-                            icon={
-                                <View style={styles.iconContainer}>
-                                    <Ionicons name={reaction.icon as any} size={24} color={OnboardingTheme.Colors.IconColor} />
-                                </View>
-                            }
-                        />
-                    ))}
-                </View>
+                <OnboardingSingleSelect
+                    options={REACTIONS}
+                    selectedId={selected}
+                    onSelect={handleSelect}
+                    showCheckbox={false}
+                />
 
                 <View style={styles.reassuranceContainer}>
                     <Text style={styles.reassuranceText}>
@@ -74,17 +63,6 @@ export default function ParentGuiltScreen() {
 const styles = StyleSheet.create({
     contentContainer: {
         width: '100%',
-    },
-    optionsContainer: {
-        marginTop: OnboardingTheme.Spacing.xl,
-    },
-    iconContainer: {
-        width: 48,
-        height: 48,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: OnboardingTheme.Colors.IconBackground,
     },
     reassuranceContainer: {
         marginTop: OnboardingTheme.Spacing.xl,

@@ -3,11 +3,17 @@ import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
-import { OnboardingTitle, OnboardingBody, OnboardingSubtitle } from '../../../components/OnboardingTypography';
-import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
+import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
+import OnboardingSingleSelect, { SelectOption } from '../../../components/OnboardingSingleSelect';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
-const AGE_OPTIONS = ['2-3', '4-5', '6-7', '8-9', '10+'];
+const AGE_OPTIONS: SelectOption[] = [
+    { id: '2-3', title: '2-3' },
+    { id: '4-5', title: '4-5' },
+    { id: '6-7', title: '6-7' },
+    { id: '8-9', title: '8-9' },
+    { id: '10+', title: '10+' },
+];
 
 export default function ChildAgeScreen() {
     const router = useRouter();
@@ -35,16 +41,12 @@ export default function ChildAgeScreen() {
                     We'll tailor the stories to their age.
                 </OnboardingBody>
 
-                <View style={styles.optionsContainer}>
-                    {AGE_OPTIONS.map((age) => (
-                        <OnboardingOptionCard
-                            key={age}
-                            title={age}
-                            selected={selectedAge === age}
-                            onPress={() => setSelectedAge(age)}
-                        />
-                    ))}
-                </View>
+                <OnboardingSingleSelect
+                    options={AGE_OPTIONS}
+                    selectedId={selectedAge}
+                    onSelect={setSelectedAge}
+                    showCheckbox={false}
+                />
             </View>
         </OnboardingLayout>
     );
@@ -53,8 +55,5 @@ export default function ChildAgeScreen() {
 const styles = StyleSheet.create({
     contentContainer: {
         width: '100%',
-    },
-    optionsContainer: {
-        marginTop: OnboardingTheme.Spacing.xl,
     },
 });

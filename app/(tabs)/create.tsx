@@ -49,15 +49,15 @@ import {
   Wand2,
   Zap,
   X,
+  LucideIcon
 } from 'lucide-react-native';
-import { LucideIcon } from 'lucide-react-native';
 
 import { CrystalModal } from '@/components/CrystalModal';
 import { DurationSelector } from '@/components/DurationSelector';
 import { VibeSelector } from '@/components/VibeSelector';
 import { WishDetailModal } from '@/components/WishDetailModal';
 import { MAX_CRYSTALS, REGEN_TIME_SECONDS } from '@/constants/crystals';
-import { FRIENDS, PRESET_LOCATIONS, VOICE_PRESETS, WISHES } from '@/constants/data';
+import { FRIENDS, PRESET_LOCATIONS, VOICE_PRESETS, WISHES, FOCUS_VALUES } from '@/constants/data';
 import { STORY_STARTERS, CHALLENGE_SUGGESTIONS } from '@/constants/suggestions';
 import { Friend, PresetLocation, StoryLength, VoicePreset, Wish } from '@/types';
 
@@ -70,7 +70,7 @@ interface FocusValue {
   id: string;
   name: string;
   icon: LucideIcon;
-  bgClass: string;
+  bgColor: string;
   iconColor: string;
   desc: string;
 }
@@ -115,91 +115,6 @@ const TOGGLE_THEMES: Record<ThemeMode, { activeClass: string; icon: string; acti
     activeIcon: '#fef3c7',
   },
 };
-
-const FOCUS_VALUES: FocusValue[] = [
-  {
-    id: 'compassion',
-    name: 'Compassion',
-    icon: Heart,
-    bgClass: 'bg-rose-50',
-    iconColor: '#f43f5e',
-    desc: 'Understanding feelings',
-  },
-  {
-    id: 'bravery',
-    name: 'Bravery',
-    icon: Shield,
-    bgClass: 'bg-amber-50',
-    iconColor: '#f59e0b',
-    desc: 'Finding courage',
-  },
-  {
-    id: 'sharing',
-    name: 'Sharing',
-    icon: Gift,
-    bgClass: 'bg-purple-50',
-    iconColor: '#a855f7',
-    desc: 'The joy of giving',
-  },
-  {
-    id: 'honesty',
-    name: 'Honesty',
-    icon: Scale,
-    bgClass: 'bg-blue-50',
-    iconColor: '#3b82f6',
-    desc: 'Telling the truth',
-  },
-  {
-    id: 'patience',
-    name: 'Patience',
-    icon: Hourglass,
-    bgClass: 'bg-emerald-50',
-    iconColor: '#10b981',
-    desc: 'Waiting calmly',
-  },
-  {
-    id: 'teamwork',
-    name: 'Teamwork',
-    icon: Users,
-    bgClass: 'bg-indigo-50',
-    iconColor: '#6366f1',
-    desc: 'Working together',
-  },
-  {
-    id: 'curiosity',
-    name: 'Curiosity',
-    icon: Search,
-    bgClass: 'bg-cyan-50',
-    iconColor: '#06b6d4',
-    desc: 'Discovering new things',
-  },
-  {
-    id: 'gratitude',
-    name: 'Gratitude',
-    icon: Sun,
-    bgClass: 'bg-yellow-50',
-    iconColor: '#eab308',
-    desc: 'Being thankful',
-  },
-  {
-    id: 'responsibility',
-    name: 'Responsibility',
-    icon: ClipboardList,
-    bgClass: 'bg-slate-100',
-    iconColor: '#64748b',
-    desc: 'Doing your part',
-  },
-  {
-    id: 'problem_solving',
-    name: 'Problem Solving',
-    icon: Puzzle,
-    bgClass: 'bg-teal-50',
-    iconColor: '#14b8a6',
-    desc: 'Finding solutions',
-  },
-];
-
-
 
 const getRandomItem = <T,>(items: T[]) => items[Math.floor(Math.random() * items.length)];
 
@@ -1062,7 +977,7 @@ export const CreateScreen: React.FC = () => {
                   <View className="flex-row gap-3">
                     <Pressable
                       onPress={() => router.push({
-                        pathname: '/asset-studio',
+                        pathname: '/manage-assets',
                         params: { tab: 'voices', selectedVoiceId: overrideVoice?.id || '' },
                       })}
                       className={`flex-1 flex-row items-center gap-2 px-4 py-3 rounded-xl border ${overrideVoice ? 'bg-primary-50 border-primary-200' : 'bg-slate-50 border-transparent'
@@ -1233,7 +1148,7 @@ export const CreateScreen: React.FC = () => {
                               label="World"
                               value={overrideLocation?.name || null}
                               onPress={() => router.push({
-                                pathname: '/asset-studio',
+                                pathname: '/manage-assets',
                                 params: { tab: 'places', selectedLocationId: overrideLocation?.id || '' },
                               })}
                               onClear={() => setOverrideLocation(null)}
@@ -1244,7 +1159,7 @@ export const CreateScreen: React.FC = () => {
                               label="Sidekick"
                               value={overrideCharacter?.name || null}
                               onPress={() => router.push({
-                                pathname: '/asset-studio',
+                                pathname: '/manage-assets',
                                 params: { tab: 'faces', selectedCharacterId: overrideCharacter?.id || '' },
                               })}
                               onClear={() => setOverrideCharacter(null)}
@@ -1255,7 +1170,7 @@ export const CreateScreen: React.FC = () => {
                               label="Lesson"
                               value={overrideValue?.name || null}
                               onPress={() => router.push({
-                                pathname: '/asset-studio',
+                                pathname: '/manage-assets',
                                 params: { tab: 'values', selectedValueId: overrideValue?.id || '' },
                               })}
                               onClear={() => setOverrideValue(null)}

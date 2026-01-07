@@ -1,19 +1,18 @@
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
-import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
+import OnboardingSingleSelect, { SelectOption } from '../../../components/OnboardingSingleSelect';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
-const STYLES = [
-    { id: 'authoritative', label: 'Balanced', description: 'Clear rules with warmth and flexibility', icon: 'scale-outline' },
-    { id: 'permissive', label: 'Relaxed', description: 'Few rules, lots of freedom', icon: 'water-outline' },
-    { id: 'strict', label: 'Structured', description: 'Clear expectations and consequences', icon: 'grid-outline' },
-    { id: 'helicopter', label: 'Protective', description: 'Very involved in every decision', icon: 'shield-outline' },
-    { id: 'unsure', label: 'Still figuring it out', description: 'Every day is different', icon: 'help-circle-outline' },
+const STYLES: SelectOption[] = [
+    { id: 'authoritative', title: 'Balanced', description: 'Clear rules with warmth and flexibility', icon: 'scale-outline' },
+    { id: 'permissive', title: 'Relaxed', description: 'Few rules, lots of freedom', icon: 'water-outline' },
+    { id: 'strict', title: 'Structured', description: 'Clear expectations and consequences', icon: 'grid-outline' },
+    { id: 'helicopter', title: 'Protective', description: 'Very involved in every decision', icon: 'shield-outline' },
+    { id: 'unsure', title: 'Still figuring it out', description: 'Every day is different', icon: 'help-circle-outline' },
 ];
 
 export default function ParentingStyleScreen() {
@@ -43,23 +42,12 @@ export default function ParentingStyleScreen() {
                     No judgment—just helps us tailor the approach.
                 </OnboardingBody>
 
-                <View style={styles.optionsContainer}>
-                    {STYLES.map((style) => (
-                        <OnboardingOptionCard
-                            key={style.id}
-                            title={style.label}
-                            description={style.description}
-                            selected={selected === style.id}
-                            showCheckbox={false}
-                            onPress={() => handleSelect(style.id)}
-                            icon={
-                                <View style={styles.iconContainer}>
-                                    <Ionicons name={style.icon as any} size={24} color={OnboardingTheme.Colors.IconColor} />
-                                </View>
-                            }
-                        />
-                    ))}
-                </View>
+                <OnboardingSingleSelect
+                    options={STYLES}
+                    selectedId={selected}
+                    onSelect={handleSelect}
+                    showCheckbox={false}
+                />
             </View>
         </OnboardingLayout>
     );
@@ -68,16 +56,5 @@ export default function ParentingStyleScreen() {
 const styles = StyleSheet.create({
     contentContainer: {
         width: '100%',
-    },
-    optionsContainer: {
-        marginTop: OnboardingTheme.Spacing.xl,
-    },
-    iconContainer: {
-        width: 48,
-        height: 48,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: OnboardingTheme.Colors.IconBackground,
     },
 });

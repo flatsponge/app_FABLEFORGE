@@ -4,14 +4,14 @@ import { useRouter } from 'expo-router';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
-import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
+import OnboardingSingleSelect, { SelectOption } from '../../../components/OnboardingSingleSelect';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
-const FREQUENCIES = [
-    { id: 'daily', label: 'Daily', description: 'Almost every day', severity: 'high' },
-    { id: 'weekly', label: 'Weekly', description: 'A few times per week', severity: 'medium' },
-    { id: 'monthly', label: 'Monthly', description: 'A few times per month', severity: 'low' },
-    { id: 'rarely', label: 'Rarely', description: 'Once in a while', severity: 'minimal' },
+const FREQUENCIES: (SelectOption & { severity: string })[] = [
+    { id: 'daily', title: 'Daily', description: 'Almost every day', severity: 'high' },
+    { id: 'weekly', title: 'Weekly', description: 'A few times per week', severity: 'medium' },
+    { id: 'monthly', title: 'Monthly', description: 'A few times per month', severity: 'low' },
+    { id: 'rarely', title: 'Rarely', description: 'Once in a while', severity: 'minimal' },
 ];
 
 export default function AggressionFrequencyScreen() {
@@ -30,6 +30,19 @@ export default function AggressionFrequencyScreen() {
         }
     };
 
+    const optionsWithContent = FREQUENCIES.map(freq => ({
+        ...freq,
+        rightContent: freq.severity === 'high' ? (
+            <View style={styles.badgeUrgent}>
+                <Text style={styles.badgeTextUrgent}>Urgent</Text>
+            </View>
+        ) : freq.severity === 'medium' ? (
+            <View style={styles.badgeModerate}>
+                <Text style={styles.badgeTextModerate}>Moderate</Text>
+            </View>
+        ) : undefined
+    }));
+
     return (
         <OnboardingLayout
             showProgressBar={false} skipTopSafeArea progress={0.6}
@@ -43,28 +56,12 @@ export default function AggressionFrequencyScreen() {
                     This helps us understand the urgency level.
                 </OnboardingBody>
 
-                <View style={styles.optionsContainer}>
-                    {FREQUENCIES.map((freq) => (
-                        <OnboardingOptionCard
-                            key={freq.id}
-                            title={freq.label}
-                            description={freq.description}
-                            selected={selected === freq.id}
-                            onPress={() => handleSelect(freq.id)}
-                            rightContent={
-                                freq.severity === 'high' ? (
-                                    <View style={styles.badgeUrgent}>
-                                        <Text style={styles.badgeTextUrgent}>Urgent</Text>
-                                    </View>
-                                ) : freq.severity === 'medium' ? (
-                                    <View style={styles.badgeModerate}>
-                                        <Text style={styles.badgeTextModerate}>Moderate</Text>
-                                    </View>
-                                ) : undefined
-                            }
-                        />
-                    ))}
-                </View>
+                <OnboardingSingleSelect
+                    options={optionsWithContent}
+                    selectedId={selected}
+                    onSelect={handleSelect}
+                    showCheckbox={false}
+                />
             </View>
         </OnboardingLayout>
     );
@@ -73,9 +70,6 @@ export default function AggressionFrequencyScreen() {
 const styles = StyleSheet.create({
     contentContainer: {
         width: '100%',
-    },
-    optionsContainer: {
-        marginTop: OnboardingTheme.Spacing.xl,
     },
     badgeUrgent: {
         backgroundColor: '#fee2e2', // red-100

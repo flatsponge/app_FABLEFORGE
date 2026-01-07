@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, Pressable, Image, StyleSheet } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   X,
@@ -9,16 +9,16 @@ import {
   Mic,
   Plus,
   Upload,
-  Trash2,
-  Pencil,
-  MoreVertical,
   CloudLightning,
   Sparkles,
+  Heart,
+  Check,
+  Diamond,
+  LucideIcon
 } from 'lucide-react-native';
-import { LucideIcon } from 'lucide-react-native';
-import { PRESET_LOCATIONS, FRIENDS, VOICE_PRESETS } from '@/constants/data';
+import { PRESET_LOCATIONS, FRIENDS, VOICE_PRESETS, FOCUS_VALUES } from '@/constants/data';
 
-type TabType = 'faces' | 'places' | 'voices';
+type TabType = 'faces' | 'places' | 'voices' | 'values';
 
 interface TabConfig {
   id: TabType;
@@ -32,13 +32,56 @@ const tabs: TabConfig[] = [
   { id: 'faces', label: 'Characters', icon: Users, color: '#f97316', bgColor: '#fff7ed' },
   { id: 'places', label: 'Places', icon: Map, color: '#6366f1', bgColor: '#eef2ff' },
   { id: 'voices', label: 'Voices', icon: Mic, color: '#f43f5e', bgColor: '#fff1f2' },
+  { id: 'values', label: 'Values', icon: Heart, color: '#ec4899', bgColor: '#fdf2f8' },
 ];
 
 export default function ManageAssetsScreen() {
+  const params = useLocalSearchParams<{
+    tab?: string;
+    selectedLocationId?: string;
+    selectedCharacterId?: string;
+    selectedVoiceId?: string;
+    selectedValueId?: string;
+  }>();
+
   const [activeTab, setActiveTab] = useState<TabType>('faces');
+
+  useEffect(() => {
+    if (params.tab && tabs.some(t => t.id === params.tab)) {
+      setActiveTab(params.tab as TabType);
+    }
+  }, [params.tab]);
 
   const handleClose = () => {
     router.back();
+  };
+
+  const handleSelectLocation = (id: string) => {
+    router.navigate({
+      pathname: '/(tabs)/create',
+      params: { selectedLocationId: id },
+    });
+  };
+
+  const handleSelectCharacter = (id: string) => {
+    router.navigate({
+      pathname: '/(tabs)/create',
+      params: { selectedCharacterId: id },
+    });
+  };
+
+  const handleSelectVoice = (id: string) => {
+    router.navigate({
+      pathname: '/(tabs)/create',
+      params: { selectedVoiceId: id },
+    });
+  };
+
+  const handleSelectValue = (id: string) => {
+    router.navigate({
+      pathname: '/(tabs)/create',
+      params: { selectedValueId: id },
+    });
   };
 
   return (
@@ -49,11 +92,11 @@ export default function ManageAssetsScreen() {
           <View>
             <View style={styles.badgeRow}>
               <View style={styles.badge}>
-                <Text style={styles.badgeText}>Parent Zone</Text>
+                <Text style={styles.badgeText}>Studio</Text>
               </View>
             </View>
-            <Text style={styles.title}>My Assets</Text>
-            <Text style={styles.subtitle}>Manage your custom story elements</Text>
+            <Text style={styles.title}>Assets</Text>
+            <Text style={styles.subtitle}>Select or create story elements</Text>
           </View>
           <Pressable onPress={handleClose} style={styles.closeButton}>
             <X size={20} color="#64748b" />
@@ -105,25 +148,43 @@ export default function ManageAssetsScreen() {
               </Pressable>
 
               <View style={styles.listContainer}>
-                {FRIENDS.map(friend => (
-                  <View key={friend.id} style={styles.listItem}>
-                    <View style={[styles.listItemIcon, { backgroundColor: '#fef3c7' }]}>
-                      <Text style={styles.emoji}>{friend.icon}</Text>
-                    </View>
-                    <View style={styles.listItemContent}>
-                      <Text style={styles.listItemTitle}>{friend.name}</Text>
-                      <Text style={styles.listItemSubtitle}>{friend.type}</Text>
-                    </View>
-                    <View style={styles.listItemActions}>
-                      <Pressable style={styles.actionButton}>
-                        <Pencil size={16} color="#94a3b8" />
-                      </Pressable>
-                      <Pressable style={styles.actionButton}>
-                        <Trash2 size={16} color="#94a3b8" />
-                      </Pressable>
-                    </View>
-                  </View>
-                ))}
+                {FRIENDS.map(friend => {
+                  const isSelected = params.selectedCharacterId === friend.id;
+                  return (
+                    <Pressable
+                      key={friend.id}
+                      onPress={() => handleSelectCharacter(friend.id)}
+                      style={[
+                        styles.listItem,
+                        isSelected && { borderColor: '#f97316', backgroundColor: '#fff7ed' }
+                      ]}
+                    >
+                      <View style={[styles.listItemIcon, { backgroundColor: friend.color }]}>
+                        <Text style={styles.emoji}>{friend.icon}</Text>
+                      </View>
+                      <View style={styles.listItemContent}>
+                        <Text style={styles.listItemTitle}>{friend.name}</Text>
+                        <Text style={styles.listItemSubtitle}>{friend.type}</Text>
+                      </View>
+                      <View style={styles.listItemActions}>
+                        {isSelected ? (
+                          <View style={[styles.checkCircle, { backgroundColor: '#f97316' }]}>
+                            <Check size={16} color="white" />
+                          </View>
+                        ) : (
+                          <>
+                            {friend.cost > 0 && (
+                              <View style={styles.costBadge}>
+                                <Diamond size={12} color="#0891b2" fill="#0891b2" />
+                                <Text style={styles.costText}>{friend.cost}</Text>
+                              </View>
+                            )}
+                          </>
+                        )}
+                      </View>
+                    </Pressable>
+                  );
+                })}
               </View>
             </View>
           )}
@@ -142,31 +203,47 @@ export default function ManageAssetsScreen() {
               </Pressable>
 
               <View style={styles.grid}>
-                {PRESET_LOCATIONS.map(loc => (
-                  <View key={loc.id} style={styles.gridItem}>
-                    <View style={styles.gridImageContainer}>
-                      <Image
-                        source={{ uri: loc.image }}
-                        style={styles.gridImage}
-                        resizeMode="cover"
-                      />
-                      <View style={styles.gridImageOverlay}>
-                        <Pressable style={styles.gridDeleteButton}>
-                          <Trash2 size={14} color="#64748b" />
-                        </Pressable>
+                {PRESET_LOCATIONS.map(loc => {
+                  const isSelected = params.selectedLocationId === loc.id;
+                  return (
+                    <Pressable
+                      key={loc.id}
+                      onPress={() => handleSelectLocation(loc.id)}
+                      style={[
+                        styles.gridItem,
+                        isSelected && { borderColor: '#6366f1', borderWidth: 2 }
+                      ]}
+                    >
+                      <View style={styles.gridImageContainer}>
+                        <Image
+                          source={{ uri: loc.image }}
+                          style={styles.gridImage}
+                          resizeMode="cover"
+                        />
+                        {isSelected && (
+                          <View style={styles.gridImageOverlaySelected}>
+                            <View style={[styles.checkCircle, { backgroundColor: '#6366f1' }]}>
+                              <Check size={16} color="white" />
+                            </View>
+                          </View>
+                        )}
                       </View>
-                    </View>
-                    <View style={styles.gridItemContent}>
-                      <Text style={styles.gridItemTitle} numberOfLines={1}>{loc.name}</Text>
-                      <View style={styles.gridItemFooter}>
-                        <Text style={styles.gridItemLabel}>Preset</Text>
-                        <Pressable>
-                          <Pencil size={12} color="#cbd5e1" />
-                        </Pressable>
+                      <View style={styles.gridItemContent}>
+                        <Text style={styles.gridItemTitle} numberOfLines={1}>{loc.name}</Text>
+                        <View style={styles.gridItemFooter}>
+                          {loc.cost > 0 && !isSelected ? (
+                            <View style={styles.costBadge}>
+                              <Diamond size={10} color="#0891b2" fill="#0891b2" />
+                              <Text style={styles.costText}>{loc.cost}</Text>
+                            </View>
+                          ) : (
+                            <Text style={styles.gridItemLabel}>Preset</Text>
+                          )}
+                        </View>
                       </View>
-                    </View>
-                  </View>
-                ))}
+                    </Pressable>
+                  );
+                })}
               </View>
             </View>
           )}
@@ -195,35 +272,80 @@ export default function ManageAssetsScreen() {
 
                 <Text style={styles.sectionLabel}>Your Voices</Text>
 
-                {VOICE_PRESETS.map(voice => (
-                  <View key={voice.id} style={styles.voiceItem}>
-                    <View style={styles.voiceItemIcon}>
-                      <Text style={styles.emoji}>{voice.icon}</Text>
-                    </View>
-                    <View style={styles.flex1}>
-                      <Text style={styles.voiceItemTitle}>{voice.name}</Text>
-                      <Text style={styles.voiceItemSubtitle}>{voice.style}</Text>
-                    </View>
-                    <Pressable style={styles.moreButton}>
-                      <MoreVertical size={20} color="#cbd5e1" />
+                {VOICE_PRESETS.map(voice => {
+                  const isSelected = params.selectedVoiceId === voice.id;
+                  return (
+                    <Pressable
+                      key={voice.id}
+                      onPress={() => handleSelectVoice(voice.id)}
+                      style={[
+                        styles.voiceItem,
+                        isSelected && { borderColor: '#f43f5e', backgroundColor: '#fff1f2' }
+                      ]}
+                    >
+                      <View style={styles.voiceItemIcon}>
+                        <Text style={styles.emoji}>{voice.icon}</Text>
+                      </View>
+                      <View style={styles.flex1}>
+                        <Text style={styles.voiceItemTitle}>{voice.name}</Text>
+                        <Text style={styles.voiceItemSubtitle}>{voice.style}</Text>
+                      </View>
+                      {isSelected ? (
+                        <View style={[styles.checkCircle, { backgroundColor: '#f43f5e' }]}>
+                          <Check size={16} color="white" />
+                        </View>
+                      ) : (
+                        <>
+                          {voice.cost > 0 && (
+                            <View style={styles.costBadge}>
+                              <Diamond size={12} color="#0891b2" fill="#0891b2" />
+                              <Text style={styles.costText}>{voice.cost}</Text>
+                            </View>
+                          )}
+                        </>
+                      )}
                     </Pressable>
-                  </View>
-                ))}
-              </View>
-
-              <View style={styles.comingSoonOverlay}>
-                <View style={styles.comingSoonCard}>
-                  <View style={styles.comingSoonIcon}>
-                    <Sparkles size={28} color="#f43f5e" />
-                  </View>
-                  <Text style={styles.comingSoonTitle}>Coming Soon</Text>
-                  <Text style={styles.comingSoonText}>
-                    Voice Cloning is currently under development. Stay tuned for updates!
-                  </Text>
-                </View>
+                  );
+                })}
               </View>
             </View>
           )}
+
+          {/* VALUES TAB */}
+          {activeTab === 'values' && (
+            <View style={styles.section}>
+              <View style={styles.valueList}>
+                {FOCUS_VALUES.map(value => {
+                  const isSelected = params.selectedValueId === value.id;
+                  const ValueIcon = value.icon;
+                  return (
+                    <Pressable
+                      key={value.id}
+                      onPress={() => handleSelectValue(value.id)}
+                      style={[
+                        styles.valueCard,
+                        isSelected && { backgroundColor: '#fdf2f8', borderColor: '#fbcfe8' }
+                      ]}
+                    >
+                      <View style={[styles.valueIcon, { backgroundColor: value.bgColor }]}>
+                        <ValueIcon size={20} color={value.iconColor} />
+                      </View>
+                      <View style={styles.valueInfo}>
+                        <Text style={styles.valueName}>{value.name}</Text>
+                        <Text style={styles.valueDesc}>{value.desc}</Text>
+                      </View>
+                      {isSelected && (
+                        <View style={[styles.checkCircle, { backgroundColor: value.iconColor }]}>
+                          <Check size={16} color="white" />
+                        </View>
+                      )}
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+          )}
+
         </ScrollView>
       </View>
     </SafeAreaView>
@@ -289,8 +411,11 @@ const styles = StyleSheet.create({
   listItemContent: { flex: 1 },
   listItemTitle: { fontWeight: '700', color: '#1e293b', fontSize: 18 },
   listItemSubtitle: { fontSize: 12, fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.5 },
-  listItemActions: { flexDirection: 'row', gap: 8 },
+  listItemActions: { flexDirection: 'row', gap: 8, alignItems: 'center' },
   actionButton: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#f8fafc', alignItems: 'center', justifyContent: 'center' },
+  checkCircle: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  costBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#ecfeff', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
+  costText: { fontSize: 12, fontWeight: '700', color: '#0891b2' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 16 },
   gridItem: {
     width: '47%', backgroundColor: 'white', padding: 12, borderRadius: 24, borderWidth: 1, borderColor: '#f1f5f9',
@@ -298,7 +423,7 @@ const styles = StyleSheet.create({
   },
   gridImageContainer: { aspectRatio: 1, borderRadius: 16, overflow: 'hidden', marginBottom: 12, position: 'relative' },
   gridImage: { width: '100%', height: '100%' },
-  gridImageOverlay: { position: 'absolute', top: 8, right: 8 },
+  gridImageOverlaySelected: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(99, 102, 241, 0.2)', alignItems: 'center', justifyContent: 'center' },
   gridDeleteButton: {
     width: 28, height: 28, backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: 14,
     alignItems: 'center', justifyContent: 'center',
@@ -308,7 +433,7 @@ const styles = StyleSheet.create({
   gridItemTitle: { fontWeight: '700', color: '#1e293b', fontSize: 14 },
   gridItemFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
   gridItemLabel: { fontSize: 10, fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase' },
-  disabledLayer: { opacity: 0.4, gap: 16 },
+  disabledLayer: { gap: 16 },
   voiceCloneCard: { backgroundColor: '#f43f5e', padding: 24, borderRadius: 24 },
   voiceCloneHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 },
   voiceCloneTitle: { fontWeight: '700', fontSize: 20, color: 'white' },
@@ -332,20 +457,16 @@ const styles = StyleSheet.create({
   voiceItemTitle: { fontWeight: '700', color: '#1e293b' },
   voiceItemSubtitle: { fontSize: 12, fontWeight: '700', color: '#94a3b8' },
   moreButton: { padding: 8 },
-  comingSoonOverlay: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    alignItems: 'center', justifyContent: 'center',
+  valueList: { gap: 12, paddingBottom: 24 },
+  valueCard: {
+    width: '100%', flexDirection: 'row', alignItems: 'center', gap: 16,
+    padding: 12, paddingRight: 16, borderRadius: 24, borderWidth: 1, borderColor: '#f1f5f9',
+    backgroundColor: 'white',
   },
-  comingSoonCard: {
-    backgroundColor: 'rgba(255,255,255,0.9)', padding: 24, borderRadius: 24, borderWidth: 1, borderColor: '#e2e8f0',
-    alignItems: 'center', maxWidth: 240,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.15, shadowRadius: 24,
-    transform: [{ rotate: '3deg' }],
+  valueIcon: {
+    width: 48, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center',
   },
-  comingSoonIcon: {
-    width: 56, height: 56, backgroundColor: '#ffe4e6', borderRadius: 28,
-    alignItems: 'center', justifyContent: 'center', marginBottom: 16,
-  },
-  comingSoonTitle: { fontWeight: '800', color: '#1e293b', fontSize: 20, marginBottom: 8 },
-  comingSoonText: { fontSize: 12, fontWeight: '700', color: '#64748b', lineHeight: 18, textAlign: 'center' },
+  valueInfo: { flex: 1 },
+  valueName: { fontWeight: '700', color: '#1e293b', fontSize: 14 },
+  valueDesc: { fontSize: 12, fontWeight: '600', color: '#94a3b8' },
 });

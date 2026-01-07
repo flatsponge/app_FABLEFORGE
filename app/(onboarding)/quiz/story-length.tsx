@@ -1,18 +1,17 @@
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
-import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
+import OnboardingSingleSelect, { SelectOption } from '../../../components/OnboardingSingleSelect';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
-const LENGTHS = [
-    { id: 'quick', label: '2-3 minutes', description: 'Quick and focused', icon: 'flash-outline' },
-    { id: 'medium', label: '5-7 minutes', description: 'Perfect for bedtime', icon: 'book-outline' },
-    { id: 'long', label: '10-15 minutes', description: 'Deep story experience', icon: 'library-outline' },
-    { id: 'varies', label: 'Depends on the day', description: 'Flexibility is key', icon: 'options-outline' },
+const LENGTHS: SelectOption[] = [
+    { id: 'quick', title: '2-3 minutes', description: 'Quick and focused', icon: 'flash-outline' },
+    { id: 'medium', title: '5-7 minutes', description: 'Perfect for bedtime', icon: 'book-outline' },
+    { id: 'long', title: '10-15 minutes', description: 'Deep story experience', icon: 'library-outline' },
+    { id: 'varies', title: 'Depends on the day', description: 'Flexibility is key', icon: 'options-outline' },
 ];
 
 export default function StoryLengthScreen() {
@@ -42,23 +41,12 @@ export default function StoryLengthScreen() {
                     We'll adjust the story length to fit.
                 </OnboardingBody>
 
-                <View style={styles.optionsContainer}>
-                    {LENGTHS.map((length) => (
-                        <OnboardingOptionCard
-                            key={length.id}
-                            title={length.label}
-                            description={length.description}
-                            selected={selected === length.id}
-                            showCheckbox={false}
-                            onPress={() => handleSelect(length.id)}
-                            icon={
-                                <View style={styles.iconContainer}>
-                                    <Ionicons name={length.icon as any} size={24} color={OnboardingTheme.Colors.IconColor} />
-                                </View>
-                            }
-                        />
-                    ))}
-                </View>
+                <OnboardingSingleSelect
+                    options={LENGTHS}
+                    selectedId={selected}
+                    onSelect={handleSelect}
+                    showCheckbox={false}
+                />
             </View>
         </OnboardingLayout>
     );
@@ -67,16 +55,5 @@ export default function StoryLengthScreen() {
 const styles = StyleSheet.create({
     contentContainer: {
         width: '100%',
-    },
-    optionsContainer: {
-        marginTop: OnboardingTheme.Spacing.xl,
-    },
-    iconContainer: {
-        width: 48,
-        height: 48,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: OnboardingTheme.Colors.IconBackground,
     },
 });

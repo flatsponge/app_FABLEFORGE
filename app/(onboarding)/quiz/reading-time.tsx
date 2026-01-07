@@ -1,18 +1,17 @@
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
-import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
+import OnboardingSingleSelect, { SelectOption } from '../../../components/OnboardingSingleSelect';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
-const TIMES = [
-    { id: 'morning', label: 'Morning', description: 'Start the day right', icon: 'sunny-outline' },
-    { id: 'afternoon', label: 'Afternoon', description: 'After school/nap', icon: 'partly-sunny-outline' },
-    { id: 'bedtime', label: 'Bedtime', description: 'Wind down routine', icon: 'moon-outline' },
-    { id: 'anytime', label: 'Whenever works', description: 'No set time', icon: 'time-outline' },
+const TIMES: SelectOption[] = [
+    { id: 'morning', title: 'Morning', description: 'Start the day right', icon: 'sunny-outline' },
+    { id: 'afternoon', title: 'Afternoon', description: 'After school/nap', icon: 'partly-sunny-outline' },
+    { id: 'bedtime', title: 'Bedtime', description: 'Wind down routine', icon: 'moon-outline' },
+    { id: 'anytime', title: 'Whenever works', description: 'No set time', icon: 'time-outline' },
 ];
 
 export default function ReadingTimeScreen() {
@@ -42,23 +41,12 @@ export default function ReadingTimeScreen() {
                     We'll remind you at the perfect moment.
                 </OnboardingBody>
 
-                <View style={styles.optionsContainer}>
-                    {TIMES.map((time) => (
-                        <OnboardingOptionCard
-                            key={time.id}
-                            title={time.label}
-                            description={time.description}
-                            selected={selected === time.id}
-                            showCheckbox={false}
-                            onPress={() => handleSelect(time.id)}
-                            icon={
-                                <View style={styles.iconContainer}>
-                                    <Ionicons name={time.icon as any} size={24} color={OnboardingTheme.Colors.IconColor} />
-                                </View>
-                            }
-                        />
-                    ))}
-                </View>
+                <OnboardingSingleSelect
+                    options={TIMES}
+                    selectedId={selected}
+                    onSelect={handleSelect}
+                    showCheckbox={false}
+                />
             </View>
         </OnboardingLayout>
     );
@@ -67,16 +55,5 @@ export default function ReadingTimeScreen() {
 const styles = StyleSheet.create({
     contentContainer: {
         width: '100%',
-    },
-    optionsContainer: {
-        marginTop: OnboardingTheme.Spacing.xl,
-    },
-    iconContainer: {
-        width: 48,
-        height: 48,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: OnboardingTheme.Colors.IconBackground,
     },
 });

@@ -1,24 +1,23 @@
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
-import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
+import OnboardingMultiSelect, { SelectOption } from '../../../components/OnboardingMultiSelect';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
-const THEMES = [
-    { id: 'adventure', label: 'Adventure', icon: 'map-outline' },
-    { id: 'animals', label: 'Animals', icon: 'paw-outline' },
-    { id: 'space', label: 'Space', icon: 'rocket-outline' },
-    { id: 'fantasy', label: 'Fantasy & Magic', icon: 'sparkles-outline' },
-    { id: 'dinosaurs', label: 'Dinosaurs', icon: 'skull-outline' },
-    { id: 'ocean', label: 'Ocean & Sea', icon: 'water-outline' },
-    { id: 'superheroes', label: 'Superheroes', icon: 'flash-outline' },
-    { id: 'nature', label: 'Nature', icon: 'leaf-outline' },
-    { id: 'vehicles', label: 'Vehicles', icon: 'car-outline' },
-    { id: 'robots', label: 'Robots & Tech', icon: 'hardware-chip-outline' },
+const THEMES: SelectOption[] = [
+    { id: 'adventure', title: 'Adventure', icon: 'map-outline' },
+    { id: 'animals', title: 'Animals', icon: 'paw-outline' },
+    { id: 'space', title: 'Space', icon: 'rocket-outline' },
+    { id: 'fantasy', title: 'Fantasy & Magic', icon: 'sparkles-outline' },
+    { id: 'dinosaurs', title: 'Dinosaurs', icon: 'skull-outline' },
+    { id: 'ocean', title: 'Ocean & Sea', icon: 'water-outline' },
+    { id: 'superheroes', title: 'Superheroes', icon: 'flash-outline' },
+    { id: 'nature', title: 'Nature', icon: 'leaf-outline' },
+    { id: 'vehicles', title: 'Vehicles', icon: 'car-outline' },
+    { id: 'robots', title: 'Robots & Tech', icon: 'hardware-chip-outline' },
 ];
 
 export default function StoryThemesScreen() {
@@ -55,21 +54,11 @@ export default function StoryThemesScreen() {
                     Select all that apply.
                 </OnboardingBody>
 
-                <View style={styles.optionsContainer}>
-                    {THEMES.map((theme) => (
-                        <OnboardingOptionCard
-                            key={theme.id}
-                            title={theme.label}
-                            selected={selected.includes(theme.id)}
-                            onPress={() => toggleSelection(theme.id)}
-                            icon={
-                                <View style={styles.iconContainer}>
-                                    <Ionicons name={theme.icon as any} size={24} color={OnboardingTheme.Colors.IconColor} />
-                                </View>
-                            }
-                        />
-                    ))}
-                </View>
+                <OnboardingMultiSelect
+                    options={THEMES}
+                    selectedValues={selected}
+                    onToggle={toggleSelection}
+                />
             </View>
         </OnboardingLayout>
     );
@@ -78,16 +67,5 @@ export default function StoryThemesScreen() {
 const styles = StyleSheet.create({
     contentContainer: {
         width: '100%',
-    },
-    optionsContainer: {
-        marginTop: OnboardingTheme.Spacing.xl,
-    },
-    iconContainer: {
-        width: 48,
-        height: 48,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: OnboardingTheme.Colors.IconBackground,
     },
 });

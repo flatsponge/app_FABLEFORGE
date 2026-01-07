@@ -1,18 +1,17 @@
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
-import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
+import OnboardingSingleSelect, { SelectOption } from '../../../components/OnboardingSingleSelect';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
-const ROUTINES = [
-    { id: 'structured', label: 'Very structured', description: 'Set times for everything', icon: 'calendar-outline' },
-    { id: 'flexible', label: 'Flexible', description: 'General routine with wiggle room', icon: 'color-palette-outline' },
-    { id: 'chaotic', label: 'Chaotic', description: 'Every day is different', icon: 'shuffle-outline' },
-    { id: 'working', label: 'Working on it', description: 'Trying to build better habits', icon: 'construct-outline' },
+const ROUTINES: SelectOption[] = [
+    { id: 'structured', title: 'Very structured', description: 'Set times for everything', icon: 'calendar-outline' },
+    { id: 'flexible', title: 'Flexible', description: 'General routine with wiggle room', icon: 'color-palette-outline' },
+    { id: 'chaotic', title: 'Chaotic', description: 'Every day is different', icon: 'shuffle-outline' },
+    { id: 'working', title: 'Working on it', description: 'Trying to build better habits', icon: 'construct-outline' },
 ];
 
 export default function DailyRoutineScreen() {
@@ -42,23 +41,12 @@ export default function DailyRoutineScreen() {
                     This helps us suggest the best story times.
                 </OnboardingBody>
 
-                <View style={styles.optionsContainer}>
-                    {ROUTINES.map((routine) => (
-                        <OnboardingOptionCard
-                            key={routine.id}
-                            title={routine.label}
-                            description={routine.description}
-                            selected={selected === routine.id}
-                            showCheckbox={false}
-                            onPress={() => handleSelect(routine.id)}
-                            icon={
-                                <View style={styles.iconContainer}>
-                                    <Ionicons name={routine.icon as any} size={24} color={OnboardingTheme.Colors.IconColor} />
-                                </View>
-                            }
-                        />
-                    ))}
-                </View>
+                <OnboardingSingleSelect
+                    options={ROUTINES}
+                    selectedId={selected}
+                    onSelect={handleSelect}
+                    showCheckbox={false}
+                />
             </View>
         </OnboardingLayout>
     );
@@ -67,16 +55,5 @@ export default function DailyRoutineScreen() {
 const styles = StyleSheet.create({
     contentContainer: {
         width: '100%',
-    },
-    optionsContainer: {
-        marginTop: OnboardingTheme.Spacing.xl,
-    },
-    iconContainer: {
-        width: 48,
-        height: 48,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: OnboardingTheme.Colors.IconBackground,
     },
 });

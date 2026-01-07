@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
-import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
+import OnboardingSingleSelect, { SelectOption } from '../../../components/OnboardingSingleSelect';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
-const TARGETS = [
+const TARGETS: SelectOption[] = [
     { id: 'sibling', title: 'Siblings', icon: 'people' },
     { id: 'parent', title: 'Parents', icon: 'home' },
     { id: 'peer', title: 'Friends / Peers', icon: 'school' },
@@ -44,25 +43,12 @@ export default function AggressionDetailsScreen() {
                     Understanding the trigger helps us script the solution.
                 </OnboardingBody>
 
-                <View style={styles.optionsContainer}>
-                    {TARGETS.map((target) => (
-                        <OnboardingOptionCard
-                            key={target.id}
-                            title={target.title}
-                            selected={selected === target.id}
-                            onPress={() => handleSelect(target.id)}
-                            icon={
-                                <View style={[styles.iconContainer, selected === target.id && styles.iconContainerSelected]}>
-                                    <Ionicons
-                                        name={target.icon as any}
-                                        size={24}
-                                        color={selected === target.id ? OnboardingTheme.Colors.Primary : OnboardingTheme.Colors.IconColor}
-                                    />
-                                </View>
-                            }
-                        />
-                    ))}
-                </View>
+                <OnboardingSingleSelect
+                    options={TARGETS}
+                    selectedId={selected}
+                    onSelect={handleSelect}
+                    showCheckbox={false}
+                />
             </View>
         </OnboardingLayout>
     );
@@ -71,19 +57,5 @@ export default function AggressionDetailsScreen() {
 const styles = StyleSheet.create({
     contentContainer: {
         width: '100%',
-    },
-    optionsContainer: {
-        marginTop: OnboardingTheme.Spacing.xl,
-    },
-    iconContainer: {
-        width: 48,
-        height: 48,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: OnboardingTheme.Colors.IconBackground,
-    },
-    iconContainerSelected: {
-        backgroundColor: '#f3e8ff', // primary-100 (approx)
     },
 });

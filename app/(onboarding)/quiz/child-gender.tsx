@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
-import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
+import OnboardingSingleSelect, { SelectOption } from '../../../components/OnboardingSingleSelect';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
-const GENDER_OPTIONS = [
-    { id: 'boy', title: 'Boy', icon: 'male' as const },
-    { id: 'girl', title: 'Girl', icon: 'female' as const },
+const GENDER_OPTIONS: SelectOption[] = [
+    { id: 'boy', title: 'Boy', icon: 'male' },
+    { id: 'girl', title: 'Girl', icon: 'female' },
 ];
 
 export default function ChildGenderScreen() {
@@ -40,25 +39,12 @@ export default function ChildGenderScreen() {
                     We'll personalize the stories and characters to match.
                 </OnboardingBody>
 
-                <View style={styles.optionsContainer}>
-                    {GENDER_OPTIONS.map((option) => (
-                        <OnboardingOptionCard
-                            key={option.id}
-                            title={option.title}
-                            icon={
-                                <View style={styles.iconContainer}>
-                                    <Ionicons
-                                        name={option.icon}
-                                        size={24}
-                                        color={OnboardingTheme.Colors.IconColor}
-                                    />
-                                </View>
-                            }
-                            selected={selectedGender === option.id}
-                            onPress={() => setSelectedGender(option.id as 'boy' | 'girl')}
-                        />
-                    ))}
-                </View>
+                <OnboardingSingleSelect
+                    options={GENDER_OPTIONS}
+                    selectedId={selectedGender}
+                    onSelect={(id) => setSelectedGender(id as 'boy' | 'girl')}
+                    showCheckbox={false}
+                />
             </View>
         </OnboardingLayout>
     );
@@ -67,16 +53,5 @@ export default function ChildGenderScreen() {
 const styles = StyleSheet.create({
     contentContainer: {
         width: '100%',
-    },
-    optionsContainer: {
-        marginTop: OnboardingTheme.Spacing.xl,
-    },
-    iconContainer: {
-        width: 48,
-        height: 48,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: OnboardingTheme.Colors.IconBackground,
     },
 });

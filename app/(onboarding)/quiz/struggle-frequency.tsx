@@ -1,19 +1,18 @@
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
-import OnboardingOptionCard from '../../../components/OnboardingOptionCard';
+import OnboardingSingleSelect, { SelectOption } from '../../../components/OnboardingSingleSelect';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
-const FREQUENCIES = [
-    { id: 'multiple_daily', label: 'Multiple times a day', icon: 'flame-outline' },
-    { id: 'daily', label: 'Once a day', icon: 'alert-circle-outline' },
-    { id: 'few_weekly', label: 'A few times a week', icon: 'bar-chart-outline' },
-    { id: 'weekly', label: 'Once a week', icon: 'trending-up-outline' },
-    { id: 'rarely', label: 'Rarely', icon: 'sparkles-outline' },
+const FREQUENCIES: SelectOption[] = [
+    { id: 'multiple_daily', title: 'Multiple times a day', icon: 'flame-outline' },
+    { id: 'daily', title: 'Once a day', icon: 'alert-circle-outline' },
+    { id: 'few_weekly', title: 'A few times a week', icon: 'bar-chart-outline' },
+    { id: 'weekly', title: 'Once a week', icon: 'trending-up-outline' },
+    { id: 'rarely', title: 'Rarely', icon: 'sparkles-outline' },
 ];
 
 export default function StruggleFrequencyScreen() {
@@ -43,22 +42,12 @@ export default function StruggleFrequencyScreen() {
                     This helps us gauge the intensity of support needed.
                 </OnboardingBody>
 
-                <View style={styles.optionsContainer}>
-                    {FREQUENCIES.map((freq) => (
-                        <OnboardingOptionCard
-                            key={freq.id}
-                            title={freq.label}
-                            selected={selected === freq.id}
-                            showCheckbox={false}
-                            onPress={() => handleSelect(freq.id)}
-                            icon={
-                                <View style={styles.iconContainer}>
-                                    <Ionicons name={freq.icon as any} size={24} color={OnboardingTheme.Colors.IconColor} />
-                                </View>
-                            }
-                        />
-                    ))}
-                </View>
+                <OnboardingSingleSelect
+                    options={FREQUENCIES}
+                    selectedId={selected}
+                    onSelect={handleSelect}
+                    showCheckbox={false}
+                />
             </View>
         </OnboardingLayout>
     );
@@ -67,16 +56,5 @@ export default function StruggleFrequencyScreen() {
 const styles = StyleSheet.create({
     contentContainer: {
         width: '100%',
-    },
-    optionsContainer: {
-        marginTop: OnboardingTheme.Spacing.xl,
-    },
-    iconContainer: {
-        width: 48,
-        height: 48,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: OnboardingTheme.Colors.IconBackground,
     },
 });
