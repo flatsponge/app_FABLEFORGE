@@ -39,7 +39,7 @@ export interface AvatarConfig {
 export interface PresetLocation {
   id: string;
   name: string;
-  image: string;
+  image: any;
   cost: number;
 }
 

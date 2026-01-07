@@ -1,19 +1,122 @@
 import { Book, Category, AvatarItem, PresetLocation, Friend, VoicePreset, Wish } from '../types';
 
-import { Heart, Shield, Gift, Scale, Hourglass, Users, Search, Sun, ClipboardList, Puzzle } from 'lucide-react-native';
+import { Heart, Shield, Scale, Hourglass, Users, Search, Sun, ClipboardList, Puzzle, Sparkles } from 'lucide-react-native';
+import { LucideIcon } from 'lucide-react-native';
 
-export const FOCUS_VALUES = [
-  { id: 'compassion', name: 'Compassion', icon: Heart, bgColor: '#fff1f2', iconColor: '#f43f5e', desc: 'Understanding feelings' },
-  { id: 'bravery', name: 'Bravery', icon: Shield, bgColor: '#fffbeb', iconColor: '#f59e0b', desc: 'Finding courage' },
-  { id: 'sharing', name: 'Sharing', icon: Gift, bgColor: '#faf5ff', iconColor: '#a855f7', desc: 'The joy of giving' },
-  { id: 'honesty', name: 'Honesty', icon: Scale, bgColor: '#eff6ff', iconColor: '#3b82f6', desc: 'Telling the truth' },
-  { id: 'patience', name: 'Patience', icon: Hourglass, bgColor: '#ecfdf5', iconColor: '#10b981', desc: 'Waiting calmly' },
-  { id: 'teamwork', name: 'Teamwork', icon: Users, bgColor: '#eef2ff', iconColor: '#6366f1', desc: 'Working together' },
-  { id: 'curiosity', name: 'Curiosity', icon: Search, bgColor: '#ecfeff', iconColor: '#06b6d4', desc: 'Discovering new things' },
-  { id: 'gratitude', name: 'Gratitude', icon: Sun, bgColor: '#fefce8', iconColor: '#eab308', desc: 'Being thankful' },
-  { id: 'responsibility', name: 'Responsibility', icon: ClipboardList, bgColor: '#f8fafc', iconColor: '#64748b', desc: 'Doing your part' },
-  { id: 'problem_solving', name: 'Problem Solving', icon: Puzzle, bgColor: '#f0fdfa', iconColor: '#14b8a6', desc: 'Finding solutions' },
+// Core values interface matching Growth screen skills
+export interface CoreValue {
+  id: string;
+  name: string;
+  icon: LucideIcon;
+  color: string;
+  bgColor: string;
+  textColor: string;
+  description: string;
+}
+
+// Unified core values - single source of truth for both Asset selection and Growth tracking
+export const CORE_VALUES: CoreValue[] = [
+  {
+    id: 'empathy',
+    name: 'Compassion & Empathy',
+    icon: Heart,
+    color: '#F43F5E',
+    bgColor: '#fff1f2',
+    textColor: '#E11D48',
+    description: 'Understanding feelings and caring for others.',
+  },
+  {
+    id: 'bravery',
+    name: 'Bravery & Resilience',
+    icon: Shield,
+    color: '#F59E0B',
+    bgColor: '#fffbeb',
+    textColor: '#D97706',
+    description: 'Finding courage and overcoming challenges.',
+  },
+  {
+    id: 'honesty',
+    name: 'Honesty',
+    icon: Scale,
+    color: '#3B82F6',
+    bgColor: '#eff6ff',
+    textColor: '#2563EB',
+    description: 'Valuing truth and integrity.',
+  },
+  {
+    id: 'teamwork',
+    name: 'Teamwork',
+    icon: Users,
+    color: '#6366F1',
+    bgColor: '#eef2ff',
+    textColor: '#4F46E5',
+    description: 'Working together to solve problems.',
+  },
+  {
+    id: 'creativity',
+    name: 'Creativity & Imagination',
+    icon: Sparkles,
+    color: '#8B5CF6',
+    bgColor: '#faf5ff',
+    textColor: '#7C3AED',
+    description: 'Exploring ideas and creative thinking.',
+  },
+  {
+    id: 'gratitude',
+    name: 'Gratitude',
+    icon: Sun,
+    color: '#EAB308',
+    bgColor: '#fefce8',
+    textColor: '#CA8A04',
+    description: 'Appreciating the good things in life.',
+  },
+  {
+    id: 'problem_solving',
+    name: 'Problem Solving',
+    icon: Puzzle,
+    color: '#14B8A6',
+    bgColor: '#f0fdfa',
+    textColor: '#0D9488',
+    description: 'Finding solutions to challenges.',
+  },
+  {
+    id: 'responsibility',
+    name: 'Responsibility',
+    icon: ClipboardList,
+    color: '#64748B',
+    bgColor: '#f8fafc',
+    textColor: '#475569',
+    description: 'Taking ownership of your actions.',
+  },
+  {
+    id: 'patience',
+    name: 'Patience',
+    icon: Hourglass,
+    color: '#10B981',
+    bgColor: '#ecfdf5',
+    textColor: '#059669',
+    description: 'Waiting calmly and practicing self-control.',
+  },
+  {
+    id: 'curiosity',
+    name: 'Curiosity',
+    icon: Search,
+    color: '#06B6D4',
+    bgColor: '#ecfeff',
+    textColor: '#0891B2',
+    description: 'Eagerness to learn and explore.',
+  },
 ];
+
+// Legacy alias for backward compatibility
+export const FOCUS_VALUES = CORE_VALUES.map(v => ({
+  id: v.id,
+  name: v.name,
+  icon: v.icon,
+  bgColor: v.bgColor,
+  iconColor: v.color,
+  desc: v.description,
+}));
 
 export const CATEGORIES: Category[] = [
   { id: 'animals', name: 'Animals', color: 'bg-orange-50', text: 'text-orange-600', iconName: 'Star' },
@@ -195,10 +298,10 @@ export const TOYS: AvatarItem[] = [
 ];
 
 export const PRESET_LOCATIONS: PresetLocation[] = [
-  { id: 'loc-1', name: 'Magic Castle', image: 'https://images.unsplash.com/photo-1599694467232-09e0a05b38cb?auto=format&fit=crop&w=300&q=80', cost: 2 },
-  { id: 'loc-2', name: 'Deep Space', image: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?auto=format&fit=crop&w=300&q=80', cost: 3 },
-  { id: 'loc-3', name: 'Candy Land', image: 'https://images.unsplash.com/photo-1535572290543-960a8046f5af?auto=format&fit=crop&w=300&q=80', cost: 2 },
-  { id: 'loc-4', name: 'Dino Valley', image: 'https://images.unsplash.com/photo-1518275497276-2c5d72f9602c?auto=format&fit=crop&w=300&q=80', cost: 2 },
+  { id: 'loc-1', name: 'Magic Castle', image: require('../assets/places/magic_castle.png'), cost: 2 },
+  { id: 'loc-2', name: 'Deep Space', image: require('../assets/places/deep_space.png'), cost: 3 },
+  { id: 'loc-3', name: 'Candy Land', image: require('../assets/places/candy_land.png'), cost: 2 },
+  { id: 'loc-4', name: 'Dino Valley', image: require('../assets/places/dino_valley.png'), cost: 2 },
 ];
 
 export const FRIENDS: Friend[] = [

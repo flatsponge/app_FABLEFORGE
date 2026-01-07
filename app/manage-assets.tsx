@@ -10,13 +10,12 @@ import {
   Plus,
   Upload,
   CloudLightning,
-  Sparkles,
   Heart,
   Check,
   Diamond,
   LucideIcon
 } from 'lucide-react-native';
-import { PRESET_LOCATIONS, FRIENDS, VOICE_PRESETS, FOCUS_VALUES } from '@/constants/data';
+import { PRESET_LOCATIONS, FRIENDS, VOICE_PRESETS, CORE_VALUES } from '@/constants/data';
 
 type TabType = 'faces' | 'places' | 'voices' | 'values';
 
@@ -85,16 +84,11 @@ export default function ManageAssetsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.flex1}>
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <View style={styles.badgeRow}>
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>Studio</Text>
-              </View>
-            </View>
             <Text style={styles.title}>Assets</Text>
             <Text style={styles.subtitle}>Select or create story elements</Text>
           </View>
@@ -315,7 +309,7 @@ export default function ManageAssetsScreen() {
           {activeTab === 'values' && (
             <View style={styles.section}>
               <View style={styles.valueList}>
-                {FOCUS_VALUES.map(value => {
+                {CORE_VALUES.map(value => {
                   const isSelected = params.selectedValueId === value.id;
                   const ValueIcon = value.icon;
                   return (
@@ -323,21 +317,24 @@ export default function ManageAssetsScreen() {
                       key={value.id}
                       onPress={() => handleSelectValue(value.id)}
                       style={[
-                        styles.valueCard,
-                        isSelected && { backgroundColor: '#fdf2f8', borderColor: '#fbcfe8' }
+                        styles.skillCard,
+                        isSelected && styles.skillCardSelected,
+                        isSelected && { borderColor: value.color }
                       ]}
                     >
-                      <View style={[styles.valueIcon, { backgroundColor: value.bgColor }]}>
-                        <ValueIcon size={20} color={value.iconColor} />
+                      <View style={[styles.skillIconBadge, { backgroundColor: value.bgColor }]}>
+                        <ValueIcon size={24} color={value.textColor} />
                       </View>
-                      <View style={styles.valueInfo}>
-                        <Text style={styles.valueName}>{value.name}</Text>
-                        <Text style={styles.valueDesc}>{value.desc}</Text>
+                      <View style={styles.skillContent}>
+                        <Text style={styles.skillName} numberOfLines={1}>{value.name}</Text>
+                        <Text style={styles.skillDescription} numberOfLines={1}>{value.description}</Text>
                       </View>
-                      {isSelected && (
-                        <View style={[styles.checkCircle, { backgroundColor: value.iconColor }]}>
-                          <Check size={16} color="white" />
+                      {isSelected ? (
+                        <View style={[styles.skillCheckCircle, { backgroundColor: value.color }]}>
+                          <Check size={14} color="white" strokeWidth={3} />
                         </View>
+                      ) : (
+                        <View style={styles.skillSelectCircle} />
                       )}
                     </Pressable>
                   );
@@ -357,6 +354,7 @@ const styles = StyleSheet.create({
   flex1: { flex: 1 },
   header: {
     paddingHorizontal: 24,
+    paddingTop: 24,
     paddingBottom: 16,
     backgroundColor: 'rgba(255,255,255,0.8)',
     borderBottomWidth: 1,
@@ -365,9 +363,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
-  badge: { backgroundColor: '#0f172a', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999 },
-  badgeText: { color: 'white', fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
   title: { fontSize: 24, fontWeight: '800', color: '#1e293b', letterSpacing: -0.5 },
   subtitle: { fontSize: 12, fontWeight: '700', color: '#94a3b8' },
   closeButton: {
@@ -457,16 +452,68 @@ const styles = StyleSheet.create({
   voiceItemTitle: { fontWeight: '700', color: '#1e293b' },
   voiceItemSubtitle: { fontSize: 12, fontWeight: '700', color: '#94a3b8' },
   moreButton: { padding: 8 },
-  valueList: { gap: 12, paddingBottom: 24 },
-  valueCard: {
-    width: '100%', flexDirection: 'row', alignItems: 'center', gap: 16,
-    padding: 12, paddingRight: 16, borderRadius: 24, borderWidth: 1, borderColor: '#f1f5f9',
+  valueList: { gap: 16, paddingBottom: 24 },
+  // Growth-style skill cards
+  skillCard: {
     backgroundColor: 'white',
+    borderRadius: 24,
+    padding: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 20,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  valueIcon: {
-    width: 48, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center',
+  skillCardSelected: {
+    backgroundColor: 'white',
+    borderWidth: 2,
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
   },
-  valueInfo: { flex: 1 },
-  valueName: { fontWeight: '700', color: '#1e293b', fontSize: 14 },
-  valueDesc: { fontSize: 12, fontWeight: '600', color: '#94a3b8' },
+  skillIconBadge: {
+    width: 52,
+    height: 52,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  skillContent: {
+    flex: 1,
+  },
+  skillName: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1e293b',
+    letterSpacing: -0.3,
+    marginBottom: 2,
+  },
+  skillDescription: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#94a3b8',
+  },
+  skillCheckCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+  },
+  skillSelectCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#e2e8f0',
+    backgroundColor: '#f8fafc',
+  },
 });
