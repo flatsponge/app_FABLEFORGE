@@ -168,6 +168,7 @@ const styles = StyleSheet.create({
   },
   scrollContentContainer: {
     paddingHorizontal: OnboardingTheme.Spacing.lg,
+    paddingTop: OnboardingTheme.Spacing.xl * 2,
     paddingBottom: OnboardingTheme.Spacing.xl,
   },
   footer: {

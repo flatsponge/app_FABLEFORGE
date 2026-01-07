@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
@@ -47,11 +47,9 @@ export default function StruggleAreasScreen() {
             showProgressBar={false} progress={0.7}
             onNext={handleNext}
             nextLabel="Continue"
+            isScrollable={true}
         >
-            <ScrollView
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.scrollContent}
-            >
+            <View style={styles.contentContainer}>
                 <OnboardingTitle>Where does your child struggle most?</OnboardingTitle>
                 <OnboardingBody>
                     Select all that apply.
@@ -72,14 +70,14 @@ export default function StruggleAreasScreen() {
                         />
                     ))}
                 </View>
-            </ScrollView>
+            </View>
         </OnboardingLayout>
     );
 }
 
 const styles = StyleSheet.create({
-    scrollContent: {
-        paddingBottom: OnboardingTheme.Spacing.xl,
+    contentContainer: {
+        width: '100%',
     },
     optionsContainer: {
         marginTop: OnboardingTheme.Spacing.md,
