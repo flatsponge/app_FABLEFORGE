@@ -78,7 +78,7 @@ export default function MagicMomentScreen() {
               Want to see what happens next?
             </Text>
             <TouchableOpacity
-              onPress={() => router.push('/(onboarding)/parent/results-intro')}
+              onPress={() => router.push('/(onboarding)/quiz/processing')}
               className="w-full bg-[#10b981] py-5 rounded-full items-center flex-row justify-center"
             >
               <Ionicons name="lock-closed" size={24} color="white" style={{ marginRight: 8 }} />

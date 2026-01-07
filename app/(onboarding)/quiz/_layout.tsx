@@ -9,6 +9,7 @@ import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 const PROGRESS_MAP: Record<string, number> = {
     'child-name': 0.05,
     'child-age': 0.10,
+    'child-gender': 0.12,
     'goals-timeline': 0.15,
     'parenting-style': 0.20,
     'child-personality': 0.25,
@@ -25,19 +26,18 @@ const PROGRESS_MAP: Record<string, number> = {
     'struggle-areas': 0.75,
     'struggle-frequency': 0.80,
     'moral-baseline': 0.85,
-    'parent-guilt': 0.88,
-    'commitment': 0.91,
-    'softening': 0.94,
-    'processing': 0.97,
+    'parent-guilt': 0.90,
+    'commitment': 0.95,
+    'softening': 1.0,
 };
 
 export default function QuizLayout() {
     const router = useRouter();
     const segments = useSegments();
     const insets = useSafeAreaInsets();
-    
+
     const currentRoute = segments[segments.length - 1] || 'child-name';
-    
+
     const progress = PROGRESS_MAP[currentRoute] || 0.1;
 
     const progressWidth = useSharedValue(progress * 100);
@@ -56,8 +56,8 @@ export default function QuizLayout() {
     return (
         <View style={[styles.container, { backgroundColor: OnboardingTheme.Colors.Background }]}>
             <View style={[styles.header, { paddingTop: insets.top }]}>
-                <TouchableOpacity 
-                    onPress={() => router.back()} 
+                <TouchableOpacity
+                    onPress={() => router.back()}
                     style={styles.backButton}
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >

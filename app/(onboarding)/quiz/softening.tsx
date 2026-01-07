@@ -10,7 +10,7 @@ export default function SofteningScreen() {
     const router = useRouter();
 
     const handleNext = () => {
-        router.push('/(onboarding)/quiz/processing');
+        router.push('/(onboarding)/auth/email');
     };
 
     return (

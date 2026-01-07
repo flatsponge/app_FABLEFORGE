@@ -12,6 +12,7 @@ type OnboardingData = {
     // Child
     childName: string;
     childAge: string;
+    gender: 'boy' | 'girl';
     avatarId: string;
     lockedCosmeticClicked: boolean;
 };
@@ -28,6 +29,7 @@ const defaultData: OnboardingData = {
     moralScore: 50,
     childName: '',
     childAge: '4-5',
+    gender: 'boy',
     avatarId: 'hero_1',
     lockedCosmeticClicked: false,
 };

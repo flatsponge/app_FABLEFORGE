@@ -29,7 +29,7 @@ export default function ProcessingScreen() {
         }, 1200);
 
         const navigationTimer = setTimeout(() => {
-            router.push('/(onboarding)/auth/email');
+            router.push('/(onboarding)/parent/results-intro');
         }, 1200 * MESSAGES.length + 800);
 
         return () => {

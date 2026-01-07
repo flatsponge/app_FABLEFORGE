@@ -155,9 +155,7 @@ export const STORY_DATA: Record<number, string[]> = {
   ],
 };
 
-export const SKIN_TONES = [
-  '#FCD5B5', '#EAC098', '#D6A47C', '#C68642', '#8D5524', '#593618'
-];
+
 
 export const OUTFITS: AvatarItem[] = [
   { id: 'tshirt-red', color: 'bg-red-400', iconName: '👕', type: 'Casual' },
@@ -200,4 +198,14 @@ export const VOICE_PRESETS: VoicePreset[] = [
   { id: 'v2', name: 'Cosmo', style: 'Energetic', icon: '🤖', cost: 2, color: 'bg-blue-100 text-blue-600' },
   { id: 'v3', name: 'Luna', style: 'Soft & Sleepy', icon: '🧚‍♀️', cost: 2, color: 'bg-purple-100 text-purple-600' },
   { id: 'v4', name: 'Captain', style: 'Adventurous', icon: '🏴‍☠️', cost: 2, color: 'bg-amber-100 text-amber-600' },
+];
+
+export const BASE_AVATARS = [
+  { id: 'bears', name: 'Bear', image: require('../assets/avatar/basestarter/bears.png') },
+  { id: 'dinosaurs', name: 'Dino', image: require('../assets/avatar/basestarter/dinosaurs.png') },
+  { id: 'dogs', name: 'Dog', image: require('../assets/avatar/basestarter/dogs.png') },
+  { id: 'foxes', name: 'Fox', image: require('../assets/avatar/basestarter/foxes.png') },
+  { id: 'pandas', name: 'Panda', image: require('../assets/avatar/basestarter/pandas.png') },
+  { id: 'rabbit', name: 'Rabbit', image: require('../assets/avatar/basestarter/rabbit.png') },
+  { id: 'unicorns', name: 'Unicorn', image: require('../assets/avatar/basestarter/unicorns.png') },
 ];

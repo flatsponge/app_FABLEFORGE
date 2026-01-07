@@ -38,7 +38,8 @@ import {
   Play,
   Image as ImageIcon,
 } from 'lucide-react-native';
-import { SKIN_TONES, OUTFITS, HATS, TOYS, BOOKS, PRESET_LOCATIONS } from '@/constants/data';
+import { OUTFITS, HATS, TOYS, BOOKS, PRESET_LOCATIONS, BASE_AVATARS } from '@/constants/data';
+import { useOnboarding } from '@/contexts/OnboardingContext';
 import { AvatarConfig } from '@/types';
 
 type RoomType = 'wardrobe' | 'well' | 'read';
@@ -46,8 +47,8 @@ type WardrobeTab = 'clothes' | 'hats' | 'toys' | 'skin' | 'background';
 type WishState = 'idle' | 'recording' | 'typing' | 'review' | 'sent';
 
 const DEFAULT_AVATAR: AvatarConfig = {
-  skinColor: '#FDBF60',
-  outfitId: 'blue-shirt',
+  skinColor: '#fed0b3',
+  outfitId: 'tshirt-blue',
   hatId: 'none',
   toyId: 'none',
 };
@@ -346,31 +347,31 @@ const Avatar = ({
   config: AvatarConfig;
   scale?: number;
 }) => {
+  const { data } = useOnboarding();
+  const avatarId = data?.avatarId || 'bears';
+  const baseImage = BASE_AVATARS.find(a => a.id === avatarId)?.image || BASE_AVATARS[0].image;
+
   const outfit = OUTFITS.find(o => o.id === config.outfitId) || OUTFITS[0];
   const hat = HATS.find(h => h.id === config.hatId);
 
   return (
     <View
-      className="relative w-48 h-64 items-center"
+      className="relative w-48 h-64 items-center justify-center"
       style={{ transform: [{ scale }] }}
     >
-      {/* Body */}
-      <View
-        className="absolute bottom-0 w-24 h-32 rounded-[32px]"
-        style={{
-          backgroundColor: config.skinColor,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.15,
-          shadowRadius: 8,
-          borderWidth: 4,
-          borderColor: 'rgba(0,0,0,0.1)',
-        }}
+      {/* Base Body */}
+      <Image
+        source={baseImage}
+        className="absolute w-full h-full"
+        resizeMode="contain"
       />
+
+      {/* Shoes/Feet - positioned absolute if needed, or included in base? 
+            Base includes feet. Clothes go on top. */}
 
       {/* Clothes */}
       <View
-        className={`absolute bottom-0 w-28 h-24 rounded-t-[32px] rounded-b-[40px] z-10 ${outfit.color} items-center justify-center`}
+        className={`absolute bottom-[20%] w-28 h-24 rounded-t-[32px] rounded-b-[40px] z-10 ${outfit.color} items-center justify-center`}
         style={{
           shadowColor: '#000',
           shadowOffset: { width: 0, height: 2 },
@@ -385,34 +386,9 @@ const Avatar = ({
         </View>
       </View>
 
-      {/* Head */}
-      <View
-        className="absolute top-4 w-32 h-36 rounded-[48px] z-20 items-center justify-center pt-6"
-        style={{
-          backgroundColor: config.skinColor,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.15,
-          shadowRadius: 8,
-          borderWidth: 4,
-          borderColor: 'rgba(0,0,0,0.1)',
-        }}
-      >
-        {/* Eyes */}
-        <View className="flex-row gap-4 mb-2">
-          <View className="w-3 h-3 bg-slate-800 rounded-full" />
-          <View className="w-3 h-3 bg-slate-800 rounded-full" />
-        </View>
-        {/* Smile */}
-        <View className="w-6 h-3 border-b-4 border-slate-800 rounded-full" />
-        {/* Cheeks */}
-        <View className="absolute top-20 left-4 w-5 h-2 bg-pink-400/30 rounded-full" style={{ opacity: 0.5 }} />
-        <View className="absolute top-20 right-4 w-5 h-2 bg-pink-400/30 rounded-full" style={{ opacity: 0.5 }} />
-      </View>
-
       {/* Hat */}
       {hat && hat.id !== 'none' && (
-        <View className="absolute -top-4 z-30" style={{ transform: [{ scale: 0.9 }] }}>
+        <View className="absolute top-[5%] z-30" style={{ transform: [{ scale: 0.9 }] }}>
           {hat.id === 'crown' && (
             <View style={styles.hatShadow}>
               <Crown size={80} color="#fbbf24" fill="#fbbf24" />
@@ -673,6 +649,8 @@ export default function ChildHubScreen() {
   const [showBottleAnimation, setShowBottleAnimation] = useState(false);
   const [showGlitter, setShowGlitter] = useState(false);
   const [wishSent, setWishSent] = useState(false);
+  const { data: onboardingData } = useOnboarding();
+  const gender = onboardingData?.gender || 'boy';
 
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const unlockHintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -798,7 +776,7 @@ export default function ChildHubScreen() {
     { id: 'clothes', icon: Shirt, bgColor: '#60a5fa', borderColorValue: '#2563eb' },
     { id: 'hats', icon: Crown, bgColor: '#facc15', borderColorValue: '#ca8a04' },
     { id: 'toys', icon: Gift, bgColor: '#c084fc', borderColorValue: '#9333ea' },
-    { id: 'skin', icon: Palette, bgColor: '#fb923c', borderColorValue: '#ea580c' },
+    // { id: 'skin', icon: Palette, bgColor: '#fb923c', borderColorValue: '#ea580c' },
     { id: 'background', icon: ImageIcon, bgColor: '#4ade80', borderColorValue: '#16a34a' },
   ];
 
@@ -885,9 +863,9 @@ export default function ChildHubScreen() {
                           onPress={() =>
                             setAvatarConfig({ ...avatarConfig, outfitId: item.id })
                           }
-                          style={currentOutfit.id === item.id ? undefined : { opacity: 0.9 }}
+                          style={currentOutfit.id === item.id ? { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4, elevation: 4 } : { opacity: 0.9 }}
                           className={`w-20 h-20 rounded-2xl items-center justify-center border-4 ${item.color} ${currentOutfit.id === item.id
-                            ? 'border-black/20 ring-4'
+                            ? 'border-black/30'
                             : 'border-transparent'
                             }`}
                         >
@@ -927,28 +905,20 @@ export default function ChildHubScreen() {
                         </Pressable>
                       ))}
 
-                    {wardrobeTab === 'skin' &&
-                      SKIN_TONES.map(color => (
-                        <Pressable
-                          key={color}
-                          onPress={() =>
-                            setAvatarConfig({ ...avatarConfig, skinColor: color })
-                          }
-                          style={{ backgroundColor: color }}
-                          className={`w-20 h-20 rounded-full border-4 ${avatarConfig.skinColor === color
-                            ? 'border-white ring-4 ring-black/10'
-                            : 'border-transparent'
-                            }`}
-                        />
-                      ))}
+                    {wardrobeTab === 'skin' && (
+                      <View className="h-20 items-center justify-center w-full">
+                        <Text className="text-gray-400">No skin customization for this hero!</Text>
+                      </View>
+                    )}
 
                     {wardrobeTab === 'background' && (
                       <>
                         {/* Default Background */}
                         <Pressable
                           onPress={() => setBackgroundSource(ChildBackground)}
+                          style={backgroundSource === ChildBackground ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
                           className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === ChildBackground
-                            ? 'border-green-500 ring-4 ring-green-200'
+                            ? 'border-green-500'
                             : 'border-slate-200'
                             }`}
                         >
@@ -958,8 +928,9 @@ export default function ChildHubScreen() {
                         {/* Dreamy Night Background */}
                         <Pressable
                           onPress={() => setBackgroundSource(ChildBackground2)}
+                          style={backgroundSource === ChildBackground2 ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
                           className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === ChildBackground2
-                            ? 'border-green-500 ring-4 ring-green-200'
+                            ? 'border-green-500'
                             : 'border-slate-200'
                             }`}
                         >
@@ -969,8 +940,9 @@ export default function ChildHubScreen() {
                         {/* Sunny Meadow Background */}
                         <Pressable
                           onPress={() => setBackgroundSource(ChildBackground3)}
+                          style={backgroundSource === ChildBackground3 ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
                           className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === ChildBackground3
-                            ? 'border-green-500 ring-4 ring-green-200'
+                            ? 'border-green-500'
                             : 'border-slate-200'
                             }`}
                         >
@@ -980,8 +952,9 @@ export default function ChildHubScreen() {
                         {/* Ocean Background */}
                         <Pressable
                           onPress={() => setBackgroundSource(ChildBackground4)}
+                          style={backgroundSource === ChildBackground4 ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
                           className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === ChildBackground4
-                            ? 'border-green-500 ring-4 ring-green-200'
+                            ? 'border-green-500'
                             : 'border-slate-200'
                             }`}
                         >
@@ -991,8 +964,9 @@ export default function ChildHubScreen() {
                         {/* Forest Background */}
                         <Pressable
                           onPress={() => setBackgroundSource(ChildBackground5)}
+                          style={backgroundSource === ChildBackground5 ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
                           className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === ChildBackground5
-                            ? 'border-green-500 ring-4 ring-green-200'
+                            ? 'border-green-500'
                             : 'border-slate-200'
                             }`}
                         >
@@ -1004,8 +978,9 @@ export default function ChildHubScreen() {
                           <Pressable
                             key={loc.id}
                             onPress={() => setBackgroundSource({ uri: loc.image })}
+                            style={(backgroundSource as any)?.uri === loc.image ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
                             className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${(backgroundSource as any)?.uri === loc.image
-                              ? 'border-green-500 ring-4 ring-green-200'
+                              ? 'border-green-500'
                               : 'border-slate-200'
                               }`}
                           >

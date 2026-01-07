@@ -19,7 +19,7 @@ export default function ChildAgeScreen() {
     const handleNext = () => {
         if (canProceed) {
             updateData({ childAge: selectedAge! });
-            router.push('/(onboarding)/quiz/goals-timeline');
+            router.push('/(onboarding)/quiz/child-gender');
         }
     };
 
