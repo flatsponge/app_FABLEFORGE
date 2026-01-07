@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, Pressable } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ActivityIndicator, Pressable, Image, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
@@ -11,10 +11,16 @@ import Animated, {
   useSharedValue,
   withSpring,
   interpolate,
+  withRepeat,
+  withSequence,
+  withTiming,
+  Easing,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft, Mic, Lock, ArrowRight, Sparkles } from 'lucide-react-native';
+import { ArrowLeft, Mic, Lock, Sparkles, StopCircle } from 'lucide-react-native';
+import { useOnboarding } from '../../../contexts/OnboardingContext';
+import { BASE_AVATARS } from '../../../constants/data';
 
 // Chunky 3D button matching the child flow style
 const ChunkyButton = ({
@@ -100,17 +106,69 @@ const ChunkyButton = ({
 export default function MagicMomentScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [phase, setPhase] = useState<'input' | 'generating' | 'preview'>('input');
+  const { data } = useOnboarding();
+  const [phase, setPhase] = useState<'input' | 'recording' | 'generating' | 'preview'>('input');
 
-  const startMagic = () => {
+  // Animation values
+  const pulse = useSharedValue(1);
+  const glow = useSharedValue(0);
+
+  // Get selected avatar
+  const selectedAvatarData = BASE_AVATARS.find(a => a.id === data.avatarId) || BASE_AVATARS[0];
+
+  // Recording animation loop
+  useEffect(() => {
+    if (phase === 'recording') {
+      pulse.value = withRepeat(
+        withSequence(
+          withTiming(1.1, { duration: 500, easing: Easing.inOut(Easing.ease) }),
+          withTiming(1.0, { duration: 500, easing: Easing.inOut(Easing.ease) })
+        ),
+        -1,
+        true
+      );
+      glow.value = withRepeat(
+        withTiming(1, { duration: 1000 }),
+        -1,
+        true
+      );
+    } else {
+      pulse.value = withSpring(1);
+      glow.value = withTiming(0);
+    }
+  }, [phase]);
+
+  const animatedAvatarStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulse.value }],
+  }));
+
+  const animatedGlowStyle = useAnimatedStyle(() => ({
+    opacity: glow.value,
+    transform: [{ scale: interpolate(glow.value, [0, 1], [1, 1.2]) }],
+  }));
+
+  const handleAvatarPress = () => {
+    if (phase === 'input') {
+      setPhase('recording');
+    } else if (phase === 'recording') {
+      finishRecording();
+    }
+  };
+
+  const finishRecording = () => {
     setPhase('generating');
+    // Simulate API call / processing time
     setTimeout(() => {
       setPhase('preview');
     }, 2500);
   };
 
   const handleBack = () => {
-    router.back();
+    if (phase === 'recording') {
+      setPhase('input');
+    } else {
+      router.back();
+    }
   };
 
   return (
@@ -136,22 +194,117 @@ export default function MagicMomentScreen() {
       </View>
 
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 }}>
-        {/* PHASE 1: INPUT */}
-        {phase === 'input' && (
+
+        {/* PHASE 1 & 2: INPUT & RECORDING */}
+        {(phase === 'input' || phase === 'recording') && (
           <Animated.View entering={FadeIn} exiting={FadeOut} style={{ alignItems: 'center', width: '100%' }}>
-            <View style={{
-              width: 96,
-              height: 96,
-              backgroundColor: '#EDE9FE',
-              borderRadius: 48,
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: 32,
-              borderWidth: 4,
-              borderColor: '#DDD6FE',
-            }}>
-              <Mic size={48} color="#7C3AED" strokeWidth={2} />
-            </View>
+
+            {/* Avatar Interaction Area */}
+            <Pressable onPress={handleAvatarPress} style={{ alignItems: 'center', marginBottom: 32 }}>
+              {/* Glow Effect Background */}
+              {phase === 'recording' && (
+                <Animated.View
+                  style={[
+                    animatedGlowStyle,
+                    {
+                      position: 'absolute',
+                      width: 180,
+                      height: 180,
+                      borderRadius: 90,
+                      backgroundColor: '#C4B5FD',
+                      opacity: 0.5,
+                    }
+                  ]}
+                />
+              )}
+
+              {/* Avatar Image */}
+              <Animated.View
+                style={[
+                  animatedAvatarStyle,
+                  {
+                    width: 160,
+                    height: 160,
+                    borderRadius: 80,
+                    backgroundColor: '#EDE9FE',
+                    borderWidth: 6,
+                    borderColor: phase === 'recording' ? '#7C3AED' : '#DDD6FE',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: 'hidden',
+                  }
+                ]}
+              >
+                <Image
+                  source={selectedAvatarData.image}
+                  style={{ width: 130, height: 130 }}
+                  resizeMode="contain"
+                />
+
+                {/* Mic Overlay Icon for visual affordance */}
+                <View style={{
+                  position: 'absolute',
+                  bottom: 10,
+                  right: 35,
+                  backgroundColor: phase === 'recording' ? '#EF4444' : '#7C3AED',
+                  padding: 8,
+                  borderRadius: 20,
+                  borderWidth: 2,
+                  borderColor: 'white',
+                }}>
+                  {phase === 'recording' ? (
+                    <StopCircle size={20} color="white" fill="white" />
+                  ) : (
+                    <Mic size={20} color="white" />
+                  )}
+                </View>
+              </Animated.View>
+            </Pressable>
+
+            {/* Recording Controls */}
+            {phase === 'recording' && (
+              <Animated.View
+                entering={FadeInUp.springify()}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 20,
+                  marginBottom: 24,
+                  width: '100%',
+                }}
+              >
+                {/* Redo Button - Using ChunkyButton style */}
+                <ChunkyButton
+                  onPress={() => setPhase('input')}
+                  bgColor="#FFFFFF"
+                  borderColor="#E5E7EB"
+                  size="medium"
+                >
+                  <View style={{ padding: 16, alignItems: 'center' }}>
+                    <Ionicons name="refresh" size={36} color="#6B7280" />
+                    <Text style={{ fontSize: 14, fontWeight: '700', color: '#6B7280', marginTop: 4 }}>
+                      Redo
+                    </Text>
+                  </View>
+                </ChunkyButton>
+
+                {/* Done Button - Primary action */}
+                <ChunkyButton
+                  onPress={finishRecording}
+                  bgColor="#10B981"
+                  borderColor="#059669"
+                  size="large"
+                >
+                  <View style={{ paddingVertical: 20, paddingHorizontal: 32, alignItems: 'center' }}>
+                    <Ionicons name="checkmark-circle" size={48} color="white" />
+                    <Text style={{ fontSize: 18, fontWeight: '800', color: 'white', marginTop: 4 }}>
+                      Done!
+                    </Text>
+                  </View>
+                </ChunkyButton>
+              </Animated.View>
+            )}
 
             <Animated.Text
               entering={FadeInDown.delay(100)}
@@ -163,44 +316,50 @@ export default function MagicMomentScreen() {
                 marginBottom: 16,
               }}
             >
-              What did you do today?
+              {phase === 'recording' ? "I'm listening..." : "What did you do today?"}
             </Animated.Text>
 
             <Animated.Text
               entering={FadeInDown.delay(200)}
               style={{
-                fontSize: 17,
-                color: '#6B7280',
+                fontSize: 18,
+                color: phase === 'recording' ? '#10B981' : '#6B7280',
                 textAlign: 'center',
-                marginBottom: 48,
-                lineHeight: 24,
+                marginBottom: 32,
+                fontWeight: '600',
+                lineHeight: 26,
                 paddingHorizontal: 16,
               }}
             >
-              Tell me something that happened, and I&apos;ll turn it into a story!
+              {phase === 'recording'
+                ? "Press Done when finished!"
+                : `Tap ${selectedAvatarData.name} to talk!`}
             </Animated.Text>
 
-            <Animated.View entering={FadeInUp.delay(300)} style={{ width: '100%' }}>
-              <ChunkyButton
-                onPress={startMagic}
-                bgColor="#3B82F6"
-                borderColor="#1D4ED8"
-                size="large"
-              >
-                <View style={{ padding: 20, alignItems: 'center' }}>
-                  <Text style={{ fontSize: 20, fontWeight: '700', color: 'white' }}>
-                    &quot;I played with my dog!&quot;
-                  </Text>
-                  <Text style={{ fontSize: 13, color: '#BFDBFE', marginTop: 4, fontWeight: '600' }}>
-                    (Tap to say this)
-                  </Text>
-                </View>
-              </ChunkyButton>
-            </Animated.View>
+            {/* Suggestions - Only show when not recording */}
+            {phase === 'input' && (
+              <Animated.View entering={FadeInUp.delay(300)} style={{ width: '100%' }}>
+                <ChunkyButton
+                  onPress={() => setPhase('recording')}
+                  bgColor="#3B82F6"
+                  borderColor="#1D4ED8"
+                  size="large"
+                >
+                  <View style={{ padding: 20, alignItems: 'center' }}>
+                    <Text style={{ fontSize: 20, fontWeight: '700', color: 'white' }}>
+                      "I played with my dog!"
+                    </Text>
+                    <Text style={{ fontSize: 13, color: '#BFDBFE', marginTop: 4, fontWeight: '600' }}>
+                      (Tap to say this)
+                    </Text>
+                  </View>
+                </ChunkyButton>
+              </Animated.View>
+            )}
           </Animated.View>
         )}
 
-        {/* PHASE 2: GENERATING */}
+        {/* PHASE 3: GENERATING */}
         {phase === 'generating' && (
           <Animated.View entering={FadeIn} exiting={FadeOut} style={{ alignItems: 'center' }}>
             <ActivityIndicator size="large" color="#7C3AED" />
@@ -224,7 +383,7 @@ export default function MagicMomentScreen() {
           </Animated.View>
         )}
 
-        {/* PHASE 3: PREVIEW */}
+        {/* PHASE 4: PREVIEW */}
         {phase === 'preview' && (
           <Animated.View
             entering={FadeIn.duration(600)}
@@ -268,7 +427,7 @@ export default function MagicMomentScreen() {
                   color: '#1F2937',
                   lineHeight: 32,
                 }}>
-                  The Space Explorer &amp; The Dog&apos;s Big Adventure
+                  The Space Explorer & The Dog's Big Adventure
                 </Text>
               </View>
 
@@ -289,7 +448,8 @@ export default function MagicMomentScreen() {
                 shadowOpacity: 0.15,
                 shadowRadius: 16,
               }}>
-                <Ionicons name="book" size={80} color="#9CA3AF" />
+                {/* Use the same book cover logic/image or a placeholder */}
+                <Text style={{ fontSize: 60 }}>📖</Text>
                 <LinearGradient
                   colors={['transparent', 'rgba(0,0,0,0.6)']}
                   style={{
@@ -308,7 +468,7 @@ export default function MagicMomentScreen() {
                     fontWeight: '500',
                     opacity: 0.9,
                   }}>
-                    &quot;Once upon a time, in a galaxy not so far away...&quot;
+                    "Once upon a time, in a galaxy not so far away..."
                   </Text>
                 </LinearGradient>
               </View>

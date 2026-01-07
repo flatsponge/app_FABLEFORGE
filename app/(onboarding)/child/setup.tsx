@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, Pressable } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, Pressable, Switch } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, {
     FadeInDown,
@@ -11,7 +11,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Sparkles, ArrowRight, Users, Wand2, User } from 'lucide-react-native';
+import { Sparkles, ArrowRight, Users, Wand2, User, Mic } from 'lucide-react-native';
+import { useOnboarding } from '../../../contexts/OnboardingContext';
 
 // Chunky 3D button matching child flow
 const ChunkyButton = ({
@@ -87,6 +88,7 @@ const ChunkyButton = ({
 export default function ChildSetupScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const { data, updateData } = useOnboarding();
 
     return (
         <LinearGradient
@@ -211,6 +213,84 @@ export default function ChildSetupScreen() {
                                 </Text>
                             </View>
                         </View>
+                    </Animated.View>
+
+                    {/* Audio Opt-In Toggle */}
+                    <Animated.View
+                        entering={FadeInUp.delay(550)}
+                        style={{
+                            width: '100%',
+                            backgroundColor: data.audioEnabled ? '#F0FDF4' : 'white',
+                            borderRadius: 16,
+                            padding: 16,
+                            marginBottom: 24,
+                            borderWidth: 2,
+                            borderColor: data.audioEnabled ? '#86EFAC' : '#FCD34D',
+                        }}
+                    >
+                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 12 }}>
+                                <View style={{
+                                    backgroundColor: data.audioEnabled ? '#DCFCE7' : '#FEF3C7',
+                                    width: 44,
+                                    height: 44,
+                                    borderRadius: 12,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    marginRight: 12,
+                                }}>
+                                    <Mic size={24} color={data.audioEnabled ? '#16A34A' : '#D97706'} strokeWidth={2.5} />
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 3 }}>
+                                        <Text style={{ fontSize: 16, fontWeight: '700', color: '#1F2937' }}>
+                                            Voice Storytelling
+                                        </Text>
+                                        {!data.audioEnabled && (
+                                            <View style={{
+                                                backgroundColor: '#FEF3C7',
+                                                paddingHorizontal: 6,
+                                                paddingVertical: 2,
+                                                borderRadius: 4,
+                                                marginLeft: 8,
+                                            }}>
+                                                <Text style={{ fontSize: 9, fontWeight: '800', color: '#D97706' }}>
+                                                    RECOMMENDED
+                                                </Text>
+                                            </View>
+                                        )}
+                                    </View>
+                                    <Text style={{ fontSize: 12, color: '#6B7280', lineHeight: 16 }}>
+                                        {data.audioEnabled
+                                            ? '✓ Your child can speak their stories naturally!'
+                                            : 'Let your child speak their adventures aloud.'}
+                                    </Text>
+                                </View>
+                            </View>
+                            <Switch
+                                value={data.audioEnabled}
+                                onValueChange={(value) => updateData({ audioEnabled: value })}
+                                trackColor={{ false: '#D1D5DB', true: '#4ADE80' }}
+                                thumbColor={data.audioEnabled ? '#16A34A' : '#f4f3f4'}
+                                ios_backgroundColor="#D1D5DB"
+                            />
+                        </View>
+
+                        {/* Benefits / Warning */}
+                        {!data.audioEnabled ? (
+                            <View style={{ marginTop: 12, backgroundColor: '#FFFBEB', borderRadius: 8, padding: 10 }}>
+                                <Text style={{ fontSize: 11, color: '#92400E', lineHeight: 15, fontWeight: '500' }}>
+                                    ⚠️ Without voice input, your child will need to type or select preset options. Voice makes storytelling much more engaging and personal!
+                                </Text>
+                            </View>
+                        ) : (
+                            <View style={{ marginTop: 12, backgroundColor: '#F0FDF4', borderRadius: 8, padding: 10, borderWidth: 1, borderColor: '#BBF7D0' }}>
+                                <Text style={{ fontSize: 10, color: '#166534', lineHeight: 14 }}>
+                                    <Text style={{ fontWeight: '700' }}>Consent & Privacy: </Text>
+                                    By enabling, you consent to audio recording of your child's voice for transcription purposes only. Audio is processed on-device or via secure servers, converted to text, and is not stored or shared. You can disable this anytime. See our Privacy Policy.
+                                </Text>
+                            </View>
+                        )}
                     </Animated.View>
 
                     {/* CTA Button */}

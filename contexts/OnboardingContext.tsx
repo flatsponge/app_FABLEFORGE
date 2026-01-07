@@ -15,6 +15,7 @@ type OnboardingData = {
     gender: 'boy' | 'girl';
     avatarId: string;
     lockedCosmeticClicked: boolean;
+    audioEnabled: boolean;
 };
 
 type OnboardingContextType = {
@@ -32,6 +33,7 @@ const defaultData: OnboardingData = {
     gender: 'boy',
     avatarId: 'hero_1',
     lockedCosmeticClicked: false,
+    audioEnabled: false,
 };
 
 const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);
