@@ -279,46 +279,54 @@ export const GrowthScoreArc: React.FC<GrowthScoreArcProps> = ({
   );
 };
 
-// Compact version for inline use
+// Compact version for inline use - matches the segmented arc style
 export const GrowthScoreArcCompact: React.FC<{ score: number; size?: number }> = ({
   score,
   size = 52,
 }) => {
-  const strokeWidth = Math.max(4, size * 0.1);
-  const center = size / 2;
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const arcLength = circumference * (260 / 360);
-  const progressOffset = arcLength * (1 - score / 100);
+  const outerRadius = size * 0.48;
+  const innerRadius = size * 0.32;
+  const cx = size / 2;
+  const cy = size / 2 + size * 0.08; // Shift center down slightly for semi-circle
 
-  const getCoords = (angle: number) => {
-    const rad = ((angle - 90) * Math.PI) / 180;
-    return { x: center + radius * Math.cos(rad), y: center + radius * Math.sin(rad) };
-  };
-
-  const start = getCoords(230);
-  const end = getCoords(130);
-  const arcPath = `M ${start.x} ${start.y} A ${radius} ${radius} 0 1 1 ${end.x} ${end.y}`;
+  const clamped = Math.min(100, Math.max(0, score));
+  const activeIndex = SEGMENTS.findIndex(s => clamped >= s.min && clamped < s.max);
+  const finalActiveIndex = activeIndex === -1 ? SEGMENTS.length - 1 : activeIndex;
 
   return (
     <View style={{ width: size, height: size }}>
       <Svg width={size} height={size}>
         <Defs>
-          <LinearGradient id="growthGradientCompact" x1="0" y1="0" x2="1" y2="0">
-            <Stop offset="0%" stopColor="#0ea5e9" />
-            <Stop offset="100%" stopColor="#10b981" />
+          <LinearGradient id="glossCompact" x1="0%" y1="0%" x2="0%" y2="100%">
+            <Stop offset="0%" stopColor="white" stopOpacity={0.35} />
+            <Stop offset="50%" stopColor="white" stopOpacity={0.1} />
+            <Stop offset="100%" stopColor="white" stopOpacity={0} />
           </LinearGradient>
         </Defs>
-        <Path d={arcPath} fill="none" stroke="#f1f5f9" strokeWidth={strokeWidth} strokeLinecap="round" />
-        <Path
-          d={arcPath}
-          fill="none"
-          stroke="url(#growthGradientCompact)"
-          strokeWidth={strokeWidth}
-          strokeDasharray={`${arcLength} ${circumference}`}
-          strokeDashoffset={progressOffset}
-          strokeLinecap="round"
-        />
+
+        {SEGMENTS.map((segment, index) => {
+          const startAngle = (segment.min / 100) * 180 - 90;
+          const endAngle = (segment.max / 100) * 180 - 90;
+          const isActive = index === finalActiveIndex;
+
+          const pathData = calculateDonutSegment(
+            cx,
+            cy,
+            startAngle,
+            endAngle,
+            innerRadius,
+            outerRadius,
+            1.5, // smaller padding for compact
+            3    // smaller corner radius
+          );
+
+          return (
+            <G key={segment.label} opacity={isActive ? 1 : 0.35}>
+              <Path d={pathData} fill={isActive ? segment.color : '#cbd5e1'} />
+              {isActive && <Path d={pathData} fill="url(#glossCompact)" />}
+            </G>
+          );
+        })}
       </Svg>
     </View>
   );

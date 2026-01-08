@@ -853,7 +853,7 @@ export default function ChildHubScreen() {
         {activeRoom === 'wardrobe' && (
           <View className="flex-1 relative z-10 pb-24">
             {wardrobeState === 'selecting' ? (
-              <Animated.View entering={FadeIn} exiting={FadeOut} className="flex-1">
+              <Animated.View entering={FadeIn} exiting={FadeOut} style={{ flex: 1 }}>
                 <View className="flex-1 items-center justify-center pt-8">
                   <View className="p-8 rounded-full border-4" style={{ backgroundColor: 'rgba(255,255,255,0.3)', borderColor: 'rgba(255,255,255,0.5)' }}>
                     <Avatar config={pendingAvatarConfig} scale={1.2} />
@@ -1036,7 +1036,7 @@ export default function ChildHubScreen() {
                 </View>
               </Animated.View>
             ) : (
-              <Animated.View entering={FadeIn} exiting={FadeOut} className="flex-1 items-center justify-center px-8 pb-32">
+              <Animated.View entering={FadeIn} exiting={FadeOut} style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, paddingBottom: 128 }}>
                 <Image
                   source={require('@/assets/childview/childdoor.png')}
                   className="w-72 h-80 mb-8"
@@ -1049,6 +1049,15 @@ export default function ChildHubScreen() {
                   <Text className="text-base font-bold text-slate-400 text-center uppercase tracking-wide">
                     Read a story to reveal! 📚
                   </Text>
+                </View>
+                <View className="w-full max-w-sm mt-6">
+                  <BigActionButton
+                    onPress={handleRevealWardrobe}
+                    bgColor="#f1f5f9"
+                    borderColor="#cbd5e1"
+                  >
+                    <Text className="text-slate-500 font-black text-xl uppercase tracking-wider">Undo</Text>
+                  </BigActionButton>
                 </View>
               </Animated.View>
             )}
