@@ -345,6 +345,69 @@ const BigActionButton = ({
   );
 };
 
+// Slim text button for secondary actions like Cancel/Change - refined but consistent animation
+const TextActionButton = ({
+  onPress,
+  label,
+  variant = 'secondary',
+  flex = 1,
+}: {
+  onPress: () => void;
+  label: string;
+  variant?: 'primary' | 'secondary';
+  flex?: number;
+}) => {
+  const pressed = useSharedValue(0);
+  const borderBottom = 6; // Slightly smaller than BigActionButton for slimmer profile
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateY: interpolate(pressed.value, [0, 1], [0, borderBottom - 2]) },
+    ],
+  }));
+
+  const animatedBorderStyle = useAnimatedStyle(() => ({
+    borderBottomWidth: interpolate(pressed.value, [0, 1], [borderBottom, 2]),
+  }));
+
+  const isPrimary = variant === 'primary';
+
+  return (
+    <Pressable
+      onPressIn={() => {
+        pressed.value = withSpring(1, { damping: 25, stiffness: 600 });
+      }}
+      onPressOut={() => {
+        pressed.value = withSpring(0, { damping: 25, stiffness: 600 });
+        setTimeout(() => onPress(), 100);
+      }}
+      style={{ flex }}
+    >
+      <Animated.View
+        style={[
+          animatedStyle,
+          animatedBorderStyle,
+          {
+            height: 48,
+            backgroundColor: isPrimary ? '#22c55e' : '#f1f5f9',
+            borderRadius: 24,
+            borderTopWidth: 2,
+            borderLeftWidth: 2,
+            borderRightWidth: 2,
+            borderColor: isPrimary ? '#16a34a' : '#e2e8f0',
+            alignItems: 'center',
+            justifyContent: 'center',
+          },
+        ]}
+      >
+        <Text className={`font-black text-base uppercase tracking-wider ${isPrimary ? 'text-white' : 'text-slate-500'}`}>
+          {label}
+        </Text>
+      </Animated.View>
+    </Pressable>
+  );
+};
+
 
 const Avatar = ({
   config,
@@ -653,7 +716,7 @@ export default function ChildHubScreen() {
   const [avatarConfig, setAvatarConfig] = useState<AvatarConfig>(DEFAULT_AVATAR);
   const [pendingAvatarConfig, setPendingAvatarConfig] = useState<AvatarConfig>(DEFAULT_AVATAR);
   const [wardrobeState, setWardrobeState] = useState<'selecting' | 'hidden'>('selecting');
-  
+
   // Initialize pending config when confirmed config changes (or on mount)
   useEffect(() => {
     setPendingAvatarConfig(avatarConfig);
@@ -885,8 +948,8 @@ export default function ChildHubScreen() {
                                 setPendingAvatarConfig({ ...pendingAvatarConfig, outfitId: item.id })
                               }
                               style={[
-                                pendingAvatarConfig.outfitId === item.id 
-                                  ? { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4, elevation: 4, borderColor: 'rgba(0,0,0,0.3)' } 
+                                pendingAvatarConfig.outfitId === item.id
+                                  ? { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4, elevation: 4, borderColor: 'rgba(0,0,0,0.3)' }
                                   : { opacity: 0.9, borderColor: 'transparent' }
                               ]}
                               className={`w-20 h-20 rounded-2xl items-center justify-center border-4 ${item.color}`}
@@ -1014,23 +1077,12 @@ export default function ChildHubScreen() {
                       </View>
                     </ScrollView>
 
-                    <View className="flex-row gap-4 mt-6 h-16">
-                      <BigActionButton
-                        onPress={handleCancelSelection}
-                        bgColor="#f1f5f9"
-                        borderColor="#cbd5e1"
-                        flex={1}
-                      >
-                        <Text className="text-slate-500 font-black text-xl uppercase tracking-wider">Cancel</Text>
-                      </BigActionButton>
-                      <BigActionButton
+                    <View className="mt-5">
+                      <TextActionButton
                         onPress={handleConfirmSelection}
-                        bgColor="#22c55e"
-                        borderColor="#15803d"
-                        flex={2}
-                      >
-                        <Text className="text-white font-black text-xl uppercase tracking-wider">Change</Text>
-                      </BigActionButton>
+                        label="Change"
+                        variant="primary"
+                      />
                     </View>
                   </View>
                 </View>
@@ -1050,7 +1102,7 @@ export default function ChildHubScreen() {
                     Read a story to reveal! 📚
                   </Text>
                 </View>
-                <View className="w-full max-w-sm mt-6">
+                <View className="w-full max-w-sm mt-6 h-20">
                   <BigActionButton
                     onPress={handleRevealWardrobe}
                     bgColor="#f1f5f9"
