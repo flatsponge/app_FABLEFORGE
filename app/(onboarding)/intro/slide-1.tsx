@@ -208,19 +208,23 @@ export default function IntroSlide1() {
                             {CHAOS_ELEMENTS.slice(0, 2).map((item, index) => {
                                 const floatStyle = createFloatStyle(index);
                                 return (
-                                    <Animated.View
+                                    // Outer View handles static rotation to avoid conflict with entering animation
+                                    <View
                                         key={item.id}
-                                        entering={ZoomIn.delay(400 + index * 80).duration(400).springify()}
                                         style={[
                                             styles.chaosCard,
                                             { transform: [{ rotate: `${item.rotate}deg` }] }
                                         ]}
                                     >
-                                        <Animated.View style={[styles.chaosCardInner, floatStyle]}>
-                                            <item.Icon size={18} color={item.color} strokeWidth={2.5} />
-                                            <Text style={styles.chaosLabel}>{item.label}</Text>
+                                        <Animated.View
+                                            entering={ZoomIn.delay(400 + index * 80).duration(400).springify()}
+                                        >
+                                            <Animated.View style={[styles.chaosCardInner, floatStyle]}>
+                                                <item.Icon size={18} color={item.color} strokeWidth={2.5} />
+                                                <Text style={styles.chaosLabel}>{item.label}</Text>
+                                            </Animated.View>
                                         </Animated.View>
-                                    </Animated.View>
+                                    </View>
                                 );
                             })}
                         </View>
@@ -228,19 +232,22 @@ export default function IntroSlide1() {
                             {CHAOS_ELEMENTS.slice(2, 4).map((item, index) => {
                                 const floatStyle = createFloatStyle(index + 2);
                                 return (
-                                    <Animated.View
+                                    <View
                                         key={item.id}
-                                        entering={ZoomIn.delay(560 + index * 80).duration(400).springify()}
                                         style={[
                                             styles.chaosCard,
                                             { transform: [{ rotate: `${item.rotate}deg` }] }
                                         ]}
                                     >
-                                        <Animated.View style={[styles.chaosCardInner, floatStyle]}>
-                                            <item.Icon size={18} color={item.color} strokeWidth={2.5} />
-                                            <Text style={styles.chaosLabel}>{item.label}</Text>
+                                        <Animated.View
+                                            entering={ZoomIn.delay(560 + index * 80).duration(400).springify()}
+                                        >
+                                            <Animated.View style={[styles.chaosCardInner, floatStyle]}>
+                                                <item.Icon size={18} color={item.color} strokeWidth={2.5} />
+                                                <Text style={styles.chaosLabel}>{item.label}</Text>
+                                            </Animated.View>
                                         </Animated.View>
-                                    </Animated.View>
+                                    </View>
                                 );
                             })}
                         </View>
@@ -248,19 +255,22 @@ export default function IntroSlide1() {
                             {CHAOS_ELEMENTS.slice(4, 6).map((item, index) => {
                                 const floatStyle = createFloatStyle(index + 4);
                                 return (
-                                    <Animated.View
+                                    <View
                                         key={item.id}
-                                        entering={ZoomIn.delay(720 + index * 80).duration(400).springify()}
                                         style={[
                                             styles.chaosCard,
                                             { transform: [{ rotate: `${item.rotate}deg` }] }
                                         ]}
                                     >
-                                        <Animated.View style={[styles.chaosCardInner, floatStyle]}>
-                                            <item.Icon size={18} color={item.color} strokeWidth={2.5} />
-                                            <Text style={styles.chaosLabel}>{item.label}</Text>
+                                        <Animated.View
+                                            entering={ZoomIn.delay(720 + index * 80).duration(400).springify()}
+                                        >
+                                            <Animated.View style={[styles.chaosCardInner, floatStyle]}>
+                                                <item.Icon size={18} color={item.color} strokeWidth={2.5} />
+                                                <Text style={styles.chaosLabel}>{item.label}</Text>
+                                            </Animated.View>
                                         </Animated.View>
-                                    </Animated.View>
+                                    </View>
                                 );
                             })}
                         </View>
@@ -268,19 +278,22 @@ export default function IntroSlide1() {
                             {CHAOS_ELEMENTS.slice(6, 8).map((item, index) => {
                                 const floatStyle = createFloatStyle(index + 6);
                                 return (
-                                    <Animated.View
+                                    <View
                                         key={item.id}
-                                        entering={ZoomIn.delay(880 + index * 80).duration(400).springify()}
                                         style={[
                                             styles.chaosCard,
                                             { transform: [{ rotate: `${item.rotate}deg` }] }
                                         ]}
                                     >
-                                        <Animated.View style={[styles.chaosCardInner, floatStyle]}>
-                                            <item.Icon size={18} color={item.color} strokeWidth={2.5} />
-                                            <Text style={styles.chaosLabel}>{item.label}</Text>
+                                        <Animated.View
+                                            entering={ZoomIn.delay(880 + index * 80).duration(400).springify()}
+                                        >
+                                            <Animated.View style={[styles.chaosCardInner, floatStyle]}>
+                                                <item.Icon size={18} color={item.color} strokeWidth={2.5} />
+                                                <Text style={styles.chaosLabel}>{item.label}</Text>
+                                            </Animated.View>
                                         </Animated.View>
-                                    </Animated.View>
+                                    </View>
                                 );
                             })}
                         </View>

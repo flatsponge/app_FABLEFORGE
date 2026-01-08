@@ -174,12 +174,12 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: OnboardingTheme.Spacing.lg,
-    paddingTop: OnboardingTheme.Spacing.xl * 2, // Visual balance instead of centering
+    paddingTop: OnboardingTheme.Spacing.md, // Reduced spacing to keep content closer to progress bar
     // Using flex-start prevents layout shifts when content animates in
   },
   scrollContentContainer: {
     paddingHorizontal: OnboardingTheme.Spacing.lg,
-    paddingTop: OnboardingTheme.Spacing.xl * 2,
+    paddingTop: OnboardingTheme.Spacing.md,
     paddingBottom: OnboardingTheme.Spacing.xl,
   },
   footer: {

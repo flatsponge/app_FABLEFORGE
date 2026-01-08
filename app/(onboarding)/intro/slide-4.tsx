@@ -34,6 +34,8 @@ const MetricsCard = ({ value, label, index }: { value: string, label: string, in
 );
 
 // Individual avatar with staggered spring animation
+// Note: We use a plain View as the outer container to avoid conflicts between
+// layout animations (entering/exiting) and useAnimatedStyle transforms.
 const AnimatedAvatar = ({ seed, index }: { seed: number, index: number }) => {
     const scale = useSharedValue(0);
     const translateX = useSharedValue(-10);
@@ -55,13 +57,16 @@ const AnimatedAvatar = ({ seed, index }: { seed: number, index: number }) => {
         ],
     }));
 
+    // Outer View handles positioning/zIndex, inner Animated.View handles transform
     return (
-        <Animated.View style={[styles.avatarContainer, animatedStyle, { zIndex: AVATAR_SEEDS.length - index }]}>
-            <Image
-                source={{ uri: `https://api.dicebear.com/7.x/avataaars/png?seed=${seed}` }}
-                style={styles.avatarImage}
-            />
-        </Animated.View>
+        <View style={[styles.avatarWrapper, { zIndex: AVATAR_SEEDS.length - index }]}>
+            <Animated.View style={[styles.avatarContainer, animatedStyle]}>
+                <Image
+                    source={{ uri: `https://api.dicebear.com/7.x/avataaars/png?seed=${seed}` }}
+                    style={styles.avatarImage}
+                />
+            </Animated.View>
+        </View>
     );
 };
 
@@ -76,6 +81,7 @@ export default function IntroSlide4() {
 
     const [showButton, setShowButton] = useState(false);
     const confettiRef = useRef<ConfettiCannon>(null);
+    const isNavigatingRef = useRef(false);
 
     useEffect(() => {
         const timer = setTimeout(() => setShowButton(true), 1500);
@@ -83,6 +89,10 @@ export default function IntroSlide4() {
     }, []);
 
     const handleNext = () => {
+        // Prevent multiple navigation calls when user spams the button
+        if (isNavigatingRef.current) return;
+        isNavigatingRef.current = true;
+
         router.replace('/(onboarding)/quiz/goals');
     };
 
@@ -198,12 +208,11 @@ export default function IntroSlide4() {
                     <MetricsCard value="4.9★" label="Parent Rating" index={1} />
                 </View>
 
-                <Animated.View
-                    entering={FadeIn.delay(1800).duration(600)}
-                    style={styles.guarantee}
-                >
-                    <Ionicons name="shield-checkmark-outline" size={16} color="#15803d" />
-                    <Text style={styles.guaranteeText}>See results in days</Text>
+                <Animated.View entering={FadeIn.delay(1800).duration(600)}>
+                    <View style={styles.guarantee}>
+                        <Ionicons name="shield-checkmark-outline" size={16} color="#15803d" />
+                        <Text style={styles.guaranteeText}>See results in days</Text>
+                    </View>
                 </Animated.View>
 
                 {/* Social Proof */}
@@ -349,6 +358,9 @@ const styles = StyleSheet.create({
     },
     avatarsStack: {
         flexDirection: 'row',
+    },
+    avatarWrapper: {
+        marginLeft: -8,
     },
     avatarContainer: {
         width: 24,
