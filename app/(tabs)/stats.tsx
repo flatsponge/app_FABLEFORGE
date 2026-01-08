@@ -698,11 +698,11 @@ const getMotivationalMessage = (score: number) => {
 };
 
 const GrowthScoreWidget = () => {
-  const totalScore = calculateTotalScore(SKILLS_DATA);
+  const score = calculateTotalScore(SKILLS_DATA);
 
   return (
     <View className="mb-12 mt-6">
-      <GrowthScoreArc score={totalScore} size={240} showMotivation={true} />
+      <GrowthScoreArc score={score} size={240} showMotivation={false} />
     </View>
   );
 };

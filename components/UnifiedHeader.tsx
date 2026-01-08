@@ -75,7 +75,15 @@ export function UnifiedHeader({
   // Static fallback styles
   const staticContainerClass = isChild
     ? 'bg-yellow-400 border-b-4 border-yellow-500'
-    : scrollY ? '' : 'bg-background dark:bg-slate-900 shadow-sm';
+    : scrollY ? '' : 'bg-background dark:bg-slate-900';
+
+  const staticShadowStyle = !isChild && !scrollY ? {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  } : {};
 
   // We need to resolve colors for the animated background manually or use a simple hack.
   // For simplicity with NativeWind + Reanimated, we'll apply the static class if NO scrollY,
@@ -92,8 +100,8 @@ export function UnifiedHeader({
       className={`px-4 pb-4 z-10 ${staticContainerClass}`}
       style={[
         { paddingTop: insets.top },
+        staticShadowStyle,
         !isChild && scrollY ? containerAnimatedStyle : {},
-        // If animated, we default to transparent/no shadow until scrolled
         !isChild && scrollY ? { backgroundColor: undefined, shadowOpacity: 0 } : {}
       ]}
       accessibilityRole="header"

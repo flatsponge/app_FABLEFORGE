@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ActivityIndicator, Pressable, Image, TouchableOpacity } from 'react-native';
+import { View, Text, ActivityIndicator, Pressable, Image, TouchableOpacity, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
@@ -14,13 +14,265 @@ import Animated, {
   withRepeat,
   withSequence,
   withTiming,
+  withDelay,
   Easing,
+  interpolateColor,
+  SharedValue,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft, Mic, Lock, Sparkles, StopCircle } from 'lucide-react-native';
+import { ArrowLeft, Mic, Lock, Sparkles } from 'lucide-react-native';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import { BASE_AVATARS } from '../../../constants/data';
+
+// Premium Recording Bubble Component
+const RecordingBubble = ({
+  isRecording,
+  avatarImage,
+  onPress,
+}: {
+  isRecording: boolean;
+  avatarImage: any;
+  onPress: () => void;
+}) => {
+  // Animation shared values
+  const pulse = useSharedValue(1);
+  const ringScale1 = useSharedValue(1);
+  const ringScale2 = useSharedValue(1);
+  const ringScale3 = useSharedValue(1);
+  const ringOpacity1 = useSharedValue(0);
+  const ringOpacity2 = useSharedValue(0);
+  const ringOpacity3 = useSharedValue(0);
+  const borderColorProgress = useSharedValue(0);
+  const glowIntensity = useSharedValue(0);
+
+  useEffect(() => {
+    if (isRecording) {
+      // Animate to recording state
+      borderColorProgress.value = withTiming(1, { duration: 300 });
+      glowIntensity.value = withRepeat(
+        withSequence(
+          withTiming(1, { duration: 800, easing: Easing.inOut(Easing.ease) }),
+          withTiming(0.5, { duration: 800, easing: Easing.inOut(Easing.ease) })
+        ),
+        -1,
+        true
+      );
+
+      // Avatar pulse
+      pulse.value = withRepeat(
+        withSequence(
+          withTiming(1.05, { duration: 600, easing: Easing.inOut(Easing.ease) }),
+          withTiming(1.0, { duration: 600, easing: Easing.inOut(Easing.ease) })
+        ),
+        -1,
+        true
+      );
+
+      // Concentric rings - staggered wave animation
+      const animateRing = (scaleValue: SharedValue<number>, opacityValue: SharedValue<number>, delay: number) => {
+        scaleValue.value = withDelay(
+          delay,
+          withRepeat(
+            withSequence(
+              withTiming(1, { duration: 0 }),
+              withTiming(1.8, { duration: 1200, easing: Easing.out(Easing.ease) })
+            ),
+            -1,
+            false
+          )
+        );
+        opacityValue.value = withDelay(
+          delay,
+          withRepeat(
+            withSequence(
+              withTiming(0.6, { duration: 0 }),
+              withTiming(0, { duration: 1200, easing: Easing.out(Easing.ease) })
+            ),
+            -1,
+            false
+          )
+        );
+      };
+
+      animateRing(ringScale1, ringOpacity1, 0);
+      animateRing(ringScale2, ringOpacity2, 400);
+      animateRing(ringScale3, ringOpacity3, 800);
+    } else {
+      // Reset to idle state
+      borderColorProgress.value = withTiming(0, { duration: 300 });
+      glowIntensity.value = withTiming(0, { duration: 300 });
+      pulse.value = withSpring(1);
+      ringScale1.value = withTiming(1, { duration: 200 });
+      ringScale2.value = withTiming(1, { duration: 200 });
+      ringScale3.value = withTiming(1, { duration: 200 });
+      ringOpacity1.value = withTiming(0, { duration: 200 });
+      ringOpacity2.value = withTiming(0, { duration: 200 });
+      ringOpacity3.value = withTiming(0, { duration: 200 });
+    }
+  }, [isRecording]);
+
+  // Animated styles
+  const avatarContainerStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulse.value }],
+    borderColor: interpolateColor(
+      borderColorProgress.value,
+      [0, 1],
+      ['#DDD6FE', '#EC4899']
+    ),
+    shadowOpacity: interpolate(glowIntensity.value, [0, 1], [0.15, 0.5]),
+    shadowRadius: interpolate(glowIntensity.value, [0, 1], [8, 24]),
+  }));
+
+  const createRingStyle = (scaleValue: SharedValue<number>, opacityValue: SharedValue<number>) =>
+    useAnimatedStyle(() => ({
+      transform: [{ scale: scaleValue.value }],
+      opacity: opacityValue.value,
+    }));
+
+  const ring1Style = createRingStyle(ringScale1, ringOpacity1);
+  const ring2Style = createRingStyle(ringScale2, ringOpacity2);
+  const ring3Style = createRingStyle(ringScale3, ringOpacity3);
+
+  const glowStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(glowIntensity.value, [0, 1], [0, 0.4]),
+    transform: [{ scale: interpolate(glowIntensity.value, [0, 1], [1, 1.15]) }],
+  }));
+
+  const BUBBLE_SIZE = 180;
+  const RING_SIZE = BUBBLE_SIZE;
+
+  return (
+    <Pressable onPress={onPress} style={{ alignItems: 'center', justifyContent: 'center' }}>
+      {/* Outer glow layer */}
+      <Animated.View
+        style={[
+          glowStyle,
+          {
+            position: 'absolute',
+            width: BUBBLE_SIZE + 40,
+            height: BUBBLE_SIZE + 40,
+            borderRadius: (BUBBLE_SIZE + 40) / 2,
+            backgroundColor: '#F472B6',
+          }
+        ]}
+      />
+
+      {/* Concentric animated rings */}
+      {isRecording && (
+        <>
+          <Animated.View
+            style={[
+              ring1Style,
+              {
+                position: 'absolute',
+                width: RING_SIZE,
+                height: RING_SIZE,
+                borderRadius: RING_SIZE / 2,
+                borderWidth: 3,
+                borderColor: '#EC4899',
+              }
+            ]}
+          />
+          <Animated.View
+            style={[
+              ring2Style,
+              {
+                position: 'absolute',
+                width: RING_SIZE,
+                height: RING_SIZE,
+                borderRadius: RING_SIZE / 2,
+                borderWidth: 2.5,
+                borderColor: '#F472B6',
+              }
+            ]}
+          />
+          <Animated.View
+            style={[
+              ring3Style,
+              {
+                position: 'absolute',
+                width: RING_SIZE,
+                height: RING_SIZE,
+                borderRadius: RING_SIZE / 2,
+                borderWidth: 2,
+                borderColor: '#FBCFE8',
+              }
+            ]}
+          />
+        </>
+      )}
+
+      {/* Main avatar container */}
+      <Animated.View
+        style={[
+          avatarContainerStyle,
+          {
+            width: BUBBLE_SIZE,
+            height: BUBBLE_SIZE,
+            borderRadius: BUBBLE_SIZE / 2,
+            backgroundColor: isRecording ? '#FDF2F8' : '#EDE9FE',
+            borderWidth: 5,
+            alignItems: 'center',
+            justifyContent: 'center',
+            overflow: 'hidden',
+            shadowColor: isRecording ? '#EC4899' : '#7C3AED',
+            shadowOffset: { width: 0, height: 4 },
+            elevation: 8,
+          }
+        ]}
+      >
+        {/* Inner gradient overlay for depth */}
+        <View
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            borderRadius: BUBBLE_SIZE / 2,
+            backgroundColor: isRecording ? 'rgba(236, 72, 153, 0.05)' : 'rgba(124, 58, 237, 0.03)',
+          }}
+        />
+
+        {/* Avatar image */}
+        <Image
+          source={avatarImage}
+          style={{ width: BUBBLE_SIZE - 40, height: BUBBLE_SIZE - 40 }}
+          resizeMode="contain"
+        />
+      </Animated.View>
+
+      {/* Recording indicator badge */}
+      <Animated.View
+        style={{
+          position: 'absolute',
+          bottom: 8,
+          right: 8,
+          width: 44,
+          height: 44,
+          borderRadius: 22,
+          backgroundColor: isRecording ? '#EF4444' : '#7C3AED',
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderWidth: 3,
+          borderColor: 'white',
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.2,
+          shadowRadius: 4,
+          elevation: 4,
+        }}
+      >
+        {isRecording ? (
+          <View style={{ width: 16, height: 16, borderRadius: 3, backgroundColor: 'white' }} />
+        ) : (
+          <Mic size={22} color="white" strokeWidth={2.5} />
+        )}
+      </Animated.View>
+    </Pressable>
+  );
+};
 
 // Chunky 3D button matching the child flow style
 const ChunkyButton = ({
@@ -103,49 +355,90 @@ const ChunkyButton = ({
   );
 };
 
+const LOAD_MESSAGES = [
+  { title: "Weaving magic from your day...", subtitle: "Adding dragons... 🐉" },
+  { title: "Reviewing your adventure...", subtitle: "Sprinkling fairy dust... ✨" },
+  { title: "Building your story castle...", subtitle: "Polishing the gates... 🏰" },
+  { title: "Almost quite ready...", subtitle: "Getting the glitter ready! 🌟" },
+];
+
+const LoadingMessages = () => {
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIndex((prev) => (prev + 1) % LOAD_MESSAGES.length);
+    }, 2200);
+    return () => clearInterval(interval);
+  }, []);
+
+  const msg = LOAD_MESSAGES[index];
+
+  return (
+    <Animated.View
+      key={index}
+      entering={FadeInDown.springify()}
+      exiting={FadeOut.duration(200)}
+      style={{ alignItems: 'center', height: 80 }}
+    >
+      <Text style={{
+        fontSize: 22,
+        fontWeight: '800',
+        color: '#1F2937',
+        textAlign: 'center',
+        marginBottom: 8,
+      }}>
+        {msg.title}
+      </Text>
+      <Text style={{
+        fontSize: 16,
+        color: '#7C3AED',
+        fontWeight: '600',
+      }}>
+        {msg.subtitle}
+      </Text>
+    </Animated.View>
+  );
+};
+
+const ProgressBar = () => {
+  const progress = useSharedValue(0);
+
+  useEffect(() => {
+    progress.value = withTiming(1, { duration: 10000, easing: Easing.bezier(0.25, 0.1, 0.25, 1) });
+  }, []);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    width: `${progress.value * 100}%`,
+  }));
+
+  return (
+    <View style={{
+      width: '80%',
+      height: 12,
+      backgroundColor: '#F3F4F6',
+      borderRadius: 6,
+      overflow: 'hidden',
+      marginTop: 32,
+      borderWidth: 1,
+      borderColor: '#E5E7EB'
+    }}>
+      <Animated.View style={[
+        animatedStyle,
+        { height: '100%', backgroundColor: '#7C3AED', borderRadius: 6 }
+      ]} />
+    </View>
+  );
+};
+
 export default function MagicMomentScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { data } = useOnboarding();
   const [phase, setPhase] = useState<'input' | 'recording' | 'generating' | 'preview'>('input');
 
-  // Animation values
-  const pulse = useSharedValue(1);
-  const glow = useSharedValue(0);
-
   // Get selected avatar
   const selectedAvatarData = BASE_AVATARS.find(a => a.id === data.avatarId) || BASE_AVATARS[0];
-
-  // Recording animation loop
-  useEffect(() => {
-    if (phase === 'recording') {
-      pulse.value = withRepeat(
-        withSequence(
-          withTiming(1.1, { duration: 500, easing: Easing.inOut(Easing.ease) }),
-          withTiming(1.0, { duration: 500, easing: Easing.inOut(Easing.ease) })
-        ),
-        -1,
-        true
-      );
-      glow.value = withRepeat(
-        withTiming(1, { duration: 1000 }),
-        -1,
-        true
-      );
-    } else {
-      pulse.value = withSpring(1);
-      glow.value = withTiming(0);
-    }
-  }, [phase]);
-
-  const animatedAvatarStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: pulse.value }],
-  }));
-
-  const animatedGlowStyle = useAnimatedStyle(() => ({
-    opacity: glow.value,
-    transform: [{ scale: interpolate(glow.value, [0, 1], [1, 1.2]) }],
-  }));
 
   const handleAvatarPress = () => {
     if (phase === 'input') {
@@ -160,7 +453,7 @@ export default function MagicMomentScreen() {
     // Simulate API call / processing time
     setTimeout(() => {
       setPhase('preview');
-    }, 2500);
+    }, 10000);
   };
 
   const handleBack = () => {
@@ -199,67 +492,14 @@ export default function MagicMomentScreen() {
         {(phase === 'input' || phase === 'recording') && (
           <Animated.View entering={FadeIn} exiting={FadeOut} style={{ alignItems: 'center', width: '100%' }}>
 
-            {/* Avatar Interaction Area */}
-            <Pressable onPress={handleAvatarPress} style={{ alignItems: 'center', marginBottom: 32 }}>
-              {/* Glow Effect Background */}
-              {phase === 'recording' && (
-                <Animated.View
-                  style={[
-                    animatedGlowStyle,
-                    {
-                      position: 'absolute',
-                      width: 180,
-                      height: 180,
-                      borderRadius: 90,
-                      backgroundColor: '#C4B5FD',
-                      opacity: 0.5,
-                    }
-                  ]}
-                />
-              )}
-
-              {/* Avatar Image */}
-              <Animated.View
-                style={[
-                  animatedAvatarStyle,
-                  {
-                    width: 160,
-                    height: 160,
-                    borderRadius: 80,
-                    backgroundColor: '#EDE9FE',
-                    borderWidth: 6,
-                    borderColor: phase === 'recording' ? '#7C3AED' : '#DDD6FE',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    overflow: 'hidden',
-                  }
-                ]}
-              >
-                <Image
-                  source={selectedAvatarData.image}
-                  style={{ width: 130, height: 130 }}
-                  resizeMode="contain"
-                />
-
-                {/* Mic Overlay Icon for visual affordance */}
-                <View style={{
-                  position: 'absolute',
-                  bottom: 10,
-                  right: 35,
-                  backgroundColor: phase === 'recording' ? '#EF4444' : '#7C3AED',
-                  padding: 8,
-                  borderRadius: 20,
-                  borderWidth: 2,
-                  borderColor: 'white',
-                }}>
-                  {phase === 'recording' ? (
-                    <StopCircle size={20} color="white" fill="white" />
-                  ) : (
-                    <Mic size={20} color="white" />
-                  )}
-                </View>
-              </Animated.View>
-            </Pressable>
+            {/* Premium Recording Bubble */}
+            <View style={{ marginBottom: 32 }}>
+              <RecordingBubble
+                isRecording={phase === 'recording'}
+                avatarImage={selectedAvatarData.image}
+                onPress={handleAvatarPress}
+              />
+            </View>
 
             {/* Recording Controls */}
             {phase === 'recording' && (
@@ -323,7 +563,7 @@ export default function MagicMomentScreen() {
               entering={FadeInDown.delay(200)}
               style={{
                 fontSize: 18,
-                color: phase === 'recording' ? '#10B981' : '#6B7280',
+                color: phase === 'recording' ? '#EC4899' : '#6B7280',
                 textAlign: 'center',
                 marginBottom: 32,
                 fontWeight: '600',
@@ -361,25 +601,26 @@ export default function MagicMomentScreen() {
 
         {/* PHASE 3: GENERATING */}
         {phase === 'generating' && (
-          <Animated.View entering={FadeIn} exiting={FadeOut} style={{ alignItems: 'center' }}>
-            <ActivityIndicator size="large" color="#7C3AED" />
-            <Text style={{
-              fontSize: 22,
-              fontWeight: '800',
-              color: '#1F2937',
-              marginTop: 24,
-              textAlign: 'center',
-            }}>
-              Weaving magic from your day...
-            </Text>
-            <Text style={{
-              fontSize: 16,
-              color: '#7C3AED',
-              marginTop: 8,
-              fontWeight: '600',
-            }}>
-              Adding dragons... 🐉
-            </Text>
+          <Animated.View entering={FadeIn} exiting={FadeOut} style={{ alignItems: 'center', width: '100%' }}>
+
+            {/* Animated Icon / Image */}
+            <Animated.View
+              style={{ marginBottom: 40 }}
+              entering={FadeInDown.springify()}
+            >
+              <Image
+                source={require('../../../assets/images/shooting-star.png')}
+                style={{ width: 160, height: 160 }}
+                resizeMode="contain"
+              />
+            </Animated.View>
+
+            {/* Rotating Loading Text */}
+            <LoadingMessages />
+
+            {/* Custom Progress Bar */}
+            <ProgressBar />
+
           </Animated.View>
         )}
 
@@ -388,98 +629,139 @@ export default function MagicMomentScreen() {
           <Animated.View
             entering={FadeIn.duration(600)}
             style={{
-              width: '100%',
-              flex: 1,
-              paddingTop: 16,
-              paddingBottom: insets.bottom + 32,
-              justifyContent: 'space-between',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
             }}
           >
-            <View>
-              {/* Story Card */}
-              <View style={{
-                backgroundColor: '#FFFFFF',
-                padding: 24,
-                borderRadius: 24,
-                marginBottom: 24,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.05,
-                shadowRadius: 8,
-                borderWidth: 1,
-                borderColor: '#F3F4F6',
-              }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                  <Sparkles size={16} color="#7C3AED" />
-                  <Text style={{
-                    fontSize: 12,
-                    fontWeight: '800',
-                    color: '#7C3AED',
-                    letterSpacing: 1,
-                    marginLeft: 6,
-                  }}>
-                    NEW STORY CREATED!
-                  </Text>
-                </View>
-                <Text style={{
-                  fontSize: 26,
-                  fontWeight: '800',
-                  color: '#1F2937',
-                  lineHeight: 32,
-                }}>
-                  The Space Explorer & The Dog's Big Adventure
-                </Text>
-              </View>
+            {/* Scrollable Content Area */}
+            <View style={{ flex: 1, paddingHorizontal: 20 }}>
 
-              {/* Book Cover Placeholder */}
-              <View style={{
-                width: '100%',
-                aspectRatio: 3 / 4,
-                backgroundColor: '#F3F4F6',
-                borderRadius: 20,
-                borderWidth: 4,
-                borderColor: '#FFFFFF',
-                alignItems: 'center',
-                justifyContent: 'center',
-                overflow: 'hidden',
-                marginBottom: 24,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 8 },
-                shadowOpacity: 0.15,
-                shadowRadius: 16,
-              }}>
-                {/* Use the same book cover logic/image or a placeholder */}
-                <Text style={{ fontSize: 60 }}>📖</Text>
-                <LinearGradient
-                  colors={['transparent', 'rgba(0,0,0,0.6)']}
-                  style={{
-                    position: 'absolute',
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    padding: 24,
-                  }}
+              {/* Simple Header */}
+              <Animated.View
+                entering={FadeInDown.delay(100).springify()}
+                style={{ alignItems: 'center', marginBottom: 20, marginTop: 10 }}
+              >
+                <Text style={{
+                  fontSize: 28,
+                  fontWeight: '900',
+                  color: '#1F2937',
+                  textAlign: 'center',
+                }}>
+                  Your Story is Ready!
+                </Text>
+              </Animated.View>
+
+              {/* Large Storybook Teaser Card */}
+              <Animated.View
+                entering={FadeInUp.delay(200).springify()}
+                style={{
+                  flex: 1, // Take up available space
+                  backgroundColor: '#FFFFFF',
+                  borderRadius: 24,
+                  overflow: 'hidden',
+                  shadowColor: '#7C3AED',
+                  shadowOffset: { width: 0, height: 8 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 24,
+                  elevation: 8,
+                  marginBottom: 16,
+                  borderWidth: 1,
+                  borderColor: '#F3F4F6',
+                }}
+              >
+                <ScrollView
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={{ flexGrow: 1 }}
+                  bounces={false}
                 >
-                  <Text style={{
-                    color: 'white',
-                    fontStyle: 'italic',
-                    fontSize: 16,
-                    textAlign: 'center',
-                    fontWeight: '500',
-                    opacity: 0.9,
+                  {/* Large Cover Image Area */}
+                  <View style={{
+                    width: '100%',
+                    aspectRatio: 1.5, // Wider landscape aspect ratio for the "hero" image feel
+                    backgroundColor: '#F8F5FF',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderBottomWidth: 1,
+                    borderBottomColor: '#EDE9FE',
                   }}>
-                    "Once upon a time, in a galaxy not so far away..."
-                  </Text>
-                </LinearGradient>
-              </View>
+                    <Text style={{ fontSize: 80 }}>📖</Text>
+
+                    {/* Simple decorative sparkles */}
+                    <View style={{ position: 'absolute', top: 20, right: 30 }}>
+                      <Sparkles size={24} color="#C4B5FD" />
+                    </View>
+                    <View style={{ position: 'absolute', bottom: 30, left: 30 }}>
+                      <Sparkles size={20} color="#DDD6FE" />
+                    </View>
+                  </View>
+
+                  {/* Story Content Teaser */}
+                  <View style={{ padding: 24, flex: 1 }}>
+                    {/* Title */}
+                    <Text style={{
+                      fontSize: 28,
+                      fontWeight: '900',
+                      color: '#1F2937',
+                      lineHeight: 34,
+                      marginBottom: 16,
+                      textAlign: 'center',
+                    }}>
+                      The Space Explorer & The Dog's Big Adventure
+                    </Text>
+
+                    {/* Divider */}
+                    <View style={{
+                      height: 2,
+                      backgroundColor: '#F3F4F6',
+                      width: 60,
+                      alignSelf: 'center',
+                      marginBottom: 20
+                    }} />
+
+                    {/* Story Text Teaser */}
+                    <Text style={{
+                      fontSize: 18,
+                      color: '#4B5563',
+                      lineHeight: 28,
+                      fontFamily: 'System', // Use default system serif if available or just clean sans
+                    }}>
+                      <Text style={{ fontSize: 24, color: '#7C3AED', fontWeight: 'bold' }}>O</Text>nce upon a time, in a galaxy not so far away, there lived a brave young explorer who loved nothing more than discovering new stars. But this explorer wasn't alone—they had the best copilot in the universe...
+                    </Text>
+
+                    {/* Fade out effect at the bottom of the text */}
+                    <LinearGradient
+                      colors={['rgba(255,255,255,0)', 'rgba(255,255,255,1)']}
+                      style={{
+                        position: 'absolute',
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        height: 60,
+                      }}
+                    />
+                  </View>
+                </ScrollView>
+              </Animated.View>
             </View>
 
-            <View>
+            {/* Fixed Bottom CTA Section */}
+            <Animated.View
+              entering={FadeInUp.delay(300).springify()}
+              style={{
+                paddingHorizontal: 24,
+                paddingTop: 12,
+                paddingBottom: insets.bottom + 24,
+                backgroundColor: 'transparent',
+              }}
+            >
               <Text style={{
                 fontSize: 16,
                 color: '#6B7280',
                 textAlign: 'center',
-                marginBottom: 16,
+                marginBottom: 12,
                 fontWeight: '600',
               }}>
                 Want to see what happens next?
@@ -498,13 +780,13 @@ export default function MagicMomentScreen() {
                   padding: 18,
                   gap: 10,
                 }}>
-                  <Lock size={24} color="white" strokeWidth={2.5} />
+                  <Lock size={22} color="white" strokeWidth={2.5} />
                   <Text style={{ fontSize: 20, fontWeight: '800', color: 'white' }}>
                     Ask Parent to Unlock!
                   </Text>
                 </View>
               </ChunkyButton>
-            </View>
+            </Animated.View>
           </Animated.View>
         )}
       </View>

@@ -387,7 +387,7 @@ const Avatar = ({
           borderColor: 'rgba(0,0,0,0.05)',
         }}
       >
-        <View className="opacity-20">
+        <View style={{ opacity: 0.2 }}>
           <Star size={32} color="white" />
         </View>
       </View>
@@ -702,14 +702,6 @@ export default function ChildHubScreen() {
     }, [setIsOnChildHub])
   );
 
-  useEffect(() => {
-    PRESET_LOCATIONS.forEach((loc) => {
-      if (loc.image) {
-        Image.prefetch(loc.image).catch(() => null);
-      }
-    });
-  }, [PRESET_LOCATIONS]);
-
   const currentOutfit = OUTFITS.find(o => o.id === avatarConfig.outfitId) || OUTFITS[0];
   const currentHat = HATS.find(h => h.id === avatarConfig.hatId);
   const currentToy = TOYS.find(t => t.id === avatarConfig.toyId);
@@ -863,7 +855,7 @@ export default function ChildHubScreen() {
             {wardrobeState === 'selecting' ? (
               <Animated.View entering={FadeIn} exiting={FadeOut} className="flex-1">
                 <View className="flex-1 items-center justify-center pt-8">
-                  <View className="bg-white/30 p-8 rounded-full border-4 border-white/50">
+                  <View className="p-8 rounded-full border-4" style={{ backgroundColor: 'rgba(255,255,255,0.3)', borderColor: 'rgba(255,255,255,0.5)' }}>
                     <Avatar config={pendingAvatarConfig} scale={1.2} />
                   </View>
                 </View>
@@ -892,11 +884,12 @@ export default function ChildHubScreen() {
                               onPress={() =>
                                 setPendingAvatarConfig({ ...pendingAvatarConfig, outfitId: item.id })
                               }
-                              style={pendingAvatarConfig.outfitId === item.id ? { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4, elevation: 4 } : { opacity: 0.9 }}
-                              className={`w-20 h-20 rounded-2xl items-center justify-center border-4 ${item.color} ${pendingAvatarConfig.outfitId === item.id
-                                ? 'border-black/30'
-                                : 'border-transparent'
-                                }`}
+                              style={[
+                                pendingAvatarConfig.outfitId === item.id 
+                                  ? { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4, elevation: 4, borderColor: 'rgba(0,0,0,0.3)' } 
+                                  : { opacity: 0.9, borderColor: 'transparent' }
+                              ]}
+                              className={`w-20 h-20 rounded-2xl items-center justify-center border-4 ${item.color}`}
                             >
                               <Text className="text-4xl">{item.iconName}</Text>
                             </Pressable>
@@ -1006,14 +999,14 @@ export default function ChildHubScreen() {
                             {PRESET_LOCATIONS.map(loc => (
                               <Pressable
                                 key={loc.id}
-                                onPress={() => setBackgroundSource({ uri: loc.image })}
-                                style={(backgroundSource as any)?.uri === loc.image ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
-                                className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${(backgroundSource as any)?.uri === loc.image
+                                onPress={() => setBackgroundSource(loc.image)}
+                                style={backgroundSource === loc.image ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
+                                className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === loc.image
                                   ? 'border-green-500'
                                   : 'border-slate-200'
                                   }`}
                               >
-                                <Image source={{ uri: loc.image }} className="w-full h-full" resizeMode="cover" />
+                                <Image source={loc.image} className="w-full h-full" resizeMode="cover" />
                               </Pressable>
                             ))}
                           </>
@@ -1049,7 +1042,7 @@ export default function ChildHubScreen() {
                   className="w-72 h-80 mb-8"
                   resizeMode="contain"
                 />
-                <View className="bg-white px-8 py-6 rounded-3xl border-b-8 border-slate-200 items-center transform -rotate-1 shadow-lg w-full max-w-sm">
+                <View className="bg-white px-8 py-6 rounded-3xl border-b-8 border-slate-200 items-center w-full max-w-sm" style={{ transform: [{ rotate: '-1deg' }], shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.15, shadowRadius: 20, elevation: 8 }}>
                   <Text className="text-2xl font-black text-slate-700 text-center leading-tight mb-2">
                     ✨ Getting Ready!
                   </Text>
@@ -1064,7 +1057,7 @@ export default function ChildHubScreen() {
 
         {activeRoom === 'read' && (
           <ScrollView className="flex-1 relative z-10 px-4 pt-4" contentContainerStyle={{ paddingBottom: 100 }}>
-            <View className="bg-white px-6 py-4 rounded-3xl border-b-8 border-slate-200 mb-6 items-center transform -rotate-1">
+            <View className="bg-white px-6 py-4 rounded-3xl border-b-8 border-slate-200 mb-6 items-center" style={{ transform: [{ rotate: '-1deg' }] }}>
               <Text className="text-2xl font-black text-slate-700 tracking-tight">
                 My Stories 📚
               </Text>
@@ -1074,7 +1067,11 @@ export default function ChildHubScreen() {
               {BOOKS.slice(0, 5).map(book => (
                 <Pressable
                   key={book.id}
-                  className="w-full bg-white p-4 rounded-[40px] border-b-[12px] border-slate-200 flex-row items-center gap-5 active:scale-[0.98] active:border-b-4"
+                  className="w-full bg-white p-4 rounded-[40px] border-slate-200 flex-row items-center gap-5"
+                  style={({ pressed }) => ({
+                    borderBottomWidth: pressed ? 4 : 12,
+                    transform: [{ scale: pressed ? 0.98 : 1 }],
+                  })}
                 >
                   <View className="w-24 h-24 rounded-2xl bg-slate-100 overflow-hidden border-4 border-slate-100">
                     <Image
@@ -1096,7 +1093,7 @@ export default function ChildHubScreen() {
                       </Text>
                     </View>
                   </View>
-                  <View className="w-20 h-20 rounded-full bg-green-500 border-4 border-b-8 border-green-700 items-center justify-center shadow-sm">
+                  <View className="w-20 h-20 rounded-full bg-green-500 border-4 border-b-8 border-green-700 items-center justify-center" style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 }}>
                     <Play size={40} color="white" fill="white" />
                   </View>
                 </Pressable>
@@ -1108,7 +1105,7 @@ export default function ChildHubScreen() {
         {activeRoom === 'well' && (
           <View className="flex-1 items-center justify-between relative z-10 pt-8 pb-24 px-4">
             {wishState !== 'typing' && (
-              <View className="bg-white px-8 py-4 rounded-3xl border-b-8 border-slate-200 mb-4 transform -rotate-1">
+              <View className="bg-white px-8 py-4 rounded-3xl border-b-8 border-slate-200 mb-4" style={{ transform: [{ rotate: '-1deg' }] }}>
                 <Text className="text-2xl font-black text-slate-700 text-center tracking-tight">
                   Make a Wish! ✨
                 </Text>
@@ -1290,7 +1287,7 @@ export default function ChildHubScreen() {
 
               {wishState === 'review' && (
                 <View className="gap-6 w-full">
-                  <View className="bg-white p-8 rounded-[40px] border-b-8 border-slate-200 items-center transform rotate-1">
+                  <View className="bg-white p-8 rounded-[40px] border-b-8 border-slate-200 items-center" style={{ transform: [{ rotate: '1deg' }] }}>
                     {wishSent ? (
                       <View className="items-center gap-2">
                         <View className="w-16 h-16 bg-green-100 rounded-full items-center justify-center mb-2">

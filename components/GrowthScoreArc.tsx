@@ -1,226 +1,340 @@
-import React, { useEffect } from 'react';
-import { View, Text } from 'react-native';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import Animated, {
-    useSharedValue,
-    useAnimatedProps,
-    withTiming,
-    Easing,
+  useSharedValue,
+  useAnimatedProps,
+  withTiming,
+  Easing,
+  runOnJS,
 } from 'react-native-reanimated';
-import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
-import { Sparkles } from 'lucide-react-native';
+import Svg, { Path, G, Defs, LinearGradient, Stop } from 'react-native-svg';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
+const AnimatedG = Animated.createAnimatedComponent(G);
+
+interface MeterSegment {
+  min: number;
+  max: number;
+  color: string;
+  label: string;
+}
+
+const SEGMENTS: MeterSegment[] = [
+  { min: 0, max: 25, color: '#ef4444', label: 'Needs attention' },
+  { min: 25, max: 50, color: '#f59e0b', label: 'Watch closely' },
+  { min: 50, max: 75, color: '#3b82f6', label: 'On track' },
+  { min: 75, max: 100, color: '#10b981', label: 'Excellent' },
+];
+
+const polarToCartesian = (cx: number, cy: number, r: number, angle: number) => {
+  const rad = ((angle - 90) * Math.PI) / 180;
+  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+};
+
+const calculateDonutSegment = (
+  x: number,
+  y: number,
+  startAngle: number,
+  endAngle: number,
+  innerRadius: number,
+  outerRadius: number,
+  paddingAngle: number = 0,
+  cornerRadius: number = 8
+) => {
+  const ring = Math.max(1, outerRadius - innerRadius);
+  const cr = Math.max(0, Math.min(cornerRadius, ring / 2 - 0.5, innerRadius - 0.5));
+  const pad = paddingAngle / 2;
+  const start = startAngle + pad;
+  const end = endAngle - pad;
+  if (start >= end) return '';
+
+  const outerAngleOffset = (cr / outerRadius) * (180 / Math.PI);
+  const innerAngleOffset = (cr / innerRadius) * (180 / Math.PI);
+
+  const outerStartCorner = polarToCartesian(x, y, outerRadius, start);
+  const outerEndCorner = polarToCartesian(x, y, outerRadius, end);
+  const innerEndCorner = polarToCartesian(x, y, innerRadius, end);
+  const innerStartCorner = polarToCartesian(x, y, innerRadius, start);
+
+  const outerArcStart = polarToCartesian(x, y, outerRadius, start + outerAngleOffset);
+  const outerArcEnd = polarToCartesian(x, y, outerRadius, end - outerAngleOffset);
+  const innerArcStart = polarToCartesian(x, y, innerRadius, start + innerAngleOffset);
+  const innerArcEnd = polarToCartesian(x, y, innerRadius, end - innerAngleOffset);
+
+  const lineOuterStart = polarToCartesian(x, y, outerRadius - cr, start);
+  const lineOuterEnd = polarToCartesian(x, y, outerRadius - cr, end);
+  const lineInnerEnd = polarToCartesian(x, y, innerRadius + cr, end);
+  const lineInnerStart = polarToCartesian(x, y, innerRadius + cr, start);
+
+  const largeArcFlag = end - start <= 180 ? 0 : 1;
+  if (start + outerAngleOffset >= end - outerAngleOffset) return '';
+
+  return [
+    'M', lineOuterStart.x, lineOuterStart.y,
+    'Q', outerStartCorner.x, outerStartCorner.y, outerArcStart.x, outerArcStart.y,
+    'A', outerRadius, outerRadius, 0, largeArcFlag, 1, outerArcEnd.x, outerArcEnd.y,
+    'Q', outerEndCorner.x, outerEndCorner.y, lineOuterEnd.x, lineOuterEnd.y,
+    'L', lineInnerEnd.x, lineInnerEnd.y,
+    'Q', innerEndCorner.x, innerEndCorner.y, innerArcEnd.x, innerArcEnd.y,
+    'A', innerRadius, innerRadius, 0, largeArcFlag, 0, innerArcStart.x, innerArcStart.y,
+    'Q', innerStartCorner.x, innerStartCorner.y, lineInnerStart.x, lineInnerStart.y,
+    'Z',
+  ].join(' ');
+};
 
 export interface GrowthScoreArcProps {
-    /** The score as a percentage (0-100) */
-    score: number;
-    /** Size of the widget in pixels */
-    size?: number;
-    /** Stroke width of the arc */
-    strokeWidth?: number;
-    /** Duration of the animation in ms */
-    animationDuration?: number;
-    /** Whether to show the motivational message pill below */
-    showMotivation?: boolean;
-    /** Custom label text (defaults to "Growth Score") */
-    label?: string;
+  score: number;
+  size?: number;
+  showMotivation?: boolean;
+  immediate?: boolean;
 }
-
-const getMotivationalMessage = (score: number) => {
-    if (score >= 80) return "You're a Superstar! 🌟";
-    if (score >= 60) return "Excellent Progress! 🚀";
-    if (score >= 40) return "Great Start! 🌱";
-    return "Keep Growing! ✨";
-};
 
 export const GrowthScoreArc: React.FC<GrowthScoreArcProps> = ({
-    score,
-    size = 240,
-    strokeWidth = 18,
-    animationDuration = 1500,
-    showMotivation = true,
-    label = "Growth Score",
+  score,
+  size = 240,
+  showMotivation = true,
+  immediate = false,
 }) => {
-    const center = size / 2;
-    const radius = (size - strokeWidth) / 2;
-    const circumference = 2 * Math.PI * radius;
+  // Match original proportions: width=360, height=220 for size=240
+  const width = size * 1.5;
+  const height = size * 0.917;
+  const outerRadius = size * 0.625;
+  const innerRadius = size * 0.458;
+  const cx = width / 2;
+  const cy = height - size * 0.167; // Original: height - 40 for height=220
 
-    // Arc configuration: Open at the bottom
-    // We want to fill from Left (230deg) to Right (130deg) Clockwise.
-    const startAngle = 230;
-    const endAngle = 130;
+  const clamped = Math.min(100, Math.max(0, score));
+  const activeIndex = SEGMENTS.findIndex(s => clamped >= s.min && clamped < s.max);
+  const finalActiveIndex = activeIndex === -1 ? SEGMENTS.length - 1 : activeIndex;
+  const activeSegment = SEGMENTS[finalActiveIndex];
 
-    // Helper to get coordinates
-    const getCoords = (angleInDegrees: number) => {
-        const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180.0;
-        return {
-            x: center + radius * Math.cos(angleInRadians),
-            y: center + radius * Math.sin(angleInRadians),
-        };
+  const targetAngle = (clamped / 100) * 180 - 90;
+
+  // Animated pointer angle
+  const [animatedAngle, setAnimatedAngle] = useState(immediate ? targetAngle : -90);
+  const angleRef = useRef(animatedAngle);
+
+  useEffect(() => {
+    angleRef.current = animatedAngle;
+  }, [animatedAngle]);
+
+  useEffect(() => {
+    if (immediate) {
+      setAnimatedAngle(targetAngle);
+      return;
+    }
+
+    const start = angleRef.current;
+    const delta = targetAngle - start;
+    if (Math.abs(delta) < 0.01) return;
+
+    const durationMs = 600;
+    const t0 = Date.now();
+    let animationFrame: ReturnType<typeof requestAnimationFrame>;
+
+    const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
+
+    const tick = () => {
+      const elapsed = Date.now() - t0;
+      const t = Math.min(1, elapsed / durationMs);
+      const eased = easeOutCubic(t);
+      setAnimatedAngle(start + delta * eased);
+      if (t < 1) {
+        animationFrame = requestAnimationFrame(tick);
+      }
     };
 
-    const startPoint = getCoords(startAngle);
-    const endPoint = getCoords(endAngle);
+    animationFrame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(animationFrame);
+  }, [targetAngle, immediate]);
 
-    const largeArcFlag = 1; // 260 degrees > 180
-    const sweepFlag = 1;    // 1 for Clockwise directed arc
-    const arcLength = circumference * (260 / 360);
+  // Active segment pop distance (original uses 10px for size ~240)
+  const ACTIVE_POP = size * 0.042;
 
-    const arcPath = [
-        'M', startPoint.x, startPoint.y,
-        'A', radius, radius, 0, largeArcFlag, sweepFlag, endPoint.x, endPoint.y
-    ].join(' ');
+  // Calculate pointer geometry to touch the popped inner arc
+  const activeStartAngle = (activeSegment.min / 100) * 180 - 90;
+  const activeEndAngle = (activeSegment.max / 100) * 180 - 90;
+  const activeMidAngle = (activeStartAngle + activeEndAngle) / 2;
+  const t = polarToCartesian(0, 0, ACTIVE_POP, activeMidAngle);
 
-    const progress = useSharedValue(0);
+  const aRad = ((animatedAngle - 90) * Math.PI) / 180;
+  const ux = Math.cos(aRad);
+  const uy = Math.sin(aRad);
 
-    useEffect(() => {
-        progress.value = withTiming(score / 100, {
-            duration: animationDuration,
-            easing: Easing.out(Easing.cubic),
-        });
-    }, [score, animationDuration]);
+  const dot = ux * t.x + uy * t.y;
+  const tLen2 = t.x * t.x + t.y * t.y;
+  const r = innerRadius;
+  const disc = Math.max(0, dot * dot - (tLen2 - r * r));
+  const s = dot + Math.sqrt(disc);
 
-    const animatedProps = useAnimatedProps(() => {
-        const strokeDashoffset = arcLength * (1 - progress.value);
-        return {
-            strokeDashoffset,
-        };
-    });
+  const gap = 1.5;
+  const pointerTip = s - gap;
+  const pointerBase = pointerTip - (size * 0.108);
+  const pointerHalfWidth = size * 0.046;
 
-    return (
-        <View className="items-center justify-center">
-            <View className="relative" style={{ width: size, height: size }}>
-                <Svg width={size} height={size}>
-                    <Defs>
-                        <LinearGradient id="growthGradient" x1="0" y1="0" x2="1" y2="0">
-                            <Stop offset="0%" stopColor="#0ea5e9" />
-                            <Stop offset="50%" stopColor="#22d3ee" />
-                            <Stop offset="100%" stopColor="#10b981" />
-                        </LinearGradient>
-                    </Defs>
+  const pointerPath = `M 0 -${pointerTip} L ${pointerHalfWidth} -${pointerBase} L -${pointerHalfWidth} -${pointerBase} Z`;
 
-                    {/* Background Track */}
-                    <Path
-                        d={arcPath}
-                        fill="none"
-                        stroke="#f1f5f9"
-                        strokeWidth={strokeWidth}
-                        strokeLinecap="round"
-                    />
+  // Original positions score at top=120px in 220px container (54.5% from top)
+  const scoreTextTop = size * 0.5;
 
-                    {/* Animated Progress */}
-                    <AnimatedPath
-                        d={arcPath}
-                        fill="none"
-                        stroke="url(#growthGradient)"
-                        strokeWidth={strokeWidth}
-                        strokeDasharray={`${arcLength} ${circumference}`}
-                        animatedProps={animatedProps}
-                        strokeLinecap="round"
-                    />
-                </Svg>
+  return (
+    <View className="items-center">
+      <View style={{ width, height: height + 20 }}>
+        <Svg width={width} height={height + 20} style={{ overflow: 'visible' }}>
+          <Defs>
+            <LinearGradient id="gloss" x1="0%" y1="0%" x2="0%" y2="100%">
+              <Stop offset="0%" stopColor="white" stopOpacity={0.35} />
+              <Stop offset="50%" stopColor="white" stopOpacity={0.1} />
+              <Stop offset="100%" stopColor="white" stopOpacity={0} />
+            </LinearGradient>
+          </Defs>
 
-                {/* Inner Content */}
-                <View className="absolute inset-0 items-center justify-center" style={{ paddingTop: size * 0.08 }}>
-                    <View className="items-center">
-                        <Text className="font-black text-slate-800 tracking-tighter leading-none" style={{ fontSize: size * 0.25 }}>
-                            {score}
-                            <Text className="font-bold text-slate-400" style={{ fontSize: size * 0.125 }}>%</Text>
-                        </Text>
-                        <Text className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] mt-2">
-                            {label}
-                        </Text>
-                    </View>
-                </View>
-            </View>
+          {/* Arc Segments */}
+          {SEGMENTS.map((segment, index) => {
+            const startAngle = (segment.min / 100) * 180 - 90;
+            const endAngle = (segment.max / 100) * 180 - 90;
+            const isActive = index === finalActiveIndex;
 
-            {showMotivation && (
-                <View className="-mt-6 items-center bg-gradient-to-r from-sky-50 to-emerald-50 px-5 py-2.5 rounded-full border border-sky-100/50 shadow-sm z-10">
-                    <View className="flex-row items-center gap-2">
-                        <Sparkles size={14} color="#0ea5e9" />
-                        <Text className="text-sm font-semibold text-slate-700">
-                            {getMotivationalMessage(score)}
-                        </Text>
-                    </View>
-                </View>
-            )}
+            const pop = isActive ? ACTIVE_POP : 0;
+            const midAngle = (startAngle + endAngle) / 2;
+            const v = polarToCartesian(0, 0, pop, midAngle);
+
+            const pathData = calculateDonutSegment(
+              cx,
+              cy,
+              startAngle,
+              endAngle,
+              innerRadius,
+              outerRadius,
+              2,
+              6
+            );
+
+            return (
+              <G
+                key={segment.label}
+                opacity={isActive ? 1 : 0.42}
+                translateX={v.x}
+                translateY={v.y}
+              >
+                <Path d={pathData} fill={isActive ? segment.color : '#cbd5e1'} />
+                {isActive && <Path d={pathData} fill="url(#gloss)" />}
+              </G>
+            );
+          })}
+
+          {/* Pointer */}
+          <G transform={`translate(${cx}, ${cy})`}>
+            <G transform={`rotate(${animatedAngle})`}>
+              <Path
+                d={pointerPath}
+                fill="#0f172a"
+                stroke="white"
+                strokeWidth={2}
+                strokeLinejoin="round"
+              />
+            </G>
+          </G>
+        </Svg>
+
+        {/* Score display */}
+        <View
+          className="absolute items-center"
+          style={{ top: scoreTextTop, left: 0, right: 0 }}
+          pointerEvents="none"
+        >
+          <Text
+            className="font-black tracking-tighter leading-none"
+            style={{
+              fontSize: size * 0.29,
+              color: activeSegment.color,
+              textShadowColor: 'rgba(0,0,0,0.1)',
+              textShadowOffset: { width: 0, height: 4 },
+              textShadowRadius: 20,
+            }}
+          >
+            {Math.round(clamped)}
+          </Text>
+          <View 
+            className="mt-2 bg-slate-100 px-3 py-1 rounded-full"
+            style={styles.labelBadge}
+          >
+            <Text className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+              {activeSegment.label}
+            </Text>
+          </View>
         </View>
-    );
+      </View>
+
+      {/* Motivation badge */}
+      {showMotivation && (
+        <View className="mt-2 bg-slate-50 border border-slate-100 px-5 py-2 rounded-full" style={styles.motivationBadge}>
+          <Text className="text-sm font-semibold text-slate-700">
+            {clamped >= 75 ? '🌟 ' : clamped >= 50 ? '🌱 ' : '✨ '}
+            {activeSegment.label}!
+          </Text>
+        </View>
+      )}
+    </View>
+  );
 };
 
-// Compact version for inline use (like in FulfillmentTracker)
-export interface GrowthScoreArcCompactProps {
-    /** The score as a percentage (0-100) */
-    score: number;
-    /** Size of the widget in pixels */
-    size?: number;
-}
-
-export const GrowthScoreArcCompact: React.FC<GrowthScoreArcCompactProps> = ({
-    score,
-    size = 52,
+// Compact version for inline use
+export const GrowthScoreArcCompact: React.FC<{ score: number; size?: number }> = ({
+  score,
+  size = 52,
 }) => {
-    const strokeWidth = Math.max(4, size * 0.1);
-    const center = size / 2;
-    const radius = (size - strokeWidth) / 2;
-    const circumference = 2 * Math.PI * radius;
+  const strokeWidth = Math.max(4, size * 0.1);
+  const center = size / 2;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const arcLength = circumference * (260 / 360);
+  const progressOffset = arcLength * (1 - score / 100);
 
-    // Arc configuration: Open at the bottom (260 degrees)
-    const startAngle = 230;
-    const endAngle = 130;
+  const getCoords = (angle: number) => {
+    const rad = ((angle - 90) * Math.PI) / 180;
+    return { x: center + radius * Math.cos(rad), y: center + radius * Math.sin(rad) };
+  };
 
-    const getCoords = (angleInDegrees: number) => {
-        const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180.0;
-        return {
-            x: center + radius * Math.cos(angleInRadians),
-            y: center + radius * Math.sin(angleInRadians),
-        };
-    };
+  const start = getCoords(230);
+  const end = getCoords(130);
+  const arcPath = `M ${start.x} ${start.y} A ${radius} ${radius} 0 1 1 ${end.x} ${end.y}`;
 
-    const startPoint = getCoords(startAngle);
-    const endPoint = getCoords(endAngle);
-
-    const largeArcFlag = 1;
-    const sweepFlag = 1;
-    const arcLength = circumference * (260 / 360);
-    const progressOffset = arcLength * (1 - score / 100);
-
-    const arcPath = [
-        'M', startPoint.x, startPoint.y,
-        'A', radius, radius, 0, largeArcFlag, sweepFlag, endPoint.x, endPoint.y
-    ].join(' ');
-
-    return (
-        <View style={{ width: size, height: size }}>
-            <Svg width={size} height={size}>
-                <Defs>
-                    <LinearGradient id="growthGradientCompact" x1="0" y1="0" x2="1" y2="0">
-                        <Stop offset="0%" stopColor="#0ea5e9" />
-                        <Stop offset="50%" stopColor="#22d3ee" />
-                        <Stop offset="100%" stopColor="#10b981" />
-                    </LinearGradient>
-                </Defs>
-
-                {/* Background Track */}
-                <Path
-                    d={arcPath}
-                    fill="none"
-                    stroke="#f1f5f9"
-                    strokeWidth={strokeWidth}
-                    strokeLinecap="round"
-                />
-
-                {/* Progress */}
-                <Path
-                    d={arcPath}
-                    fill="none"
-                    stroke="url(#growthGradientCompact)"
-                    strokeWidth={strokeWidth}
-                    strokeDasharray={`${arcLength} ${circumference}`}
-                    strokeDashoffset={progressOffset}
-                    strokeLinecap="round"
-                />
-            </Svg>
-        </View>
-    );
+  return (
+    <View style={{ width: size, height: size }}>
+      <Svg width={size} height={size}>
+        <Defs>
+          <LinearGradient id="growthGradientCompact" x1="0" y1="0" x2="1" y2="0">
+            <Stop offset="0%" stopColor="#0ea5e9" />
+            <Stop offset="100%" stopColor="#10b981" />
+          </LinearGradient>
+        </Defs>
+        <Path d={arcPath} fill="none" stroke="#f1f5f9" strokeWidth={strokeWidth} strokeLinecap="round" />
+        <Path
+          d={arcPath}
+          fill="none"
+          stroke="url(#growthGradientCompact)"
+          strokeWidth={strokeWidth}
+          strokeDasharray={`${arcLength} ${circumference}`}
+          strokeDashoffset={progressOffset}
+          strokeLinecap="round"
+        />
+      </Svg>
+    </View>
+  );
 };
+
+const styles = StyleSheet.create({
+  labelBadge: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+  },
+  motivationBadge: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+  },
+});

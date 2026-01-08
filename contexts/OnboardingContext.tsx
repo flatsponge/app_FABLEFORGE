@@ -12,6 +12,8 @@ type OnboardingData = {
     // Child
     childName: string;
     childAge: string;
+    childBirthMonth?: number; // 0-11
+    childBirthYear?: number;
     gender: 'boy' | 'girl';
     avatarId: string;
     lockedCosmeticClicked: boolean;

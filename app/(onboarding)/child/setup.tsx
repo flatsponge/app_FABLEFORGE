@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, Pressable, Switch } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Pressable, Switch, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, {
     FadeInDown,
@@ -11,7 +11,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Sparkles, ArrowRight, Users, Wand2, User, Mic } from 'lucide-react-native';
+import { Sparkles, ArrowRight, Users, User, Mic } from 'lucide-react-native';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 
 // Chunky 3D button matching child flow
@@ -89,6 +89,19 @@ export default function ChildSetupScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const { data, updateData } = useOnboarding();
+    const [timerComplete, setTimerComplete] = useState(false);
+
+    // Enable Continue button after 5 seconds
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setTimerComplete(true);
+        }, 5000);
+
+        return () => clearTimeout(timer);
+    }, []);
+
+    // Continue is enabled if audio is enabled OR 5 seconds have passed
+    const canContinue = data.audioEnabled || timerComplete;
 
     return (
         <LinearGradient
@@ -98,52 +111,41 @@ export default function ChildSetupScreen() {
             <View style={{ flex: 1, paddingTop: insets.top }}>
                 {/* Main Content */}
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24 }}>
-                    {/* Main Icon */}
+                    {/* Engaging Header */}
                     <Animated.View
                         entering={FadeInDown.delay(200).springify()}
-                        style={{ marginBottom: 32 }}
+                        style={{ alignItems: 'center', marginBottom: 40 }}
                     >
-                        <LinearGradient
-                            colors={['#8B5CF6', '#7C3AED']}
-                            style={{
-                                width: 88,
-                                height: 88,
-                                borderRadius: 24,
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                shadowColor: '#7C3AED',
-                                shadowOffset: { width: 0, height: 8 },
-                                shadowOpacity: 0.3,
-                                shadowRadius: 16,
-                            }}
-                        >
-                            <Wand2 size={40} color="white" strokeWidth={2.5} />
-                        </LinearGradient>
-                    </Animated.View>
+                        {/* Shooting Star Image */}
+                        <View style={{ marginBottom: 16 }}>
+                            <Image
+                                source={require('../../../assets/images/shooting-star.png')}
+                                style={{ width: 140, height: 140 }}
+                                resizeMode="contain"
+                            />
+                        </View>
 
-                    {/* Title */}
-                    <Animated.View entering={FadeInDown.delay(300)} style={{ marginBottom: 12 }}>
+                        {/* Title with gradient feel */}
                         <Text style={{
-                            fontSize: 32,
-                            fontWeight: '800',
+                            fontSize: 34,
+                            fontWeight: '900',
                             color: '#1F2937',
                             textAlign: 'center',
-                            letterSpacing: -0.5,
+                            letterSpacing: -1,
+                            marginBottom: 8,
                         }}>
-                            Ready to Build?
+                            Let's Create Magic!
                         </Text>
-                    </Animated.View>
 
-                    {/* Subtitle */}
-                    <Animated.View entering={FadeInDown.delay(400)} style={{ marginBottom: 48 }}>
+                        {/* Subtitle */}
                         <Text style={{
-                            fontSize: 17,
+                            fontSize: 16,
                             color: '#6B7280',
                             textAlign: 'center',
                             lineHeight: 24,
-                            paddingHorizontal: 8,
+                            paddingHorizontal: 16,
                         }}>
-                            The plan is set. Now it's time to create{'\n'}your child's hero character!
+                            Time to build your child's hero character.{'\n'}Here's how to get started:
                         </Text>
                     </Animated.View>
 
@@ -228,8 +230,8 @@ export default function ChildSetupScreen() {
                             borderColor: data.audioEnabled ? '#86EFAC' : '#FCD34D',
                         }}
                     >
-                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 12 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'flex-start', flex: 1, marginRight: 12 }}>
                                 <View style={{
                                     backgroundColor: data.audioEnabled ? '#DCFCE7' : '#FEF3C7',
                                     width: 44,
@@ -238,28 +240,28 @@ export default function ChildSetupScreen() {
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     marginRight: 12,
+                                    flexShrink: 0,
                                 }}>
                                     <Mic size={24} color={data.audioEnabled ? '#16A34A' : '#D97706'} strokeWidth={2.5} />
                                 </View>
-                                <View style={{ flex: 1 }}>
-                                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 3 }}>
-                                        <Text style={{ fontSize: 16, fontWeight: '700', color: '#1F2937' }}>
-                                            Voice Storytelling
-                                        </Text>
-                                        {!data.audioEnabled && (
-                                            <View style={{
-                                                backgroundColor: '#FEF3C7',
-                                                paddingHorizontal: 6,
-                                                paddingVertical: 2,
-                                                borderRadius: 4,
-                                                marginLeft: 8,
-                                            }}>
-                                                <Text style={{ fontSize: 9, fontWeight: '800', color: '#D97706' }}>
-                                                    RECOMMENDED
-                                                </Text>
-                                            </View>
-                                        )}
-                                    </View>
+                                <View style={{ flex: 1, paddingRight: 8 }}>
+                                    <Text style={{ fontSize: 16, fontWeight: '700', color: '#1F2937', marginBottom: 2 }}>
+                                        Voice Storytelling
+                                    </Text>
+                                    {!data.audioEnabled && (
+                                        <View style={{
+                                            backgroundColor: '#FEF3C7',
+                                            paddingHorizontal: 6,
+                                            paddingVertical: 2,
+                                            borderRadius: 4,
+                                            alignSelf: 'flex-start',
+                                            marginBottom: 4,
+                                        }}>
+                                            <Text style={{ fontSize: 9, fontWeight: '800', color: '#D97706' }}>
+                                                RECOMMENDED
+                                            </Text>
+                                        </View>
+                                    )}
                                     <Text style={{ fontSize: 12, color: '#6B7280', lineHeight: 16 }}>
                                         {data.audioEnabled
                                             ? '✓ Your child can speak their stories naturally!'
@@ -273,6 +275,7 @@ export default function ChildSetupScreen() {
                                 trackColor={{ false: '#D1D5DB', true: '#4ADE80' }}
                                 thumbColor={data.audioEnabled ? '#16A34A' : '#f4f3f4'}
                                 ios_backgroundColor="#D1D5DB"
+                                style={{ marginTop: 8 }}
                             />
                         </View>
 
@@ -298,31 +301,33 @@ export default function ChildSetupScreen() {
                         entering={FadeInUp.delay(600).springify()}
                         style={{ width: '100%' }}
                     >
-                        <ChunkyButton
-                            onPress={() => router.push('/(onboarding)/child/avatar')}
-                            bgColor="#22C55E"
-                            borderColor="#16A34A"
-                            size="large"
-                        >
-                            <View style={{
-                                flexDirection: 'row',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                padding: 18,
-                                gap: 10
-                            }}>
-                                <Sparkles size={24} color="white" strokeWidth={2.5} />
-                                <Text style={{
-                                    fontSize: 20,
-                                    fontWeight: '800',
-                                    color: 'white',
-                                    letterSpacing: 0.5,
+                        <View style={{ opacity: canContinue ? 1 : 0.5 }}>
+                            <ChunkyButton
+                                onPress={canContinue ? () => router.push('/(onboarding)/child/avatar') : undefined}
+                                bgColor={canContinue ? '#22C55E' : '#9CA3AF'}
+                                borderColor={canContinue ? '#16A34A' : '#6B7280'}
+                                size="large"
+                            >
+                                <View style={{
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    padding: 18,
+                                    gap: 10
                                 }}>
-                                    Continue
-                                </Text>
-                                <ArrowRight size={24} color="white" strokeWidth={2.5} />
-                            </View>
-                        </ChunkyButton>
+                                    <Sparkles size={24} color="white" strokeWidth={2.5} />
+                                    <Text style={{
+                                        fontSize: 20,
+                                        fontWeight: '800',
+                                        color: 'white',
+                                        letterSpacing: 0.5,
+                                    }}>
+                                        Continue
+                                    </Text>
+                                    <ArrowRight size={24} color="white" strokeWidth={2.5} />
+                                </View>
+                            </ChunkyButton>
+                        </View>
                     </Animated.View>
                 </View>
 
