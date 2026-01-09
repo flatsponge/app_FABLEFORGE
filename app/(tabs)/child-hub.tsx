@@ -6,8 +6,8 @@ import { UnifiedHeader } from '@/components/UnifiedHeader';
 import { useChildLock } from '@/contexts/ChildLockContext';
 import { useOrientation } from '@/components/useOrientation';
 import ChildBackground from '@/childbackground/childbackground1.png';
-import ChildBackground2 from '@/childbackground/childbackground2.jpg';
-import ChildBackground3 from '@/childbackground/childbackground3.jpg';
+import ChildBackground2 from '@/childbackground/childbackground2.png';
+import ChildBackground3 from '@/childbackground/childbackground3.png';
 import ChildBackground4 from '@/childbackground/childbackground4.jpg';
 import ChildBackground5 from '@/childbackground/childbackground5.jpg';
 import Animated, {
@@ -929,9 +929,9 @@ export default function ChildHubScreen() {
                                   ? { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4, elevation: 4, borderColor: 'rgba(0,0,0,0.3)' }
                                   : { opacity: 0.9, borderColor: 'transparent' }
                               ]}
-                              className={`w-20 h-20 rounded-2xl items-center justify-center border-4 ${item.color}`}
+                              className={`w-20 h-20 rounded-2xl items-center justify-center border-4 bg-white`}
                             >
-                              <Text className="text-4xl">{item.iconName}</Text>
+                              <Image source={item.image} style={{ width: 60, height: 60 }} resizeMode="contain" />
                             </Pressable>
                           ))}
 
@@ -947,7 +947,7 @@ export default function ChildHubScreen() {
                                 : 'border-slate-200'
                                 }`}
                             >
-                              <Text className="text-4xl">{item.id === 'crown' ? '👑' : item.id === 'cap' ? '🧢' : item.id === 'bow' ? '🎀' : '❌'}</Text>
+                              <Image source={item.image} style={{ width: 60, height: 60 }} resizeMode="contain" />
                             </Pressable>
                           ))}
 
@@ -963,7 +963,7 @@ export default function ChildHubScreen() {
                                 : 'border-slate-200'
                                 }`}
                             >
-                              <Text className="text-4xl">{item.id === 'star' ? '⭐' : item.id === 'camera' ? '📷' : item.id === 'game' ? '🎮' : '❌'}</Text>
+                              <Image source={item.image} style={{ width: 60, height: 60 }} resizeMode="contain" />
                             </Pressable>
                           ))}
 

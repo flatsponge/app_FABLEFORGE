@@ -27,6 +27,7 @@ export interface AvatarItem {
   iconName?: string;
   type?: string;
   label?: string;
+  image?: any;
 }
 
 export interface AvatarConfig {

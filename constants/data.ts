@@ -276,25 +276,18 @@ export const STORY_DATA: Record<number, string[]> = {
 
 
 export const OUTFITS: AvatarItem[] = [
-  { id: 'tshirt-red', color: 'bg-red-400', iconName: '👕', type: 'Casual' },
-  { id: 'tshirt-blue', color: 'bg-blue-400', iconName: '👕', type: 'Cool' },
-  { id: 'dress-pink', color: 'bg-pink-300', iconName: '👗', type: 'Party' },
-  { id: 'jumpsuit-green', color: 'bg-green-400', iconName: '🦺', type: 'Adventure' },
-  { id: 'hoodie-purple', color: 'bg-purple-500', iconName: '🧥', type: 'Cozy' },
+  { id: 'shirt-blue', type: 'Casual', image: require('../assets/avatar/items/shirt_blue.png') },
+  { id: 'dress-green', type: 'Party', image: require('../assets/avatar/items/dress_green.png') },
 ];
 
 export const HATS: AvatarItem[] = [
-  { id: 'none', iconName: 'none', label: 'None' },
-  { id: 'crown', iconName: 'Crown', label: 'Royal' },
-  { id: 'cap', iconName: 'cap', label: 'Sporty' },
-  { id: 'bow', iconName: 'bow', label: 'Cute' },
+  { id: 'crown-gold', label: 'Royal', image: require('../assets/avatar/items/crown_gold.png') },
+  { id: 'hat-blue', label: 'Sporty', image: require('../assets/avatar/items/hat_blue.png') },
 ];
 
 export const TOYS: AvatarItem[] = [
-  { id: 'none', iconName: 'none' },
-  { id: 'star', iconName: 'Star' },
-  { id: 'camera', iconName: 'Camera' },
-  { id: 'game', iconName: 'Gamepad2' },
+  { id: 'sunglasses', image: require('../assets/avatar/items/sunglasses.png') },
+  { id: 'necklace', image: require('../assets/avatar/items/necklace.png') },
 ];
 
 export const PRESET_LOCATIONS: PresetLocation[] = [
