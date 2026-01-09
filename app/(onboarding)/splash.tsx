@@ -1,6 +1,6 @@
 
 import React, { useEffect } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, {
     FadeIn,
@@ -11,7 +11,6 @@ import Animated, {
     withSequence,
     withTiming
 } from 'react-native-reanimated';
-import { BookOpen } from 'lucide-react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { OnboardingTheme } from '../../constants/OnboardingTheme';
@@ -66,7 +65,11 @@ export default function SplashScreen() {
             <View style={styles.content}>
                 <Animated.View entering={FadeInDown.delay(300).springify()} style={styles.logoContainer}>
                     <Animated.View style={[styles.iconContainer, animatedIconStyle]}>
-                        <BookOpen size={64} color={OnboardingTheme.Colors.Primary} strokeWidth={1.5} />
+                        <Image
+                            source={require('../../assets/appiconnew.png')}
+                            style={styles.appIcon}
+                            resizeMode="contain"
+                        />
                     </Animated.View>
                     <Text style={styles.appName}>FableTales</Text>
                     <Text style={styles.tagline}>Where imagination comes to life.</Text>
@@ -124,6 +127,10 @@ const styles = StyleSheet.create({
     },
     iconContainer: {
         marginBottom: OnboardingTheme.Spacing.sm,
+    },
+    appIcon: {
+        width: 180,
+        height: 180,
     },
     appName: {
         ...OnboardingTheme.Typography.Title,

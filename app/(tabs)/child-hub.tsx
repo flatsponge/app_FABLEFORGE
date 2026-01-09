@@ -410,81 +410,60 @@ const TextActionButton = ({
 
 
 const Avatar = ({
-  config,
   scale = 1,
 }: {
-  config: AvatarConfig;
   scale?: number;
 }) => {
   const { data } = useOnboarding();
   const avatarId = data?.avatarId || 'bears';
   const baseImage = BASE_AVATARS.find(a => a.id === avatarId)?.image || BASE_AVATARS[0].image;
 
-  const outfit = OUTFITS.find(o => o.id === config.outfitId) || OUTFITS[0];
-  const hat = HATS.find(h => h.id === config.hatId);
-
   return (
     <View
       className="relative w-48 h-64 items-center justify-center"
       style={{ transform: [{ scale }] }}
     >
+      {/* White circular background behind avatar */}
+      <View
+        style={{
+          position: 'absolute',
+          width: 170,
+          height: 170,
+          borderRadius: 85,
+          backgroundColor: '#ffffff',
+          top: '50%',
+          marginTop: -85,
+          // Soft shadow for depth
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 8 },
+          shadowOpacity: 0.15,
+          shadowRadius: 16,
+          elevation: 8,
+          // Subtle border for definition
+          borderWidth: 3,
+          borderColor: 'rgba(255,255,255,0.8)',
+        }}
+      />
+      {/* Inner glow effect */}
+      <View
+        style={{
+          position: 'absolute',
+          width: 160,
+          height: 160,
+          borderRadius: 80,
+          backgroundColor: 'transparent',
+          top: '50%',
+          marginTop: -80,
+          borderWidth: 2,
+          borderColor: 'rgba(0,0,0,0.03)',
+        }}
+      />
       {/* Base Body */}
       <Image
         source={baseImage}
         className="absolute w-full h-full"
         resizeMode="contain"
       />
-
-      {/* Shoes/Feet - positioned absolute if needed, or included in base? 
-            Base includes feet. Clothes go on top. */}
-
-      {/* Clothes */}
-      <View
-        className={`absolute bottom-[20%] w-28 h-24 rounded-t-[32px] rounded-b-[40px] z-10 ${outfit.color} items-center justify-center`}
-        style={{
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
-          borderWidth: 4,
-          borderColor: 'rgba(0,0,0,0.05)',
-        }}
-      >
-        <View style={{ opacity: 0.2 }}>
-          <Star size={32} color="white" />
-        </View>
-      </View>
-
-      {/* Hat */}
-      {hat && hat.id !== 'none' && (
-        <View className="absolute top-[5%] z-30" style={{ transform: [{ scale: 0.9 }] }}>
-          {hat.id === 'crown' && (
-            <View style={styles.hatShadow}>
-              <Crown size={80} color="#fbbf24" fill="#fbbf24" />
-            </View>
-          )}
-          {hat.id === 'cap' && (
-            <View
-              className="w-32 h-16 bg-blue-500 rounded-t-full"
-              style={{
-                borderWidth: 4,
-                borderColor: '#2563eb',
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.2,
-                shadowRadius: 4,
-              }}
-            />
-          )}
-          {hat.id === 'bow' && (
-            <View className="flex-row items-center">
-              <View className="w-8 h-8 bg-pink-400 rounded-full" style={{ borderWidth: 4, borderColor: '#ec4899' }} />
-              <View className="w-10 h-10 bg-pink-400 rounded-full -mx-2 z-10" style={{ borderWidth: 4, borderColor: '#ec4899' }} />
-              <View className="w-8 h-8 bg-pink-400 rounded-full" style={{ borderWidth: 4, borderColor: '#ec4899' }} />
-            </View>
-          )}
-        </View>
-      )}
     </View>
   );
 };
@@ -918,12 +897,10 @@ export default function ChildHubScreen() {
             {wardrobeState === 'selecting' ? (
               <Animated.View entering={FadeIn} exiting={FadeOut} style={{ flex: 1 }}>
                 <View className="flex-1 items-center justify-center pt-8">
-                  <View className="p-8 rounded-full border-4" style={{ backgroundColor: 'rgba(255,255,255,0.3)', borderColor: 'rgba(255,255,255,0.5)' }}>
-                    <Avatar config={pendingAvatarConfig} scale={1.2} />
-                  </View>
+                  <Avatar scale={1.2} />
                 </View>
 
-                <View className="px-4 pb-4">
+                <View className="px-4 pb-8">
                   <View className="flex-row gap-3 mb-4 justify-center">
                     {tabItems.map(tab => (
                       <WardrobeTabButton
@@ -1077,11 +1054,12 @@ export default function ChildHubScreen() {
                       </View>
                     </ScrollView>
 
-                    <View className="mt-5">
+                    <View className="mt-4">
                       <TextActionButton
                         onPress={handleConfirmSelection}
                         label="Change"
                         variant="primary"
+                        flex={0}
                       />
                     </View>
                   </View>
@@ -1500,13 +1478,6 @@ export default function ChildHubScreen() {
 }
 
 const styles = StyleSheet.create({
-  hatShadow: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 4,
-  },
   chunkyButtonBase: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
