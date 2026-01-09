@@ -68,3 +68,5 @@ Desktop.ini
 # Temp
 tmp/
 .temp/
+
+.trigger
