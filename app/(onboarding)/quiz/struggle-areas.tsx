@@ -35,6 +35,7 @@ export default function StruggleAreasScreen() {
 
     const handleNext = () => {
         if (canProceed) {
+            updateData({ struggleAreas: selected });
             router.push('/(onboarding)/quiz/struggle-frequency');
         }
     };
@@ -44,6 +45,7 @@ export default function StruggleAreasScreen() {
             showProgressBar={false} skipTopSafeArea progress={0.7}
             onNext={handleNext}
             nextLabel="Continue"
+            showNextButton={canProceed}
             isScrollable={true}
         >
             <View style={styles.contentContainer}>

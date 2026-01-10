@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, TextInput, ScrollView, Pressable } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -6,11 +6,14 @@ import Animated, {
   withRepeat,
   withTiming,
   Easing,
+  useAnimatedReaction,
 } from 'react-native-reanimated';
 import { Search, ThumbsUp, Clock, Sparkles, Loader2, Hourglass } from 'lucide-react-native';
-import { BOOKS } from '@/constants/data';
+import { useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
 import { BookCard } from './BookCard';
 import { Book } from '@/types';
+import { useEffect } from 'react';
 
 interface LibraryViewProps {
   onBookClick: (book: Book) => void;
@@ -25,11 +28,6 @@ interface QueuedBook {
   task: string;
   progress: number;
 }
-
-const QUEUED_BOOKS: QueuedBook[] = [
-  { id: 'q1', title: 'The Brave Little Toaster', task: 'Writing Chapter 3...', progress: 65 },
-  { id: 'q2', title: 'Galaxy Quest', task: 'Waiting in queue', progress: 0 },
-];
 
 const SpinningLoader = () => {
   const rotation = useSharedValue(0);
@@ -119,7 +117,97 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onBookClick, isHome = 
   const [filter, setFilter] = useState<FilterType>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  let filteredBooks = BOOKS.filter(book => {
+  // Fetch user's generated books from Convex
+  const userBooks = useQuery(api.storyGeneration.getUserBooks, {});
+  
+  // Fetch active/generating jobs
+  const activeJobs = useQuery(api.storyGeneration.getUserActiveJobs);
+
+  // Convert active jobs to QueuedBook format
+  const queuedBooks = useMemo<QueuedBook[]>(() => {
+    if (!activeJobs) return [];
+    
+    return activeJobs.map(job => {
+      let task = 'Queued';
+      if (job.status === 'generating_story') task = 'Writing Story';
+      else if (job.status === 'generating_images') task = 'Creating Art';
+      
+      // Truncate prompt for title
+      const title = job.prompt.length > 40 
+        ? job.prompt.substring(0, 40) + '...' 
+        : job.prompt;
+      
+      return {
+        id: job._id,
+        title,
+        task,
+        progress: job.progress,
+      };
+    });
+  }, [activeJobs]);
+
+  // Map vibe to color gradient
+  const getColorFromVibe = (vibe: string): string => {
+    switch (vibe) {
+      case 'energizing': return 'from-orange-400 to-rose-500';
+      case 'soothing': return 'from-blue-400 to-indigo-500';
+      case 'whimsical': return 'from-pink-400 to-purple-500';
+      case 'thoughtful': return 'from-teal-400 to-cyan-500';
+      default: return 'from-purple-400 to-indigo-500';
+    }
+  };
+
+  // Map vocabulary level to display format
+  const formatVocabularyLevel = (level: string): 'Beginner' | 'Intermediate' | 'Advanced' => {
+    switch (level) {
+      case 'beginner': return 'Beginner';
+      case 'intermediate': return 'Intermediate';
+      case 'advanced': return 'Advanced';
+      default: return 'Beginner';
+    }
+  };
+
+  // Format relative date from timestamp
+  const formatRelativeDate = (timestamp: number): string => {
+    const now = Date.now();
+    const diff = now - timestamp;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+    
+    if (minutes < 5) return 'Just now';
+    if (minutes < 60) return `${minutes} min ago`;
+    if (hours < 24) return hours === 1 ? '1 hour ago' : `${hours} hours ago`;
+    if (days === 0) return 'Today';
+    if (days === 1) return 'Yesterday';
+    if (days < 7) return `${days} days ago`;
+    if (days < 14) return 'Last week';
+    return `${Math.floor(days / 7)} weeks ago`;
+  };
+
+  // Convert Convex books to Book type format
+  const convexBooksAsBooks = useMemo<Book[]>(() => {
+    if (!userBooks) return [];
+    
+    return userBooks.map((book) => ({
+      id: book._id,
+      title: book.title,
+      author: '',
+      progress: book.readingProgress,
+      color: getColorFromVibe(book.storyVibe),
+      coverImage: book.coverImageUrl || '',
+      iconName: 'Sparkles',
+      userRating: book.userRating,
+      duration: `${book.durationMinutes} min`,
+      description: book.description,
+      vocabularyLevel: formatVocabularyLevel(book.vocabularyLevel),
+      generatedDate: formatRelativeDate(book.createdAt),
+    }));
+  }, [userBooks]);
+
+  const allBooks = convexBooksAsBooks;
+
+  let filteredBooks = allBooks.filter(book => {
     const matchesSearch =
       book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       book.author.toLowerCase().includes(searchQuery.toLowerCase());
@@ -136,6 +224,8 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onBookClick, isHome = 
       (a, b) => getRecencyScore(a.generatedDate) - getRecencyScore(b.generatedDate)
     );
   }
+
+  const hasActiveJobs = queuedBooks.length > 0;
 
   return (
     <View className={`bg-background ${isHome ? 'pb-24' : 'pb-32'}`}>
@@ -204,7 +294,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onBookClick, isHome = 
       </View>
 
       <View className="px-6 py-4">
-        {filter === 'all' && !searchQuery && (
+        {filter === 'all' && !searchQuery && hasActiveJobs && (
           <View className="mb-8">
             <View className="flex-row items-center gap-2 mb-4 px-1">
               <View className="w-1.5 h-1.5 rounded-full bg-purple-500" />
@@ -213,7 +303,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onBookClick, isHome = 
               </Text>
             </View>
             <View className="flex-row flex-wrap gap-5">
-              {QUEUED_BOOKS.map(qb => (
+              {queuedBooks.map(qb => (
                 <View key={qb.id} className="w-[47%]">
                   <QueuedBookCard book={qb} />
                 </View>

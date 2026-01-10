@@ -18,6 +18,7 @@ export default function CommitmentScreen() {
             showProgressBar={false} skipTopSafeArea progress={0.85}
             onNext={handleNext}
             nextLabel="Yes, I'm Ready!"
+            isScrollable={true}
         >
             <View style={styles.contentContainer}>
                 <View style={styles.iconContainer}>

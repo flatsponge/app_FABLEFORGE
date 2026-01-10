@@ -36,6 +36,7 @@ export default function AggressionDetailsScreen() {
             showNextButton={!!selected}
             onNext={handleNext}
             nextLabel="Continue"
+            isScrollable={true}
         >
             <View style={styles.contentContainer}>
                 <OnboardingTitle>Who is this aggression usually directed toward?</OnboardingTitle>

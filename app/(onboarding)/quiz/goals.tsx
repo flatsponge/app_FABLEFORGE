@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
-import OnboardingSingleSelect, { SelectOption } from '../../../components/OnboardingSingleSelect';
+import OnboardingMultiSelect, { SelectOption } from '../../../components/OnboardingMultiSelect';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -13,20 +13,27 @@ const GOALS: SelectOption[] = [
     { id: 'moral', title: 'Strong Moral Compass', description: 'Teach honesty, sharing, and kindness', icon: 'compass' },
     { id: 'leadership', title: 'Leadership Skills', description: 'Build confidence and decision making', icon: 'ribbon' },
     { id: 'agency', title: 'Healthy Independence', description: 'Encourage responsibility and self-care', icon: 'bicycle' },
+    { id: 'social', title: 'Social Skills', description: 'Improve friendship and communication', icon: 'people' },
+    { id: 'creativity', title: 'Creativity', description: 'Foster imagination and innovation', icon: 'color-palette' },
+    { id: 'academic', title: 'Academic Success', description: 'Support learning and focus', icon: 'school' },
+    { id: 'focus', title: 'Focus & Discipline', description: 'Develop concentration and self-control', icon: 'glasses' },
 ];
 
 export default function OnboardingStart() {
     const router = useRouter();
     const { updateData } = useOnboarding();
-    const [selected, setSelected] = useState<string | null>(null);
+    const [selected, setSelected] = useState<string[]>([]);
 
-    const handleSelect = (id: string) => {
-        setSelected(id);
-        updateData({ primaryGoal: id });
+    const handleToggle = (id: string) => {
+        const newSelection = selected.includes(id)
+            ? selected.filter(item => item !== id)
+            : [...selected, id];
+        setSelected(newSelection);
+        updateData({ primaryGoal: newSelection });
     };
 
     const handleNext = () => {
-        if (selected) {
+        if (selected.length > 0) {
             router.push('/(onboarding)/quiz/child-name');
         }
     };
@@ -36,21 +43,23 @@ export default function OnboardingStart() {
             showProgressBar={false}
             skipTopSafeArea
             progress={0.05}
-            showNextButton={!!selected}
+            showNextButton={selected.length > 0}
             onNext={handleNext}
             nextLabel="Continue"
+            isScrollable={true}
         >
             <View style={styles.contentContainer}>
                 <OnboardingTitle>What is your ultimate goal for your child?</OnboardingTitle>
                 <OnboardingBody>
                     We'll tailor the stories to help them grow in this direction.
+                    Select all that apply.
                 </OnboardingBody>
 
-                <OnboardingSingleSelect
+                <OnboardingMultiSelect
                     options={GOALS}
-                    selectedId={selected}
-                    onSelect={handleSelect}
-                    showCheckbox={false}
+                    selectedValues={selected}
+                    onToggle={handleToggle}
+                    showCheckbox={true}
                 />
             </View>
         </OnboardingLayout>

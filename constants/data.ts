@@ -1,4 +1,4 @@
-import { Book, Category, AvatarItem, PresetLocation, Friend, VoicePreset, Wish } from '../types';
+import { Category, AvatarItem, PresetLocation, Friend, VoicePreset, Wish } from '../types';
 
 import { Heart, Shield, Scale, Hourglass, Users, Search, Sun, ClipboardList, Puzzle, Sparkles } from 'lucide-react-native';
 import { LucideIcon } from 'lucide-react-native';
@@ -125,93 +125,6 @@ export const CATEGORIES: Category[] = [
   { id: 'fantasy', name: 'Magic', color: 'bg-pink-50', text: 'text-pink-600', iconName: 'Sparkles' },
 ];
 
-export const BOOKS: Book[] = [
-  {
-    id: 1,
-    title: "The Sleepy Moon",
-    author: "",
-    progress: 45,
-    color: "from-indigo-400 to-purple-500",
-    coverImage: "https://images.unsplash.com/photo-1494022299300-899b96e49893?auto=format&fit=crop&w=600&q=80",
-    iconName: 'Moon',
-    userRating: 'up',
-    duration: "5 min",
-    description: "Join the Moon on a gentle journey through the night sky as he says goodnight to all his starry friends. Perfect for winding down.",
-    vocabularyLevel: 'Beginner',
-    generatedDate: "2 days ago"
-  },
-  {
-    id: 2,
-    title: "Dino's Big Roar",
-    author: "",
-    progress: 0,
-    color: "from-green-400 to-teal-500",
-    coverImage: "https://images.unsplash.com/photo-1552345391-7f999676e6d1?auto=format&fit=crop&w=600&q=80",
-    iconName: 'Volume2',
-    userRating: null,
-    duration: "8 min",
-    description: "Dino is a little T-Rex with a tiny voice. Follow him on a prehistoric adventure as he finds his courage and his big, loud roar!",
-    vocabularyLevel: 'Intermediate',
-    generatedDate: "Yesterday"
-  },
-  {
-    id: 3,
-    title: "Princess & Pea",
-    author: "",
-    progress: 10,
-    color: "from-pink-400 to-rose-500",
-    coverImage: "https://images.unsplash.com/photo-1595168863620-f46399a6e12e?auto=format&fit=crop&w=600&q=80",
-    iconName: 'Star',
-    userRating: 'up',
-    duration: "12 min",
-    description: "A classic tale retold! Can a real princess feel a tiny pea under twenty mattresses? A story about sensitivity and truth.",
-    vocabularyLevel: 'Advanced',
-    generatedDate: "Last week"
-  },
-  {
-    id: 4,
-    title: "Rocket Zoom",
-    author: "",
-    progress: 0,
-    color: "from-blue-400 to-cyan-500",
-    coverImage: "https://images.unsplash.com/photo-1517976487492-5750f3195933?auto=format&fit=crop&w=600&q=80",
-    iconName: 'Sun',
-    userRating: null,
-    duration: "6 min",
-    description: "3... 2... 1... Blast off! Rocket is the fastest ship in the galaxy. Join him as he visits colorful planets and meets alien friends.",
-    vocabularyLevel: 'Beginner',
-    generatedDate: "Just now"
-  },
-  {
-    id: 5,
-    title: "The Magic Forest",
-    author: "",
-    progress: 60,
-    color: "from-orange-300 via-rose-300 to-purple-300",
-    coverImage: "https://images.unsplash.com/photo-1448375240586-dfd8d395ea6c?auto=format&fit=crop&w=600&q=80",
-    iconName: 'Sparkles',
-    userRating: 'up',
-    duration: "15 min",
-    description: "Discover the secrets of the Magic Forest where trees whisper ancient stories and glowing creatures light up the path to adventure.",
-    vocabularyLevel: 'Intermediate',
-    generatedDate: "3 days ago"
-  },
-  {
-    id: 6,
-    title: "The Shy Ghost",
-    author: "",
-    progress: 0,
-    color: "from-slate-400 to-slate-600",
-    coverImage: "https://images.unsplash.com/photo-1623945193498-89c564347712?auto=format&fit=crop&w=600&q=80",
-    iconName: 'Ghost',
-    userRating: 'up',
-    duration: "7 min",
-    description: "Boo wasn't scary. In fact, he was afraid of the dark! A heartwarming story about finding your own way to shine.",
-    vocabularyLevel: 'Beginner',
-    generatedDate: "1 day ago"
-  },
-];
-
 export const WISHES: Wish[] = [
   {
     id: 'wish-1',
@@ -237,57 +150,49 @@ export const WISHES: Wish[] = [
   },
 ];
 
-export const STORY_DATA: Record<number, string[]> = {
-  1: [
-    "High up in the velvet sky, the Moon let out a big, sleepy yawn. \"It's way past my bedtime,\" he whispered to the twinkling stars.",
-    "The Little Dipper poured some starry milk for the Moon to drink. It was warm and glowing.",
-    "He fluffed up his cloud pillow and pulled up his blanket of night. The stars began to sing a lullaby.",
-    "Goodnight, Moon. Goodnight, stars. Sweet dreams to everyone in the world below!"
-  ],
-  2: [
-    "Dino was a small dinosaur with a very quiet voice.",
-    "He tried to roar like his dad, but only a 'squeak' came out.",
-    "One day, he saw a butterfly stuck in a tall tree.",
-    "He took a deep breath and let out a huge 'ROAR' to shake the branch!",
-    "The butterfly flew free, and Dino was the loudest hero of all."
-  ],
-  3: [
-    "Once upon a time, a prince was looking for a real princess.",
-    "One stormy night, a girl knocked on the castle door.",
-    "The Queen put a tiny green pea under twenty fluffy mattresses.",
-    "In the morning, the girl said, \"I slept terribly! Something was hard!\"",
-    "Only a real princess is that sensitive. They lived happily ever after."
-  ],
-  4: [
-    "Rocket was the fastest ship in the galaxy, Zoom-Zoom!",
-    "He counted down... 3... 2... 1... BLAST OFF!",
-    "He zoomed past Mars and waved hello to the aliens.",
-    "He looped around Saturn's rings like a celestial rollercoaster.",
-    "Time to head home for a fuel nap. Mission accomplished!"
-  ],
-  5: [
-    "The Magic Forest wasn't like any other forest. The leaves shimmered with a silver glow in the moonlight.",
-    "Oliver stepped carefully over the mossy roots. Suddenly, a tiny pixie zoomed past his ear!",
-    "\"Follow me!\" she jingled, leading him deeper into the magic. The trees seemed to whisper secrets as they passed.",
-    "They arrived at a clearing where fireflies danced in a circle. It was the most beautiful thing Oliver had ever seen."
-  ],
-};
-
 
 
 export const OUTFITS: AvatarItem[] = [
-  { id: 'shirt-blue', type: 'Casual', image: require('../assets/avatar/items/shirt_blue.png') },
-  { id: 'dress-green', type: 'Party', image: require('../assets/avatar/items/dress_green.png') },
+  { 
+    id: 'shirt-blue', 
+    type: 'Casual', 
+    image: require('../assets/avatar/items/shirt_blue.png'),
+    aiDescription: 'a casual blue t-shirt',
+  },
+  { 
+    id: 'dress-green', 
+    type: 'Party', 
+    image: require('../assets/avatar/items/dress_green.png'),
+    aiDescription: 'an elegant green party dress',
+  },
 ];
 
 export const HATS: AvatarItem[] = [
-  { id: 'crown-gold', label: 'Royal', image: require('../assets/avatar/items/crown_gold.png') },
-  { id: 'hat-blue', label: 'Sporty', image: require('../assets/avatar/items/hat_blue.png') },
+  { 
+    id: 'crown-gold', 
+    label: 'Royal', 
+    image: require('../assets/avatar/items/crown_gold.png'),
+    aiDescription: 'a shiny golden royal crown',
+  },
+  { 
+    id: 'hat-blue', 
+    label: 'Sporty', 
+    image: require('../assets/avatar/items/hat_blue.png'),
+    aiDescription: 'a sporty blue cap',
+  },
 ];
 
 export const TOYS: AvatarItem[] = [
-  { id: 'sunglasses', image: require('../assets/avatar/items/sunglasses.png') },
-  { id: 'necklace', image: require('../assets/avatar/items/necklace.png') },
+  { 
+    id: 'sunglasses', 
+    image: require('../assets/avatar/items/sunglasses.png'),
+    aiDescription: 'cool stylish sunglasses',
+  },
+  { 
+    id: 'necklace', 
+    image: require('../assets/avatar/items/necklace.png'),
+    aiDescription: 'a sparkly necklace',
+  },
 ];
 
 export const PRESET_LOCATIONS: PresetLocation[] = [

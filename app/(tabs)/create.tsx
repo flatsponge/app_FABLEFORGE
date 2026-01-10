@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, ScrollView, Pressable, TextInput, Vibration, StyleSheet, LayoutAnimation, Platform, UIManager } from 'react-native';
+import { View, Text, ScrollView, Pressable, TextInput, Vibration, StyleSheet, LayoutAnimation, Platform, UIManager, ActivityIndicator } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -12,6 +12,9 @@ import Animated, {
   withTiming,
   interpolateColor,
 } from 'react-native-reanimated';
+import { useQuery, useMutation, useAction } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import { Id } from '@/convex/_generated/dataModel';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
 import {
 
@@ -56,12 +59,12 @@ import { CrystalModal } from '@/components/CrystalModal';
 import { DurationSelector } from '@/components/DurationSelector';
 import { VibeSelector } from '@/components/VibeSelector';
 import { WishDetailModal } from '@/components/WishDetailModal';
-import { MAX_CRYSTALS, REGEN_TIME_SECONDS } from '@/constants/crystals';
+import { MAX_CRYSTALS } from '@/constants/crystals';
 import { FRIENDS, PRESET_LOCATIONS, VOICE_PRESETS, WISHES, FOCUS_VALUES } from '@/constants/data';
 import { STORY_STARTERS, CHALLENGE_SUGGESTIONS } from '@/constants/suggestions';
 import { Friend, PresetLocation, StoryLength, VoicePreset, Wish } from '@/types';
 
-type AppState = 'studio' | 'generating-outline' | 'outline-review' | 'generating-story' | 'preview';
+type AppState = 'studio' | 'generating-outline' | 'outline-review' | 'generating-story';
 type StudioMode = 'creative' | 'situation' | 'auto';
 type StoryVibe = 'energizing' | 'soothing' | 'whimsical' | 'thoughtful';
 type ThemeMode = 'purple' | 'teal' | 'amber';
@@ -355,7 +358,7 @@ const StorySettingsPanel: React.FC<StorySettingsPanelProps> = ({
               className={`text-sm font-semibold ${showWishes ? 'text-slate-800' : 'text-slate-400'
                 }`}
             >
-              Wishes
+              Child's Wishes
             </Text>
           </View>
           <View
@@ -510,9 +513,34 @@ export const CreateScreen: React.FC = () => {
   const [overrideCharacter, setOverrideCharacter] = useState<Friend | null>(null);
   const [overrideVoice, setOverrideVoice] = useState<VoicePreset | null>(null);
   const [viewingWish, setViewingWish] = useState<Wish | null>(null);
-  const [crystalBalance, setCrystalBalance] = useState(150);
   const [showCrystalModal, setShowCrystalModal] = useState(false);
-  const [timeToNextCrystal, setTimeToNextCrystal] = useState(REGEN_TIME_SECONDS);
+
+  // Server-side credits
+  const creditsData = useQuery(api.credits.getUserCredits);
+  const addCreditsMutation = useMutation(api.credits.addCredits);
+
+  // Story generation
+  const [currentJobId, setCurrentJobId] = useState<Id<"storyJobs"> | null>(null);
+  const queueStoryJobMutation = useMutation(api.storyGeneration.queueStoryJob);
+  const cancelStoryJobMutation = useMutation(api.storyGeneration.cancelStoryJob);
+  const generateOutlineAction = useAction(api.storyGenerationActions.generateOutline);
+  const storyJob = useQuery(
+    api.storyGeneration.getStoryJob,
+    currentJobId ? { jobId: currentJobId } : "skip"
+  );
+
+  interface StoryOutline {
+    title: string;
+    subtitle: string;
+    moral: string;
+    moralDescription: string;
+    points: Array<{ title: string; description: string }>;
+  }
+  const [generatedOutline, setGeneratedOutline] = useState<StoryOutline | null>(null);
+
+  const crystalBalance = creditsData?.balance ?? MAX_CRYSTALS;
+  const crystalCap = creditsData?.cap ?? MAX_CRYSTALS;
+  const timeToNextCrystal = creditsData?.timeToNextCredit ?? 0;
 
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [toggleLayout, setToggleLayout] = useState({ width: 0, height: 0 });
@@ -554,20 +582,6 @@ export const CreateScreen: React.FC = () => {
   };
 
   useEffect(() => {
-    if (crystalBalance >= MAX_CRYSTALS) return;
-    const interval = setInterval(() => {
-      setTimeToNextCrystal((prev) => {
-        if (prev <= 1) {
-          setCrystalBalance((balance) => Math.min(balance + 1, MAX_CRYSTALS));
-          return REGEN_TIME_SECONDS;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [crystalBalance]);
-
-  useEffect(() => {
     setOverrideLocation(null);
     setOverrideCharacter(null);
     setOverrideValue(null);
@@ -584,6 +598,27 @@ export const CreateScreen: React.FC = () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (!storyJob) return;
+
+    if (storyJob.status === 'complete' && storyJob.bookId) {
+      setAppState('studio');
+      setCurrentJobId(null);
+      setPrompt('');
+      setOverrideLocation(null);
+      setOverrideCharacter(null);
+      setOverrideValue(null);
+      setOverrideVoice(null);
+      router.push({
+        pathname: '/reading/[id]',
+        params: { id: storyJob.bookId },
+      });
+    } else if (storyJob.status === 'failed') {
+      setAppState('studio');
+      setCurrentJobId(null);
+    }
+  }, [storyJob?.status, storyJob?.bookId]);
 
   const scheduleStateChange = (state: AppState, delay: number) => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -605,13 +640,20 @@ export const CreateScreen: React.FC = () => {
     return cost;
   };
   const totalCost = calculateTotalCost();
+  const hasEnoughCredits = crystalBalance >= totalCost;
 
-  const handleCreateStory = () => {
+  const handleCreateStory = async () => {
     if (!hasValidPrompt) return;
     if (crystalBalance < totalCost) {
       setShowCrystalModal(true);
       return;
     }
+
+    let finalPrompt = prompt;
+    let finalLocation = overrideLocation;
+    let finalCharacter = overrideCharacter;
+    let finalValue = overrideValue;
+    let finalVoice = overrideVoice;
 
     if (studioMode === 'auto') {
       const randomWish = getRandomItem(WISHES);
@@ -620,27 +662,91 @@ export const CreateScreen: React.FC = () => {
       const randomValue = getRandomItem(FOCUS_VALUES);
       const randomVoice = getRandomItem(VOICE_PRESETS);
 
-      if (randomWish && !prompt) setPrompt(randomWish.text);
-      if (randomLoc && !overrideLocation) setOverrideLocation(randomLoc);
-      if (randomChar && !overrideCharacter) setOverrideCharacter(randomChar);
-      if (randomValue && !overrideValue) setOverrideValue(randomValue);
-      if (randomVoice && !overrideVoice) setOverrideVoice(randomVoice);
+      if (randomWish && !prompt) {
+        finalPrompt = randomWish.text;
+        setPrompt(randomWish.text);
+      }
+      if (randomLoc && !overrideLocation) {
+        finalLocation = randomLoc;
+        setOverrideLocation(randomLoc);
+      }
+      if (randomChar && !overrideCharacter) {
+        finalCharacter = randomChar;
+        setOverrideCharacter(randomChar);
+      }
+      if (randomValue && !overrideValue) {
+        finalValue = randomValue;
+        setOverrideValue(randomValue);
+      }
+      if (randomVoice && !overrideVoice) {
+        finalVoice = randomVoice;
+        setOverrideVoice(randomVoice);
+      }
     }
 
-    setCrystalBalance((prev) => prev - totalCost);
     setAppState('generating-outline');
-    scheduleStateChange('outline-review', 2500);
-  };
 
-  const handleApproveOutline = () => {
-    setAppState('generating-story');
-    scheduleStateChange('preview', 3000);
+    try {
+      const result = await generateOutlineAction({
+        mode: studioMode,
+        prompt: finalPrompt || 'a magical adventure',
+        storyLength,
+        storyVibe,
+        moral: finalValue?.id,
+        extraCharacterName: finalCharacter?.name,
+        locationName: finalLocation?.name,
+      });
+
+      if (result.success && result.outline) {
+        setGeneratedOutline(result.outline);
+        setAppState('outline-review');
+      } else {
+        setAppState('studio');
+      }
+    } catch {
+      setAppState('studio');
+    }
   };
 
   const handleRandomPrompt = () => {
     if (!WISHES.length) return;
     const randomWish = getRandomItem(WISHES);
     if (randomWish) setPrompt(randomWish.text);
+  };
+
+  const handleApproveOutline = async () => {
+    setAppState('generating-story');
+
+    const result = await queueStoryJobMutation({
+      mode: studioMode,
+      prompt: prompt || 'a magical adventure',
+      storyLength,
+      storyVibe,
+      moral: overrideValue?.id,
+      extraCharacterId: overrideCharacter?.id,
+      extraCharacterName: overrideCharacter?.name,
+      locationId: overrideLocation?.id,
+      locationName: overrideLocation?.name,
+      voiceId: overrideVoice?.id,
+      creditCost: totalCost,
+    });
+
+    if (!result.success) {
+      setAppState('studio');
+      if (result.error === 'Insufficient credits') {
+        setShowCrystalModal(true);
+      }
+      return;
+    }
+
+    if (result.jobId) {
+      setCurrentJobId(result.jobId);
+    }
+  };
+
+  const handleRefillCredits = async (amount: number) => {
+    await addCreditsMutation({ amount });
+    setShowCrystalModal(false);
   };
 
 
@@ -824,7 +930,7 @@ export const CreateScreen: React.FC = () => {
                       className={`text-sm font-black ${isCreative ? 'text-primary-700' : 'text-slate-400'
                         }`}
                     >
-                      Creative Magic
+                      Creative Mode
                     </Text>
                   </Pressable>
                   <Pressable
@@ -836,7 +942,7 @@ export const CreateScreen: React.FC = () => {
                       className={`text-sm font-black ${!isCreative ? 'text-teal-700' : 'text-slate-400'
                         }`}
                     >
-                      Real Life Help
+                      Incident Mode
                     </Text>
                   </Pressable>
                 </MotiView>
@@ -855,7 +961,7 @@ export const CreateScreen: React.FC = () => {
                 {isAuto
                   ? "Sit back. We'll conjure a unique tale for you."
                   : isCreative
-                    ? 'Create a magical story from scratch.'
+                    ? 'Create an amazing story from scratch.'
                     : 'Get help with a specific situation.'}
               </Text>
             </View>
@@ -978,7 +1084,7 @@ export const CreateScreen: React.FC = () => {
                     <Pressable
                       onPress={() => router.push({
                         pathname: '/manage-assets',
-                        params: { tab: 'voices', selectedVoiceId: overrideVoice?.id || '' },
+                        params: { tab: 'voices', mode: 'picker', selectedVoiceId: overrideVoice?.id || '' },
                       })}
                       className={`flex-1 flex-row items-center gap-2 px-4 py-3 rounded-xl border ${overrideVoice ? 'bg-primary-50 border-primary-200' : 'bg-slate-50 border-transparent'
                         }`}
@@ -997,7 +1103,7 @@ export const CreateScreen: React.FC = () => {
                       <View className="flex-row items-center gap-2">
                         <Shuffle size={16} color={showRemix ? '#a855f7' : '#94a3b8'} />
                         <Text className={`text-sm font-medium ${showRemix ? 'text-slate-800' : 'text-slate-500'}`}>
-                          Wishes
+                          Child's Wishes
                         </Text>
                       </View>
                       <View className={`w-8 h-5 rounded-full ${showRemix ? 'bg-primary-500' : 'bg-slate-300'}`}>
@@ -1149,7 +1255,7 @@ export const CreateScreen: React.FC = () => {
                               value={overrideLocation?.name || null}
                               onPress={() => router.push({
                                 pathname: '/manage-assets',
-                                params: { tab: 'places', selectedLocationId: overrideLocation?.id || '' },
+                                params: { tab: 'places', mode: 'picker', selectedLocationId: overrideLocation?.id || '' },
                               })}
                               onClear={() => setOverrideLocation(null)}
                               theme={controlsTheme}
@@ -1160,7 +1266,7 @@ export const CreateScreen: React.FC = () => {
                               value={overrideCharacter?.name || null}
                               onPress={() => router.push({
                                 pathname: '/manage-assets',
-                                params: { tab: 'faces', selectedCharacterId: overrideCharacter?.id || '' },
+                                params: { tab: 'faces', mode: 'picker', selectedCharacterId: overrideCharacter?.id || '' },
                               })}
                               onClear={() => setOverrideCharacter(null)}
                               theme={controlsTheme}
@@ -1171,7 +1277,7 @@ export const CreateScreen: React.FC = () => {
                               value={overrideValue?.name || null}
                               onPress={() => router.push({
                                 pathname: '/manage-assets',
-                                params: { tab: 'values', selectedValueId: overrideValue?.id || '' },
+                                params: { tab: 'values', mode: 'picker', selectedValueId: overrideValue?.id || '' },
                               })}
                               onClear={() => setOverrideValue(null)}
                               theme={controlsTheme}
@@ -1218,20 +1324,16 @@ export const CreateScreen: React.FC = () => {
         <CrystalModal
           visible={showCrystalModal}
           balance={crystalBalance}
-          max={MAX_CRYSTALS}
+          max={crystalCap}
           timeToNext={timeToNextCrystal}
           onClose={() => setShowCrystalModal(false)}
-          onRefill={(amount) => {
-            setCrystalBalance((prev) => prev + amount);
-            setShowCrystalModal(false);
-          }}
+          onRefill={handleRefillCredits}
         />
       </View >
     );
   };
 
-  if (appState === 'generating-outline' || appState === 'generating-story') {
-    const isOutline = appState === 'generating-outline';
+  if (appState === 'generating-outline') {
     return (
       <View className="flex-1 bg-background items-center justify-center px-8">
         <MotiView
@@ -1241,19 +1343,15 @@ export const CreateScreen: React.FC = () => {
           className="mb-12"
         >
           <View className="w-28 h-28 bg-white rounded-[40px] shadow-lg items-center justify-center border-2 border-white">
-            {isOutline ? (
-              <Sparkles size={48} color="#a855f7" />
-            ) : (
-              <BookOpen size={48} color="#06b6d4" />
-            )}
+            <Sparkles size={48} color="#a855f7" />
           </View>
         </MotiView>
         <Text className="text-2xl font-black text-slate-800 mb-3 text-center">
-          {isOutline ? 'Summoning Ideas...' : 'Weaving Magic...'}
+          Summoning Ideas...
         </Text>
         <View className="bg-white/70 p-5 rounded-3xl border border-slate-100 w-full">
           <Text className="text-slate-500 text-xs font-bold uppercase tracking-wider text-center mb-3">
-            {isOutline ? 'Consulting the creative spirits' : 'Writing chapters & drawing art'}
+            Consulting the creative spirits
           </Text>
           <View className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
             <LinearGradient
@@ -1268,7 +1366,70 @@ export const CreateScreen: React.FC = () => {
     );
   }
 
-  if (appState === 'outline-review') {
+  if (appState === 'generating-story') {
+    const progress = storyJob?.progress ?? 0;
+    const statusText = storyJob?.status === 'generating_images' 
+      ? 'Creating illustrations...' 
+      : storyJob?.status === 'generating_story'
+        ? 'Writing the story...'
+        : 'Preparing magic...';
+
+    const handleCancelGeneration = async () => {
+      if (currentJobId) {
+        await cancelStoryJobMutation({ jobId: currentJobId });
+        setCurrentJobId(null);
+        setAppState('studio');
+      }
+    };
+
+    return (
+      <View className="flex-1 bg-background items-center justify-center px-8">
+        <MotiView
+          from={{ rotate: '0deg' }}
+          animate={{ rotate: '360deg' }}
+          transition={{ type: 'timing', duration: 1200, loop: true }}
+          className="mb-12"
+        >
+          <View className="w-28 h-28 bg-white rounded-[40px] shadow-lg items-center justify-center border-2 border-white">
+            <BookOpen size={48} color="#06b6d4" />
+          </View>
+        </MotiView>
+        <Text className="text-2xl font-black text-slate-800 mb-3 text-center">
+          Weaving Magic...
+        </Text>
+        <View className="bg-white/70 p-5 rounded-3xl border border-slate-100 w-full mb-6">
+          <Text className="text-slate-500 text-xs font-bold uppercase tracking-wider text-center mb-3">
+            {statusText}
+          </Text>
+          <View className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+            <MotiView
+              animate={{ width: `${progress}%` }}
+              transition={{ type: 'timing', duration: 300 }}
+              style={{ height: '100%', borderRadius: 999 }}
+            >
+              <LinearGradient
+                colors={['#a855f7', '#ec4899', '#a855f7']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={StyleSheet.absoluteFillObject}
+              />
+            </MotiView>
+          </View>
+          <Text className="text-center text-slate-600 text-sm font-bold mt-2">
+            {Math.round(progress)}%
+          </Text>
+        </View>
+        <Pressable
+          onPress={handleCancelGeneration}
+          className="px-6 py-3 rounded-xl bg-slate-100 active:bg-slate-200"
+        >
+          <Text className="text-slate-600 font-bold text-sm">Cancel</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
+  if (appState === 'outline-review' && generatedOutline) {
     return (
       <ScrollView
         className="flex-1 bg-background"
@@ -1280,7 +1441,10 @@ export const CreateScreen: React.FC = () => {
           className="px-6 flex-row items-center justify-between mb-8"
         >
           <Pressable
-            onPress={() => setAppState('studio')}
+            onPress={() => {
+              setAppState('studio');
+              setGeneratedOutline(null);
+            }}
             className="w-10 h-10 rounded-full border border-slate-200 bg-white items-center justify-center shadow-sm active:scale-95"
           >
             <ChevronLeft size={20} color="#475569" />
@@ -1300,9 +1464,22 @@ export const CreateScreen: React.FC = () => {
               </Text>
             </View>
             <Text className="text-3xl font-extrabold text-slate-800 leading-tight mb-2">
-              Leo's Park{'\n'}
-              <Text className="text-purple-500">Adventure</Text>
+              {generatedOutline.title}
             </Text>
+            {generatedOutline.subtitle ? (
+              <Text className="text-sm text-slate-500 font-medium">
+                {generatedOutline.subtitle}
+              </Text>
+            ) : null}
+          </View>
+
+          <View className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm mb-6">
+            <View className="flex-row items-center gap-2 mb-2">
+              <Heart size={14} color="#a855f7" />
+              <Text className="text-xs font-bold text-slate-400 uppercase tracking-wider">Lesson</Text>
+            </View>
+            <Text className="text-sm font-bold text-slate-800 mb-1">{generatedOutline.moral}</Text>
+            <Text className="text-xs text-slate-500 font-medium">{generatedOutline.moralDescription}</Text>
           </View>
 
           <View className="mb-4 pl-2">
@@ -1312,20 +1489,15 @@ export const CreateScreen: React.FC = () => {
             </View>
 
             <View className="gap-4">
-              {[
-                { title: 'The Arrival', desc: 'Leo arrives at the Magic Castle on a sunny afternoon.' },
-                { title: 'The Discovery', desc: 'He hears a mysterious sound behind the big door.' },
-                { title: 'New Friend', desc: 'Leo meets Barky the dog and overcomes his shyness.' },
-                { title: 'Happy Ending', desc: 'They play fetch and Leo goes home with a new story.' },
-              ].map((point, index) => (
-                <View key={point.title} className="flex-row gap-4">
+              {generatedOutline.points.map((point, index) => (
+                <View key={`point-${index}`} className="flex-row gap-4">
                   <View className="w-8 h-8 rounded-full bg-white border-2 border-purple-100 items-center justify-center shadow-sm">
                     <Text className="text-xs font-bold text-purple-500">{index + 1}</Text>
                   </View>
                   <View className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex-1">
                     <Text className="font-bold text-slate-800 text-sm mb-1">{point.title}</Text>
                     <Text className="text-xs text-slate-500 leading-relaxed font-medium">
-                      {point.desc}
+                      {point.description}
                     </Text>
                   </View>
                 </View>
@@ -1336,7 +1508,10 @@ export const CreateScreen: React.FC = () => {
 
         <View className="px-6 py-4 flex-row gap-3">
           <Pressable
-            onPress={() => setAppState('studio')}
+            onPress={() => {
+              setAppState('studio');
+              setGeneratedOutline(null);
+            }}
             className="flex-1 py-4 rounded-2xl bg-white border border-slate-200 flex-row items-center justify-center gap-2 active:scale-95"
           >
             <RotateCcw size={16} color="#64748b" />
@@ -1349,77 +1524,6 @@ export const CreateScreen: React.FC = () => {
             <Sparkles size={16} color="#c4b5fd" />
             <Text className="text-white font-bold text-sm">Write Story</Text>
             <ArrowRight size={16} color="#ffffff" />
-          </Pressable>
-        </View>
-      </ScrollView>
-    );
-  }
-
-  if (appState === 'preview') {
-    return (
-      <ScrollView
-        className="flex-1 bg-background"
-        contentContainerStyle={{ paddingBottom: insets.bottom + 120 }}
-        showsVerticalScrollIndicator={false}
-      >
-        <View
-          style={{ paddingTop: insets.top + 12 }}
-          className="px-6 flex-row items-center justify-between mb-6"
-        >
-          <Pressable
-            onPress={() => setAppState('outline-review')}
-            className="w-10 h-10 rounded-full border border-slate-200 bg-white items-center justify-center shadow-sm active:scale-95"
-          >
-            <ChevronLeft size={20} color="#475569" />
-          </Pressable>
-          <View className="flex-row items-center gap-1">
-            <Check size={12} color="#8b5cf6" />
-            <Text className="text-xs font-bold text-purple-500 uppercase tracking-widest">Ready</Text>
-          </View>
-          <View className="w-10" />
-        </View>
-
-        <View className="px-6">
-          <View className="w-full aspect-[3/4] max-h-[340px] rounded-[40px] shadow-lg overflow-hidden mb-8">
-            <LinearGradient
-              colors={['#6366f1', '#9333ea']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={StyleSheet.absoluteFillObject}
-            />
-            <View className="flex-1 items-center justify-center">
-              <BookOpen size={80} color="#ffffff" />
-              <View className="absolute bottom-0 left-0 right-0 p-8 pt-12 items-center">
-                <Text className="text-white text-2xl font-bold text-center leading-tight">
-                  Leo's Park{'\n'}
-                  Adventure
-                </Text>
-              </View>
-            </View>
-          </View>
-
-          <View className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm mb-8">
-            <View className="flex-row items-center gap-2 mb-3">
-              <Sparkles size={14} color="#8b5cf6" />
-              <Text className="text-xs font-bold text-slate-400 uppercase tracking-wider">Story Snippet</Text>
-            </View>
-            <Text className="text-slate-600 leading-relaxed text-lg italic">
-              "The sun was shining brightly over Greenleaf Park when Leo arrived. He spotted a wagging tail behind the big oak tree..."
-            </Text>
-          </View>
-        </View>
-
-        <View className="px-6 flex-row gap-3">
-          <Pressable
-            onPress={() => setAppState('studio')}
-            className="flex-1 py-4 rounded-2xl bg-white border border-slate-200 flex-row items-center justify-center gap-2 active:scale-95"
-          >
-            <RotateCcw size={16} color="#64748b" />
-            <Text className="text-slate-600 font-bold text-sm">New</Text>
-          </Pressable>
-          <Pressable className="flex-[2] py-4 rounded-2xl bg-slate-900 flex-row items-center justify-center gap-2 shadow-lg active:scale-95">
-            <BookOpen size={16} color="#ffffff" />
-            <Text className="text-white font-bold text-sm">Read Now</Text>
           </Pressable>
         </View>
       </ScrollView>

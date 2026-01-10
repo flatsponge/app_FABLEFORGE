@@ -22,7 +22,7 @@ const THEMES: SelectOption[] = [
 
 export default function StoryThemesScreen() {
     const router = useRouter();
-    const { data } = useOnboarding();
+    const { data, updateData } = useOnboarding();
     const [selected, setSelected] = useState<string[]>([]);
 
     const toggleSelection = (id: string) => {
@@ -37,6 +37,7 @@ export default function StoryThemesScreen() {
 
     const handleNext = () => {
         if (canProceed) {
+            updateData({ storyThemes: selected });
             router.push('/(onboarding)/quiz/previous-attempts');
         }
     };
@@ -46,6 +47,7 @@ export default function StoryThemesScreen() {
             showProgressBar={false} skipTopSafeArea progress={0.35}
             onNext={handleNext}
             nextLabel="Continue"
+            showNextButton={canProceed}
             isScrollable={true}
         >
             <View style={styles.contentContainer}>

@@ -7,7 +7,7 @@ export interface Category {
 }
 
 export interface Book {
-  id: number;
+  id: string;
   title: string;
   author: string;
   progress: number;
@@ -28,6 +28,7 @@ export interface AvatarItem {
   type?: string;
   label?: string;
   image?: any;
+  aiDescription?: string; // Description used for AI image generation prompts
 }
 
 export interface AvatarConfig {

@@ -1,10 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, ScrollView, Pressable, TextInput, Image, StyleSheet, ImageBackground } from 'react-native';
+import { View, Text, ScrollView, Pressable, TextInput, Image, StyleSheet, ImageBackground, ActivityIndicator, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
 import { useChildLock } from '@/contexts/ChildLockContext';
 import { useOrientation } from '@/components/useOrientation';
+import { useQuery, useAction } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import { Id } from '@/convex/_generated/dataModel';
+import { Asset } from 'expo-asset';
 import ChildBackground from '@/childbackground/childbackground1.png';
 import ChildBackground2 from '@/childbackground/childbackground2.png';
 import ChildBackground3 from '@/childbackground/childbackground3.png';
@@ -44,20 +48,18 @@ import {
   Play,
   Image as ImageIcon,
 } from 'lucide-react-native';
-import { OUTFITS, HATS, TOYS, BOOKS, PRESET_LOCATIONS, BASE_AVATARS } from '@/constants/data';
+import { OUTFITS, HATS, TOYS, PRESET_LOCATIONS, BASE_AVATARS } from '@/constants/data';
 import { useOnboarding } from '@/contexts/OnboardingContext';
-import { AvatarConfig } from '@/types';
-
 type RoomType = 'wardrobe' | 'well' | 'read';
-type WardrobeTab = 'clothes' | 'hats' | 'toys' | 'skin' | 'background';
+// Merged hats + toys into single "accessories" tab due to FLUX Kontext 2-image limit
+type WardrobeTab = 'clothes' | 'accessories' | 'background';
 type WishState = 'idle' | 'recording' | 'typing' | 'review' | 'sent';
 
-const DEFAULT_AVATAR: AvatarConfig = {
-  skinColor: '#fed0b3',
-  outfitId: 'tshirt-blue',
-  hatId: 'none',
-  toyId: 'none',
-};
+// Combined accessories list (hats + toys) - user can only equip ONE
+const ACCESSORIES = [
+  ...HATS.map(h => ({ ...h, accessoryType: 'hat' as const })),
+  ...TOYS.map(t => ({ ...t, accessoryType: 'toy' as const })),
+];
 
 const AnimatedBottle = ({ onComplete, onLanded }: { onComplete: () => void; onLanded: () => void }) => {
   const translateY = useSharedValue(0);
@@ -411,12 +413,22 @@ const TextActionButton = ({
 
 const Avatar = ({
   scale = 1,
+  mascotImageUrl,
+  isLoading = false,
 }: {
   scale?: number;
+  mascotImageUrl?: string | null;
+  isLoading?: boolean;
 }) => {
   const { data } = useOnboarding();
   const avatarId = data?.avatarId || 'bears';
-  const baseImage = BASE_AVATARS.find(a => a.id === avatarId)?.image || BASE_AVATARS[0].image;
+  const baseAvatar = BASE_AVATARS.find(a => a.id === avatarId);
+  const baseImage = baseAvatar?.image ?? BASE_AVATARS[0]?.image;
+  
+  // Use mascot URL if provided, otherwise fall back to base avatar
+  const imageSource = mascotImageUrl 
+    ? { uri: mascotImageUrl } 
+    : baseImage;
 
   return (
     <View
@@ -458,12 +470,33 @@ const Avatar = ({
           borderColor: 'rgba(0,0,0,0.03)',
         }}
       />
-      {/* Base Body */}
+      {/* Avatar/Mascot Image */}
       <Image
-        source={baseImage}
+        source={imageSource}
         className="absolute w-full h-full"
         resizeMode="contain"
       />
+      {/* Loading overlay */}
+      {isLoading && (
+        <View
+          style={{
+            position: 'absolute',
+            width: 170,
+            height: 170,
+            borderRadius: 85,
+            backgroundColor: 'rgba(255,255,255,0.8)',
+            top: '50%',
+            marginTop: -85,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <ActivityIndicator size="large" color="#8B5CF6" />
+          <Text style={{ marginTop: 8, fontSize: 12, fontWeight: '700', color: '#7C3AED' }}>
+            Creating...
+          </Text>
+        </View>
+      )}
     </View>
   );
 };
@@ -685,34 +718,25 @@ const WardrobeTabButton = ({
 };
 
 export default function ChildHubScreen() {
-  const [isLocked, setIsLocked] = useState(false); // Default to unlocked
+  const router = useRouter();
+  const [isLocked, setIsLocked] = useState(false);
   const [activeRoom, setActiveRoom] = useState<RoomType>('wardrobe');
   const [wardrobeTab, setWardrobeTab] = useState<WardrobeTab>('clothes');
   const [backgroundSource, setBackgroundSource] = useState<any>(ChildBackground);
   const [wishState, setWishState] = useState<WishState>('idle');
   const [recordingTime, setRecordingTime] = useState(0);
   const [wishText, setWishText] = useState('');
-  const [avatarConfig, setAvatarConfig] = useState<AvatarConfig>(DEFAULT_AVATAR);
-  const [pendingAvatarConfig, setPendingAvatarConfig] = useState<AvatarConfig>(DEFAULT_AVATAR);
-  const [wardrobeState, setWardrobeState] = useState<'selecting' | 'hidden'>('selecting');
-
-  // Initialize pending config when confirmed config changes (or on mount)
-  useEffect(() => {
-    setPendingAvatarConfig(avatarConfig);
-  }, []);
-
-  const handleCancelSelection = () => {
-    setPendingAvatarConfig(avatarConfig);
-  };
-
-  const handleConfirmSelection = () => {
-    setAvatarConfig(pendingAvatarConfig);
-    setWardrobeState('hidden');
-  };
-
-  const handleRevealWardrobe = () => {
-    setWardrobeState('selecting');
-  };
+  const [isGenerating, setIsGenerating] = useState(false);
+  
+  const userProgress = useQuery(api.onboarding.getUserProgress);
+  const mascotOutfit = useQuery(api.onboarding.getMascotOutfit);
+  const userBooks = useQuery(api.storyGeneration.getUserBooks, {});
+  const addClothesToMascot = useAction(api.imageGeneration.addClothesToMascot);
+  const addAccessoryToMascot = useAction(api.imageGeneration.addAccessoryToMascot);
+  const resetMascotOutfitAction = useAction(api.imageGeneration.resetMascotOutfit);
+  const generateUploadUrl = useAction(api.imageGeneration.generateUploadUrl);
+  
+  const hasUnlockedWardrobe = userProgress?.hasUnlockedWardrobe ?? false;
 
   const [showUnlockHint, setShowUnlockHint] = useState(false);
   const [showBottleAnimation, setShowBottleAnimation] = useState(false);
@@ -743,10 +767,6 @@ export default function ChildHubScreen() {
       return () => setIsOnChildHub(false);
     }, [setIsOnChildHub])
   );
-
-  const currentOutfit = OUTFITS.find(o => o.id === avatarConfig.outfitId) || OUTFITS[0];
-  const currentHat = HATS.find(h => h.id === avatarConfig.hatId);
-  const currentToy = TOYS.find(t => t.id === avatarConfig.toyId);
 
   // Inverted lock behavior: tap to lock, long-press to unlock
   const handleLockPressStart = () => {
@@ -825,6 +845,140 @@ export default function ChildHubScreen() {
     setWishText('');
   };
 
+  // Helper: Upload a local image asset to Convex storage
+  const uploadLocalImageToConvex = async (imageSource: number): Promise<Id<"_storage">> => {
+    // Load the asset
+    const asset = Asset.fromModule(imageSource);
+    await asset.downloadAsync();
+    
+    if (!asset.localUri) {
+      throw new Error('Failed to get local URI for asset');
+    }
+    
+    // Get upload URL from Convex
+    const uploadUrl = await generateUploadUrl();
+    
+    // Fetch the local image and upload
+    const response = await fetch(asset.localUri);
+    const blob = await response.blob();
+    
+    const uploadResponse = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': blob.type || 'image/png',
+      },
+      body: blob,
+    });
+    
+    if (!uploadResponse.ok) {
+      throw new Error('Failed to upload image to Convex');
+    }
+    
+    const { storageId } = await uploadResponse.json();
+    return storageId as Id<"_storage">;
+  };
+
+  // Handle CLOTHES click - uses original bare mascot as base
+  const handleClothesClick = async (clothesId: string) => {
+    if (isGenerating) return;
+    
+    setIsGenerating(true);
+    try {
+      const item = OUTFITS.find(o => o.id === clothesId);
+      if (!item?.image) {
+        console.error('Clothes image not found:', clothesId);
+        return;
+      }
+      
+      // Upload the clothes image to Convex storage
+      const clothesImageStorageId = await uploadLocalImageToConvex(item.image);
+      
+      // Check if user has a custom mascot or needs to use base avatar
+      let mascotStorageId: Id<"_storage"> | undefined;
+      if (!mascotOutfit?.originalMascotId) {
+        const avatarId = onboardingData?.avatarId || 'bears';
+        const baseAvatar = BASE_AVATARS.find(a => a.id === avatarId) || BASE_AVATARS[0];
+        mascotStorageId = await uploadLocalImageToConvex(baseAvatar.image);
+      }
+      
+      // Clothes always use original bare mascot as reference
+      const result = await addClothesToMascot({ 
+        clothesId,
+        clothesDescription: item.aiDescription ?? `a ${clothesId}`,
+        clothesImageStorageId,
+        mascotStorageId,
+      });
+      
+      if (!result.success) {
+        console.error('Failed to add clothes:', result.error);
+      }
+    } catch (error) {
+      console.error('Error adding clothes to mascot:', error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // Handle ACCESSORY click (hat OR toy) - uses clothed mascot as base
+  const handleAccessoryClick = async (accessoryId: string, accessoryType: 'hat' | 'toy') => {
+    if (isGenerating) return;
+    
+    setIsGenerating(true);
+    try {
+      // Find item in combined accessories list
+      const item = ACCESSORIES.find(a => a.id === accessoryId);
+      if (!item?.image) {
+        console.error('Accessory image not found:', accessoryId);
+        return;
+      }
+      
+      // Upload the accessory image to Convex storage
+      const accessoryImageStorageId = await uploadLocalImageToConvex(item.image);
+      
+      // Check if user has a custom mascot or needs to use base avatar
+      let mascotStorageId: Id<"_storage"> | undefined;
+      if (!mascotOutfit?.originalMascotId) {
+        const avatarId = onboardingData?.avatarId || 'bears';
+        const baseAvatar = BASE_AVATARS.find(a => a.id === avatarId) || BASE_AVATARS[0];
+        mascotStorageId = await uploadLocalImageToConvex(baseAvatar.image);
+      }
+      
+      // Accessories use clothed mascot (or bare if no clothes) as reference
+      const result = await addAccessoryToMascot({ 
+        accessoryId,
+        accessoryType,
+        accessoryDescription: item.aiDescription ?? `a ${accessoryId}`,
+        accessoryImageStorageId,
+        mascotStorageId,
+      });
+      
+      if (!result.success) {
+        console.error('Failed to add accessory:', result.error);
+      }
+    } catch (error) {
+      console.error('Error adding accessory to mascot:', error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // Handle reset outfit
+  const handleResetOutfit = async () => {
+    if (isGenerating) return;
+    
+    setIsGenerating(true);
+    try {
+      const result = await resetMascotOutfitAction();
+      if (!result.success) {
+        console.error('Failed to reset outfit:', result.error);
+      }
+    } catch (error) {
+      console.error('Error resetting outfit:', error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   useEffect(() => {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
@@ -833,11 +987,10 @@ export default function ChildHubScreen() {
     };
   }, []);
 
+  // Merged hats + toys into "accessories" tab due to FLUX Kontext 2-image limit
   const tabItems: { id: WardrobeTab; icon: typeof Shirt; bgColor: string; borderColorValue: string }[] = [
     { id: 'clothes', icon: Shirt, bgColor: '#60a5fa', borderColorValue: '#2563eb' },
-    { id: 'hats', icon: Crown, bgColor: '#facc15', borderColorValue: '#ca8a04' },
-    { id: 'toys', icon: Gift, bgColor: '#c084fc', borderColorValue: '#9333ea' },
-    // { id: 'skin', icon: Palette, bgColor: '#fb923c', borderColorValue: '#ea580c' },
+    { id: 'accessories', icon: Star, bgColor: '#facc15', borderColorValue: '#ca8a04' }, // Star icon for merged accessories
     { id: 'background', icon: ImageIcon, bgColor: '#4ade80', borderColorValue: '#16a34a' },
   ];
 
@@ -894,10 +1047,14 @@ export default function ChildHubScreen() {
 
         {activeRoom === 'wardrobe' && (
           <View className="flex-1 relative z-10 pb-24">
-            {wardrobeState === 'selecting' ? (
+            {hasUnlockedWardrobe ? (
               <Animated.View entering={FadeIn} exiting={FadeOut} style={{ flex: 1 }}>
                 <View className="flex-1 items-center justify-center pt-8">
-                  <Avatar scale={1.2} />
+                  <Avatar 
+                    scale={1.2} 
+                    mascotImageUrl={mascotOutfit?.currentMascotUrl}
+                    isLoading={isGenerating}
+                  />
                 </View>
 
                 <View className="px-4 pb-8">
@@ -917,61 +1074,63 @@ export default function ChildHubScreen() {
                   <View className="bg-white rounded-3xl p-4 border-4 border-slate-200">
                     <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                       <View className="flex-row gap-3">
+                        {/* CLOTHES TAB - uses original bare mascot as base */}
                         {wardrobeTab === 'clothes' &&
-                          OUTFITS.map(item => (
-                            <Pressable
-                              key={item.id}
-                              onPress={() =>
-                                setPendingAvatarConfig({ ...pendingAvatarConfig, outfitId: item.id })
-                              }
-                              style={[
-                                pendingAvatarConfig.outfitId === item.id
-                                  ? { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4, elevation: 4, borderColor: 'rgba(0,0,0,0.3)' }
-                                  : { opacity: 0.9, borderColor: 'transparent' }
-                              ]}
-                              className={`w-20 h-20 rounded-2xl items-center justify-center border-4 bg-white`}
-                            >
-                              <Image source={item.image} style={{ width: 60, height: 60 }} resizeMode="contain" />
-                            </Pressable>
-                          ))}
+                          OUTFITS.map(item => {
+                            const isEquipped = mascotOutfit?.equippedClothes === item.id;
+                            return (
+                              <Pressable
+                                key={item.id}
+                                onPress={() => handleClothesClick(item.id)}
+                                disabled={isGenerating}
+                                style={[
+                                  isEquipped
+                                    ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.4, shadowRadius: 6, elevation: 4 }
+                                    : { opacity: isGenerating ? 0.5 : 0.9 }
+                                ]}
+                                className={`w-20 h-20 rounded-2xl items-center justify-center border-4 bg-white ${isEquipped ? 'border-green-500' : 'border-slate-200'}`}
+                              >
+                                <Image source={item.image} style={{ width: 60, height: 60 }} resizeMode="contain" />
+                              </Pressable>
+                            );
+                          })}
 
-                        {wardrobeTab === 'hats' &&
-                          HATS.map(item => (
-                            <Pressable
-                              key={item.id}
-                              onPress={() =>
-                                setPendingAvatarConfig({ ...pendingAvatarConfig, hatId: item.id })
-                              }
-                              className={`w-20 h-20 rounded-2xl items-center justify-center bg-slate-100 border-4 ${pendingAvatarConfig.hatId === item.id
-                                ? 'border-yellow-400 bg-white'
-                                : 'border-slate-200'
-                                }`}
-                            >
-                              <Image source={item.image} style={{ width: 60, height: 60 }} resizeMode="contain" />
-                            </Pressable>
-                          ))}
-
-                        {wardrobeTab === 'toys' &&
-                          TOYS.map(item => (
-                            <Pressable
-                              key={item.id}
-                              onPress={() =>
-                                setPendingAvatarConfig({ ...pendingAvatarConfig, toyId: item.id })
-                              }
-                              className={`w-20 h-20 rounded-2xl items-center justify-center bg-slate-100 border-4 ${pendingAvatarConfig.toyId === item.id
-                                ? 'border-purple-400 bg-white'
-                                : 'border-slate-200'
-                                }`}
-                            >
-                              <Image source={item.image} style={{ width: 60, height: 60 }} resizeMode="contain" />
-                            </Pressable>
-                          ))}
-
-                        {wardrobeTab === 'skin' && (
-                          <View className="h-20 items-center justify-center w-full">
-                            <Text className="text-gray-400">No skin customization for this hero!</Text>
-                          </View>
-                        )}
+                        {/* ACCESSORIES TAB - merged hats + toys, uses clothed mascot as base */}
+                        {/* User can only equip ONE accessory (either a hat OR a toy) */}
+                        {wardrobeTab === 'accessories' &&
+                          ACCESSORIES.map(item => {
+                            const isEquipped = mascotOutfit?.equippedAccessory === item.id;
+                            const borderColor = item.accessoryType === 'hat' ? 'border-yellow-400' : 'border-purple-400';
+                            const shadowColor = item.accessoryType === 'hat' ? '#eab308' : '#a855f7';
+                            return (
+                              <Pressable
+                                key={item.id}
+                                onPress={() => handleAccessoryClick(item.id, item.accessoryType)}
+                                disabled={isGenerating}
+                                style={isEquipped 
+                                  ? { shadowColor, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.4, shadowRadius: 6, elevation: 4 } 
+                                  : { opacity: isGenerating ? 0.5 : 0.9 }}
+                                className={`w-20 h-20 rounded-2xl items-center justify-center bg-slate-100 border-4 ${isEquipped
+                                  ? `${borderColor} bg-white`
+                                  : 'border-slate-200'
+                                  }`}
+                              >
+                                <Image source={item.image} style={{ width: 60, height: 60 }} resizeMode="contain" />
+                                {/* Small badge showing if it's a hat or toy */}
+                                <View 
+                                  className={`absolute -top-1 -right-1 w-5 h-5 rounded-full items-center justify-center ${
+                                    item.accessoryType === 'hat' ? 'bg-yellow-400' : 'bg-purple-400'
+                                  }`}
+                                >
+                                  {item.accessoryType === 'hat' ? (
+                                    <Crown size={12} color="white" />
+                                  ) : (
+                                    <Gift size={12} color="white" />
+                                  )}
+                                </View>
+                              </Pressable>
+                            );
+                          })}
 
                         {wardrobeTab === 'background' && (
                           <>
@@ -1054,14 +1213,17 @@ export default function ChildHubScreen() {
                       </View>
                     </ScrollView>
 
-                    <View className="mt-4">
-                      <TextActionButton
-                        onPress={handleConfirmSelection}
-                        label="Change"
-                        variant="primary"
-                        flex={0}
-                      />
-                    </View>
+                    {/* Reset button - only show if any items are equipped */}
+                    {(mascotOutfit?.equippedClothes || mascotOutfit?.equippedAccessory) && (
+                      <View className="mt-4">
+                        <TextActionButton
+                          onPress={handleResetOutfit}
+                          label={isGenerating ? "Resetting..." : "Reset Outfit"}
+                          variant="secondary"
+                          flex={0}
+                        />
+                      </View>
+                    )}
                   </View>
                 </View>
               </Animated.View>
@@ -1080,15 +1242,6 @@ export default function ChildHubScreen() {
                     Read a story to reveal! 📚
                   </Text>
                 </View>
-                <View className="w-full max-w-sm mt-6 h-20">
-                  <BigActionButton
-                    onPress={handleRevealWardrobe}
-                    bgColor="#f1f5f9"
-                    borderColor="#cbd5e1"
-                  >
-                    <Text className="text-slate-500 font-black text-xl uppercase tracking-wider">Undo</Text>
-                  </BigActionButton>
-                </View>
               </Animated.View>
             )}
           </View>
@@ -1103,40 +1256,53 @@ export default function ChildHubScreen() {
             </View>
 
             <View className="gap-6 pb-32">
-              {BOOKS.slice(0, 5).map(book => (
-                <Pressable
-                  key={book.id}
-                  className="w-full bg-white p-4 rounded-[40px] border-slate-200 flex-row items-center gap-5"
-                  style={({ pressed }) => ({
-                    borderBottomWidth: pressed ? 4 : 12,
-                    transform: [{ scale: pressed ? 0.98 : 1 }],
-                  })}
-                >
-                  <View className="w-24 h-24 rounded-2xl bg-slate-100 overflow-hidden border-4 border-slate-100">
-                    <Image
-                      source={{ uri: book.coverImage }}
-                      className="w-full h-full"
-                      resizeMode="cover"
-                    />
-                  </View>
-                  <View className="flex-1 py-2">
-                    <Text
-                      className="text-xl font-black text-slate-800 leading-tight mb-2"
-                      numberOfLines={2}
-                    >
-                      {book.title}
-                    </Text>
-                    <View className="px-3 py-1 bg-green-100 rounded-full border-2 border-green-200 self-start">
-                      <Text className="text-[10px] font-black text-green-600 uppercase tracking-wide">
-                        Read Now
-                      </Text>
+              {(!userBooks || userBooks.length === 0) ? (
+                <View className="bg-white p-8 rounded-[40px] border-slate-200 items-center justify-center" style={{ borderBottomWidth: 12 }}>
+                  <Text className="text-6xl mb-4">📖</Text>
+                  <Text className="text-xl font-black text-slate-700 text-center mb-2">
+                    No Stories Yet!
+                  </Text>
+                  <Text className="text-base font-bold text-slate-400 text-center">
+                    Ask a grown-up to create one! ✨
+                  </Text>
+                </View>
+              ) : (
+                userBooks.slice(0, 5).map(book => (
+                  <Pressable
+                    key={book._id}
+                    onPress={() => router.push(`/reading/${book._id}?mode=autoplay`)}
+                    className="w-full bg-white p-4 rounded-[40px] border-slate-200 flex-row items-center gap-5"
+                    style={({ pressed }) => ({
+                      borderBottomWidth: pressed ? 4 : 12,
+                      transform: [{ scale: pressed ? 0.98 : 1 }],
+                    })}
+                  >
+                    <View className="w-24 h-24 rounded-2xl bg-slate-100 overflow-hidden border-4 border-slate-100">
+                      <Image
+                        source={{ uri: book.coverImageUrl || '' }}
+                        className="w-full h-full"
+                        resizeMode="cover"
+                      />
                     </View>
-                  </View>
-                  <View className="w-20 h-20 rounded-full bg-green-500 border-4 border-b-8 border-green-700 items-center justify-center" style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 }}>
-                    <Play size={40} color="white" fill="white" />
-                  </View>
-                </Pressable>
-              ))}
+                    <View className="flex-1 py-2">
+                      <Text
+                        className="text-xl font-black text-slate-800 leading-tight mb-2"
+                        numberOfLines={2}
+                      >
+                        {book.title}
+                      </Text>
+                      <View className="px-3 py-1 bg-green-100 rounded-full border-2 border-green-200 self-start">
+                        <Text className="text-[10px] font-black text-green-600 uppercase tracking-wide">
+                          Read Now
+                        </Text>
+                      </View>
+                    </View>
+                    <View className="w-20 h-20 rounded-full bg-green-500 border-4 border-b-8 border-green-700 items-center justify-center" style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 }}>
+                      <Play size={40} color="white" fill="white" />
+                    </View>
+                  </Pressable>
+                ))
+              )}
             </View>
           </ScrollView>
         )}

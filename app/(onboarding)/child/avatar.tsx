@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, {
@@ -23,11 +24,15 @@ import Animated, {
   interpolate,
 } from 'react-native-reanimated';
 import * as ImagePicker from 'expo-image-picker';
+import { Asset } from 'expo-asset';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BASE_AVATARS } from '../../../constants/data';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Sparkles, ArrowLeft, Camera, Pencil, Grid3X3, ArrowRight, Star } from 'lucide-react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useAction } from 'convex/react';
+import { api } from '../../../convex/_generated/api';
+import { Id } from '../../../convex/_generated/dataModel';
 
 // Types
 type SelectionMode = 'select' | 'upload' | 'describe' | null;
@@ -116,9 +121,87 @@ const ChunkyButton = ({
   );
 };
 
+// Animated Avatar Grid Item with bubble-up effect
+const AnimatedAvatarItem = ({
+  avatar,
+  isSelected,
+  onSelect,
+  index,
+}: {
+  avatar: { id: string; name: string; image: any };
+  isSelected: boolean;
+  onSelect: () => void;
+  index: number;
+}) => {
+  const scale = useSharedValue(1);
+  const translateY = useSharedValue(0);
+
+  const handlePress = () => {
+    // Bubble-up animation
+    scale.value = withSequence(
+      withSpring(1.2, { damping: 8, stiffness: 400 }),
+      withSpring(1, { damping: 10, stiffness: 300 })
+    );
+    translateY.value = withSequence(
+      withSpring(-15, { damping: 8, stiffness: 400 }),
+      withSpring(0, { damping: 10, stiffness: 300 })
+    );
+    onSelect();
+  };
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { scale: scale.value },
+      { translateY: translateY.value },
+    ],
+  }));
+
+  return (
+    <Animated.View
+      entering={FadeInDown.delay(index * 50)}
+      style={animatedStyle}
+    >
+      <Pressable
+        onPress={handlePress}
+        style={[
+          {
+            width: 80,
+            height: 80,
+            borderRadius: 20,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: isSelected ? '#FEF3C7' : '#F3F4F6',
+            borderWidth: 4,
+            borderColor: isSelected ? '#F59E0B' : '#E5E7EB',
+          },
+          isSelected && {
+            shadowColor: '#F59E0B',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.3,
+            shadowRadius: 8,
+            elevation: 6,
+          },
+        ]}
+      >
+        <Image
+          source={avatar.image}
+          style={{ width: 60, height: 60 }}
+          resizeMode="contain"
+        />
+      </Pressable>
+    </Animated.View>
+  );
+};
+
 export default function AvatarSelectionScreen() {
   const router = useRouter();
   const { updateData } = useOnboarding();
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  // Convex actions
+  const generateFromDescription = useAction(api.imageGeneration.generateMascotFromDescription);
+  const generateFromImage = useAction(api.imageGeneration.generateMascotFromImage);
+  const generateUploadUrl = useAction(api.imageGeneration.generateUploadUrl);
 
   // State
   const [mode, setMode] = useState<SelectionMode>(null);
@@ -128,9 +211,18 @@ export default function AvatarSelectionScreen() {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [generatedAvatar, setGeneratedAvatar] = useState<any>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [generationError, setGenerationError] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   // Animations
   const shake = useSharedValue(0);
+
+  // Reset scroll position when mode changes
+  useEffect(() => {
+    if (scrollViewRef.current) {
+      scrollViewRef.current.scrollTo({ y: 0, animated: false });
+    }
+  }, [mode, generationStep]);
 
   // Initial selection - set first avatar as default
   useEffect(() => {
@@ -139,9 +231,8 @@ export default function AvatarSelectionScreen() {
     }
   }, []);
 
-  // Shake animation for Magic Box
-  const startMagic = () => {
-    setGenerationStep('processing');
+  // Start shake animation
+  const startShakeAnimation = () => {
     shake.value = withRepeat(
       withSequence(
         withTiming(-10, { duration: 50 }),
@@ -150,21 +241,110 @@ export default function AvatarSelectionScreen() {
         withTiming(10, { duration: 50 }),
         withTiming(0, { duration: 50 })
       ),
-      20,
+      -1, // Infinite repeat until stopped
       true
     );
+  };
 
-    setTimeout(() => {
-      const mockResult = {
-        id: 'generated_custom',
-        name: uploadedImage ? 'Your Toy!' : 'Magic Friend!',
-        image: uploadedImage ? { uri: uploadedImage } : BASE_AVATARS[0].image,
-      };
-      setGeneratedAvatar(mockResult);
-      setSelectedAvatar(mockResult.id);
-      setGenerationStep('reveal');
-      shake.value = 0;
-    }, 3500);
+  const stopShakeAnimation = () => {
+    shake.value = withTiming(0, { duration: 100 });
+  };
+
+  // Handle generation completion
+  const handleGenerationSuccess = (imageUrl: string, storageId: string) => {
+    const result = {
+      id: 'generated_custom',
+      name: uploadedImage ? 'Your Toy!' : 'Magic Friend!',
+      image: { uri: imageUrl },
+      storageId,
+    };
+    setGeneratedAvatar(result);
+    setSelectedAvatar(result.id);
+    updateData({ 
+      generatedMascotId: storageId,
+      generatedMascotUrl: imageUrl,
+    });
+    setGenerationStep('reveal');
+    stopShakeAnimation();
+    setIsGenerating(false);
+  };
+
+  const handleGenerationError = (error: string) => {
+    setGenerationError(error);
+    setGenerationStep('input');
+    stopShakeAnimation();
+    setIsGenerating(false);
+    Alert.alert(
+      'Oops!',
+      error || 'Something went wrong creating your friend. Try again!',
+      [{ text: 'OK', onPress: () => setMode(null) }]
+    );
+  };
+
+  // Generate mascot from text description
+  const generateFromText = async (text: string) => {
+    setGenerationStep('processing');
+    startShakeAnimation();
+    setIsGenerating(true);
+    setGenerationError(null);
+
+    try {
+      const result = await generateFromDescription({ description: text });
+      
+      if (result.success && result.imageUrl && result.storageId) {
+        handleGenerationSuccess(result.imageUrl, result.storageId);
+      } else {
+        handleGenerationError(result.error || 'Failed to generate image');
+      }
+    } catch (error) {
+      console.error('Generation error:', error);
+      handleGenerationError(error instanceof Error ? error.message : 'Unknown error');
+    }
+  };
+
+  // Upload image to Convex and generate mascot
+  const uploadAndGenerate = async (imageUri: string) => {
+    setGenerationStep('processing');
+    startShakeAnimation();
+    setIsGenerating(true);
+    setGenerationError(null);
+
+    try {
+      // Step 1: Get upload URL from Convex
+      const uploadUrl = await generateUploadUrl({});
+
+      // Step 2: Upload the image
+      const response = await fetch(imageUri);
+      const blob = await response.blob();
+      
+      const uploadResponse = await fetch(uploadUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': blob.type || 'image/jpeg',
+        },
+        body: blob,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload image');
+      }
+
+      const { storageId } = await uploadResponse.json();
+
+      // Step 3: Generate mascot from uploaded image
+      const result = await generateFromImage({ 
+        sourceImageId: storageId as Id<"_storage"> 
+      });
+      
+      if (result.success && result.imageUrl && result.storageId) {
+        handleGenerationSuccess(result.imageUrl, result.storageId);
+      } else {
+        handleGenerationError(result.error || 'Failed to generate image');
+      }
+    } catch (error) {
+      console.error('Upload/generation error:', error);
+      handleGenerationError(error instanceof Error ? error.message : 'Unknown error');
+    }
   };
 
   const shakeStyle = useAnimatedStyle(() => ({
@@ -186,23 +366,72 @@ export default function AvatarSelectionScreen() {
     });
 
     if (!result.canceled) {
-      setUploadedImage(result.assets[0].uri);
-      startMagic();
+      const uri = result.assets[0].uri;
+      setUploadedImage(uri);
+      // Start the upload and generation process
+      uploadAndGenerate(uri);
     } else {
       setMode(null);
     }
   };
 
   const handleDescriptionSubmit = () => {
-    if (description.trim().length > 0) {
-      startMagic();
+    if (description.trim().length > 0 && !isGenerating) {
+      generateFromText(description.trim());
     }
   };
 
-  const handleNext = () => {
-    if (selectedAvatar) {
-      updateData({ avatarId: selectedAvatar });
+  const handleNext = async () => {
+    if (!selectedAvatar || isGenerating) return;
+    
+    setIsGenerating(true);
+    
+    try {
+      // If user selected a base avatar (not AI-generated), upload it to storage
+      if (!generatedAvatar) {
+        const avatarData = BASE_AVATARS.find(a => a.id === selectedAvatar);
+        if (avatarData?.image) {
+          // Load and upload the local asset
+          const asset = Asset.fromModule(avatarData.image);
+          await asset.downloadAsync();
+          
+          if (asset.localUri) {
+            const uploadUrl = await generateUploadUrl({});
+            const response = await fetch(asset.localUri);
+            const blob = await response.blob();
+            
+            const uploadResponse = await fetch(uploadUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': blob.type || 'image/png' },
+              body: blob,
+            });
+            
+            if (!uploadResponse.ok) {
+              throw new Error('Upload failed');
+            }
+            
+            const { storageId } = await uploadResponse.json();
+            updateData({ 
+              avatarId: selectedAvatar,
+              generatedMascotId: storageId,
+            });
+          } else {
+            throw new Error('Failed to load asset');
+          }
+        } else {
+          throw new Error('Avatar data not found');
+        }
+      } else {
+        updateData({ avatarId: selectedAvatar });
+      }
+      
+      // Only navigate on success
       router.push('/(onboarding)/child/magic-moment');
+    } catch (error) {
+      console.error('Failed to upload base avatar:', error);
+      Alert.alert('Oops!', 'Failed to save your avatar. Please try again.');
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -212,7 +441,12 @@ export default function AvatarSelectionScreen() {
       setGenerationStep('input');
       setUploadedImage(null);
       setDescription('');
-      setSelectedAvatar(null);
+      setGeneratedAvatar(null);
+      setGenerationError(null);
+      // Reset to first base avatar when going back to main options
+      if (BASE_AVATARS.length > 0) {
+        setSelectedAvatar(BASE_AVATARS[0].id);
+      }
     } else {
       router.back();
     }
@@ -230,13 +464,13 @@ export default function AvatarSelectionScreen() {
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', padding: 20, gap: 16 }}>
           <View style={{ backgroundColor: '#FCD34D', padding: 16, borderRadius: 20 }}>
-            <Grid3X3 size={32} color="#92400E" strokeWidth={2.5} />
+            <Ionicons name="grid" size={32} color="#92400E" />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 20, fontWeight: '800', color: '#92400E' }}>Pick a Friend! 🎉</Text>
+            <Text style={{ fontSize: 20, fontWeight: '800', color: '#92400E' }}>Choose a Buddy! 🎉</Text>
             <Text style={{ fontSize: 14, color: '#B45309', marginTop: 2 }}>Choose your adventure buddy</Text>
           </View>
-          <ArrowRight size={24} color="#92400E" />
+          <Ionicons name="arrow-forward" size={24} color="#92400E" />
         </View>
       </ChunkyButton>
 
@@ -249,13 +483,13 @@ export default function AvatarSelectionScreen() {
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', padding: 20, gap: 16 }}>
           <View style={{ backgroundColor: '#C4B5FD', padding: 16, borderRadius: 20 }}>
-            <Camera size={32} color="#5B21B6" strokeWidth={2.5} />
+            <Ionicons name="camera" size={32} color="#5B21B6" />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: 20, fontWeight: '800', color: '#5B21B6' }}>Magic Photo! 📸</Text>
             <Text style={{ fontSize: 14, color: '#7C3AED', marginTop: 2 }}>Turn your toy into a hero</Text>
           </View>
-          <ArrowRight size={24} color="#5B21B6" />
+          <Ionicons name="arrow-forward" size={24} color="#5B21B6" />
         </View>
       </ChunkyButton>
 
@@ -268,13 +502,13 @@ export default function AvatarSelectionScreen() {
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', padding: 20, gap: 16 }}>
           <View style={{ backgroundColor: '#93C5FD', padding: 16, borderRadius: 20 }}>
-            <Pencil size={32} color="#1E40AF" strokeWidth={2.5} />
+            <Ionicons name="pencil" size={32} color="#1E40AF" />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: 20, fontWeight: '800', color: '#1E40AF' }}>Dream It Up! ✨</Text>
             <Text style={{ fontSize: 14, color: '#2563EB', marginTop: 2 }}>Describe your magical friend</Text>
           </View>
-          <ArrowRight size={24} color="#1E40AF" />
+          <Ionicons name="arrow-forward" size={24} color="#1E40AF" />
         </View>
       </ChunkyButton>
     </Animated.View>
@@ -296,7 +530,7 @@ export default function AvatarSelectionScreen() {
             marginBottom: 8,
           }}
         >
-          Who will join you? 🌟
+          Pick Your Story Buddy! 🌟
         </Text>
         <Text
           style={{
@@ -305,7 +539,7 @@ export default function AvatarSelectionScreen() {
             color: '#6B7280',
           }}
         >
-          Tap to pick your friend!
+          Tap to choose your friend!
         </Text>
       </Animated.View>
 
@@ -354,47 +588,18 @@ export default function AvatarSelectionScreen() {
       }}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <View style={{ flexDirection: 'row', gap: 12 }}>
-            {BASE_AVATARS.map((avatar, index) => {
-              const isSelected = selectedAvatar === avatar.id;
-              return (
-                <Animated.View
-                  key={avatar.id}
-                  entering={FadeInDown.delay(index * 50)}
-                >
-                  <Pressable
-                    onPress={() => {
-                      setSelectedAvatar(avatar.id);
-                      setCurrentIndex(index);
-                    }}
-                    style={[
-                      {
-                        width: 80,
-                        height: 80,
-                        borderRadius: 20,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        backgroundColor: isSelected ? '#FEF3C7' : '#F3F4F6',
-                        borderWidth: 4,
-                        borderColor: isSelected ? '#F59E0B' : '#E5E7EB',
-                      },
-                      isSelected && {
-                        shadowColor: '#F59E0B',
-                        shadowOffset: { width: 0, height: 4 },
-                        shadowOpacity: 0.3,
-                        shadowRadius: 8,
-                        elevation: 6,
-                      },
-                    ]}
-                  >
-                    <Image
-                      source={avatar.image}
-                      style={{ width: 60, height: 60 }}
-                      resizeMode="contain"
-                    />
-                  </Pressable>
-                </Animated.View>
-              );
-            })}
+            {BASE_AVATARS.map((avatar, index) => (
+              <AnimatedAvatarItem
+                key={avatar.id}
+                avatar={avatar}
+                isSelected={selectedAvatar === avatar.id}
+                onSelect={() => {
+                  setSelectedAvatar(avatar.id);
+                  setCurrentIndex(index);
+                }}
+                index={index}
+              />
+            ))}
           </View>
         </ScrollView>
 
@@ -437,7 +642,7 @@ export default function AvatarSelectionScreen() {
             <Text style={{ fontSize: 24, fontWeight: '800', color: 'white' }}>
               Pick {selectedAvatarData.name}!
             </Text>
-            <ArrowRight size={28} color="white" strokeWidth={3} />
+            <Ionicons name="arrow-forward" size={28} color="white" />
           </View>
         </ChunkyButton>
       </Animated.View>
@@ -470,7 +675,12 @@ export default function AvatarSelectionScreen() {
         Creating Magic... ✨
       </Text>
       <Text style={{ fontSize: 16, color: '#9CA3AF', textAlign: 'center', marginTop: 8 }}>
-        Sprinkling some sparkle dust!
+        {mode === 'upload' 
+          ? 'Transforming your photo into a magical friend!'
+          : 'Bringing your imagination to life!'}
+      </Text>
+      <Text style={{ fontSize: 12, color: '#D1D5DB', textAlign: 'center', marginTop: 16 }}>
+        This may take a moment...
       </Text>
     </View>
   );
@@ -514,7 +724,7 @@ export default function AvatarSelectionScreen() {
         <ChunkyButton onPress={handleNext} bgColor="#22C55E" borderColor="#15803D" size="large" style={{ width: '100%' }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 18, gap: 12 }}>
             <Text style={{ fontSize: 20, fontWeight: '800', color: 'white' }}>Start Adventure!</Text>
-            <Star size={24} color="white" fill="white" />
+            <Ionicons name="star" size={24} color="white" />
           </View>
         </ChunkyButton>
       </Animated.View>
@@ -562,14 +772,16 @@ export default function AvatarSelectionScreen() {
 
         <ChunkyButton
           onPress={handleDescriptionSubmit}
-          disabled={description.length === 0}
-          bgColor={description.length > 0 ? '#3B82F6' : '#D1D5DB'}
-          borderColor={description.length > 0 ? '#1D4ED8' : '#9CA3AF'}
+          disabled={description.length === 0 || isGenerating}
+          bgColor={description.length > 0 && !isGenerating ? '#3B82F6' : '#D1D5DB'}
+          borderColor={description.length > 0 && !isGenerating ? '#1D4ED8' : '#9CA3AF'}
           size="large"
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 18, gap: 12 }}>
-            <Text style={{ fontSize: 20, fontWeight: '800', color: 'white' }}>Create Magic!</Text>
-            <Sparkles size={24} color="white" />
+            <Text style={{ fontSize: 20, fontWeight: '800', color: 'white' }}>
+              {isGenerating ? 'Creating...' : 'Create Magic!'}
+            </Text>
+            <Ionicons name="sparkles" size={24} color="white" />
           </View>
         </ChunkyButton>
       </View>
@@ -587,7 +799,7 @@ export default function AvatarSelectionScreen() {
       <View style={{ paddingTop: insets.top + 20, paddingHorizontal: 20, paddingBottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 10 }}>
         <ChunkyButton onPress={handleBack} bgColor="#FFFFFF" borderColor="#E5E7EB" size="small">
           <View style={{ padding: 10 }}>
-            <ArrowLeft size={24} color="#4B5563" />
+            <Ionicons name="arrow-back" size={24} color="#4B5563" />
           </View>
         </ChunkyButton>
       </View>
@@ -598,6 +810,7 @@ export default function AvatarSelectionScreen() {
         keyboardVerticalOffset={insets.top + 20}
       >
         <ScrollView
+          ref={scrollViewRef}
           contentContainerStyle={{ flexGrow: 1 }}
           scrollEnabled={mode !== 'describe' && generationStep !== 'processing'}
           keyboardShouldPersistTaps="handled"

@@ -3,8 +3,9 @@ import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { useAnimatedStyle, withTiming, useSharedValue } from 'react-native-reanimated';
-import { ArrowLeft } from 'lucide-react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
+import { QuizBackHandlerProvider, useQuizBackHandler } from '../../../contexts/QuizBackHandlerContext';
 
 const PROGRESS_MAP: Record<string, number> = {
     'goals': 0.02,
@@ -26,16 +27,28 @@ const PROGRESS_MAP: Record<string, number> = {
     'trigger-situations': 0.65,
     'struggle-areas': 0.75,
     'struggle-frequency': 0.80,
-    'moral-baseline': 0.85,
+    'moral-sharing': 0.82,
+    'moral-honesty': 0.84,
+    'moral-patience': 0.86,
+    'moral-kindness': 0.88,
     'parent-guilt': 0.90,
     'commitment': 0.95,
     'softening': 1.0,
 };
 
 export default function QuizLayout() {
+    return (
+        <QuizBackHandlerProvider>
+            <QuizLayoutContent />
+        </QuizBackHandlerProvider>
+    );
+}
+
+function QuizLayoutContent() {
     const router = useRouter();
     const segments = useSegments();
     const insets = useSafeAreaInsets();
+    const { handleBack } = useQuizBackHandler();
 
     const currentRoute = segments[segments.length - 1] || 'child-name';
 
@@ -54,15 +67,23 @@ export default function QuizLayout() {
         };
     });
 
+    const onBackPress = () => {
+        // Check if any screen has a custom back handler
+        const handled = handleBack();
+        if (!handled) {
+            router.back();
+        }
+    };
+
     return (
         <View style={[styles.container, { backgroundColor: OnboardingTheme.Colors.Background }]}>
             <View style={[styles.header, { paddingTop: insets.top }]}>
                 <TouchableOpacity
-                    onPress={() => router.back()}
+                    onPress={onBackPress}
                     style={styles.backButton}
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
-                    <ArrowLeft size={24} color={OnboardingTheme.Colors.Text} />
+                    <Ionicons name="arrow-back" size={24} color={OnboardingTheme.Colors.Text} />
                 </TouchableOpacity>
 
                 <View style={styles.progressContainer}>

@@ -52,7 +52,8 @@ export default function ReviewScreen() {
         <OnboardingLayout
             showProgressBar={false}
             progress={1.0}
-            showNextButton={false} // We handle nav automatically or via "Not now"
+            showNextButton={false}
+            isScrollable={true}
         >
             <View style={styles.container}>
                 <Animated.View entering={FadeInDown.delay(200)} style={styles.content}>

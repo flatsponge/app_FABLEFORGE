@@ -25,6 +25,7 @@ export default function DailyRoutineScreen() {
 
     const handleNext = () => {
         if (selected) {
+            updateData({ dailyRoutine: selected });
             router.push('/(onboarding)/quiz/reading-time');
         }
     };
@@ -34,6 +35,7 @@ export default function DailyRoutineScreen() {
             showProgressBar={false} skipTopSafeArea progress={0.35}
             showNextButton={!!selected}
             onNext={handleNext}
+            isScrollable={true}
         >
             <View style={styles.contentContainer}>
                 <OnboardingTitle>How would you describe your daily routine?</OnboardingTitle>

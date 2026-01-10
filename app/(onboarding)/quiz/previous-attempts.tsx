@@ -25,6 +25,7 @@ export default function PreviousAttemptsScreen() {
 
     const handleNext = () => {
         if (selected) {
+            updateData({ previousAttempts: selected });
             router.push('/(onboarding)/quiz/parent-challenges');
         }
     };
@@ -34,9 +35,10 @@ export default function PreviousAttemptsScreen() {
             showProgressBar={false} skipTopSafeArea progress={0.4}
             showNextButton={!!selected}
             onNext={handleNext}
+            isScrollable={true}
         >
             <View style={styles.contentContainer}>
-                <OnboardingTitle>Have you tried other solutions before?</OnboardingTitle>
+                <OnboardingTitle>Have you tried other parenting apps or methods before?</OnboardingTitle>
                 <OnboardingBody>
                     Understanding your journey helps us help you.
                 </OnboardingBody>

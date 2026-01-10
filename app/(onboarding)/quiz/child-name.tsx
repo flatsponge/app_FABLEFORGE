@@ -25,6 +25,7 @@ export default function ChildNameScreen() {
             showProgressBar={false} skipTopSafeArea progress={0.1}
             onNext={handleNext}
             nextLabel="Continue"
+            showNextButton={canProceed}
         >
             <View style={styles.contentContainer}>
                 <OnboardingTitle>What's your child's name?</OnboardingTitle>

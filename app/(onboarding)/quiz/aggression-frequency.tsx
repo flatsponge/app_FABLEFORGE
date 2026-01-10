@@ -49,6 +49,7 @@ export default function AggressionFrequencyScreen() {
             showNextButton={!!selected}
             onNext={handleNext}
             nextLabel="Continue"
+            isScrollable={true}
         >
             <View style={styles.contentContainer}>
                 <OnboardingTitle>How often does this happen?</OnboardingTitle>

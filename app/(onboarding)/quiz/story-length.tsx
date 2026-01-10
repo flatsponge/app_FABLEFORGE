@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
@@ -25,6 +25,7 @@ export default function StoryLengthScreen() {
 
     const handleNext = () => {
         if (selected) {
+            updateData({ storyLength: selected });
             router.push('/(onboarding)/quiz/story-themes');
         }
     };
@@ -34,12 +35,14 @@ export default function StoryLengthScreen() {
             showProgressBar={false} skipTopSafeArea progress={0.3}
             showNextButton={!!selected}
             onNext={handleNext}
+            isScrollable={true}
         >
             <View style={styles.contentContainer}>
                 <OnboardingTitle>How long should stories be?</OnboardingTitle>
                 <OnboardingBody>
                     We'll adjust the story length to fit.
                 </OnboardingBody>
+                <Text style={styles.changeNote}>Can be changed later in settings</Text>
 
                 <OnboardingSingleSelect
                     options={LENGTHS}
@@ -55,5 +58,12 @@ export default function StoryLengthScreen() {
 const styles = StyleSheet.create({
     contentContainer: {
         width: '100%',
+    },
+    changeNote: {
+        fontSize: 13,
+        color: OnboardingTheme.Colors.TextSecondary,
+        fontStyle: 'italic',
+        marginTop: OnboardingTheme.Spacing.xs,
+        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
     },
 });

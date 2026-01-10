@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { View, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { useAnimatedStyle, withTiming, useSharedValue } from 'react-native-reanimated';
-import { ArrowLeft } from 'lucide-react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { OnboardingTheme } from '../constants/OnboardingTheme';
 import OnboardingButton from './OnboardingButton';
 
@@ -22,6 +22,8 @@ interface OnboardingLayoutProps {
   backButtonColor?: string;
   isScrollable?: boolean;
   skipTopSafeArea?: boolean; // When true, skip top safe area padding (for screens inside parent layouts that handle it)
+  fadeInButton?: boolean;
+  scrollResetKey?: string | number; // When this changes, scroll resets to top
 }
 
 export default function OnboardingLayout({
@@ -39,22 +41,37 @@ export default function OnboardingLayout({
   backButtonColor = OnboardingTheme.Colors.Text,
   isScrollable = false,
   skipTopSafeArea = false,
+  fadeInButton = false,
+  scrollResetKey,
 }: OnboardingLayoutProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const scrollViewRef = useRef<ScrollView>(null);
 
   const progressWidth = useSharedValue(Math.max(0, progress * 100));
-  const buttonOpacity = useSharedValue(showNextButton ? 1 : 0);
+  // If fadeInButton is true, start at 0 if showNextButton is false. Otherwise always 1.
+  const buttonOpacity = useSharedValue(fadeInButton ? (showNextButton ? 1 : 0) : 1);
+
+  // Reset scroll position when scrollResetKey changes
+  useEffect(() => {
+    if (scrollResetKey !== undefined && scrollViewRef.current) {
+      scrollViewRef.current.scrollTo({ y: 0, animated: false });
+    }
+  }, [scrollResetKey]);
 
   // Update progress width when prop changes
-  React.useEffect(() => {
+  useEffect(() => {
     progressWidth.value = withTiming(progress * 100, { duration: 300 });
   }, [progress]);
 
-  // Animate button opacity when showNextButton changes
-  React.useEffect(() => {
-    buttonOpacity.value = withTiming(showNextButton ? 1 : 0, { duration: 300 });
-  }, [showNextButton]);
+  // Animate button opacity when showNextButton changes, ONLY if fadeInButton is true
+  useEffect(() => {
+    if (fadeInButton) {
+      buttonOpacity.value = withTiming(showNextButton ? 1 : 0, { duration: 300 });
+    } else {
+      buttonOpacity.value = 1;
+    }
+  }, [showNextButton, fadeInButton]);
 
   const progressStyle = useAnimatedStyle(() => {
     return {
@@ -102,7 +119,7 @@ export default function OnboardingLayout({
         <View style={styles.header}>
           {showBack ? (
             <TouchableOpacity onPress={handleBack} style={styles.backButton} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <ArrowLeft size={24} color={backButtonColor} />
+              <Ionicons name="arrow-back" size={24} color={backButtonColor} />
             </TouchableOpacity>
           ) : (
             <View style={{ width: 24 + OnboardingTheme.Spacing.md }} />
@@ -120,7 +137,7 @@ export default function OnboardingLayout({
 
       {/* Content */}
       {isScrollable ? (
-        <ScrollView {...contentWrapperProps}>
+        <ScrollView ref={scrollViewRef} {...contentWrapperProps}>
           {children}
         </ScrollView>
       ) : (
@@ -135,7 +152,11 @@ export default function OnboardingLayout({
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
         <Animated.View style={[styles.footer, buttonStyle]}>
-          <OnboardingButton onPress={showNextButton ? onNext : undefined} title={nextLabel} disabled={!showNextButton} />
+          <OnboardingButton 
+            onPress={showNextButton ? onNext : undefined} 
+            title={nextLabel} 
+            disabled={!showNextButton} 
+          />
         </Animated.View>
       </KeyboardAvoidingView>
     </View>
@@ -180,7 +201,7 @@ const styles = StyleSheet.create({
   scrollContentContainer: {
     paddingHorizontal: OnboardingTheme.Spacing.lg,
     paddingTop: OnboardingTheme.Spacing.md,
-    paddingBottom: OnboardingTheme.Spacing.xl,
+    paddingBottom: 100, // Extra buffer to ensure content doesn't get hidden behind footer button
   },
   footer: {
     paddingHorizontal: OnboardingTheme.Spacing.lg,

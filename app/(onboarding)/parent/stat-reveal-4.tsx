@@ -44,6 +44,8 @@ export default function StatReveal4Screen() {
             progressBarColor="white"
             progressBarTrackColor="rgba(255, 255, 255, 0.3)"
             backButtonColor="white"
+            isScrollable={true}
+            fadeInButton={true}
         >
             <View style={styles.container}>
                 <Animated.View entering={FadeIn.delay(200)} style={styles.headerContainer}>

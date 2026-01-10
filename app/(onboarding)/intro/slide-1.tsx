@@ -10,7 +10,7 @@ import Animated, {
     withSequence,
     withTiming
 } from 'react-native-reanimated';
-import { Zap, Ear, HeartCrack, XCircle, Clock, Utensils, Volume2, Frown } from 'lucide-react-native';
+import { Ionicons } from '@expo/vector-icons';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 
 const GlitchText = ({ text }: { text: string }) => {
@@ -58,6 +58,7 @@ const GlitchText = ({ text }: { text: string }) => {
             -1,
             true
         );
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- animation values are stable refs, run once on mount
     }, []);
 
     const redStyle = useAnimatedStyle(() => ({
@@ -84,15 +85,74 @@ const GlitchText = ({ text }: { text: string }) => {
 };
 
 const CHAOS_ELEMENTS = [
-    { id: 'tantrums', Icon: Zap, color: '#f59e0b', label: 'TANTRUMS', rotate: -6 },
-    { id: 'ignoring', Icon: Ear, color: '#3b82f6', label: 'IGNORING', rotate: 5 },
-    { id: 'fighting', Icon: HeartCrack, color: '#f43f5e', label: 'HITTING', rotate: 4 },
-    { id: 'no', Icon: XCircle, color: '#64748b', label: '"NO!"', rotate: -4 },
-    { id: 'bedtime', Icon: Clock, color: '#8b5cf6', label: 'BEDTIME', rotate: 5 },
-    { id: 'picky', Icon: Utensils, color: '#10b981', label: 'PICKY EATER', rotate: -5 },
-    { id: 'screaming', Icon: Volume2, color: '#ef4444', label: 'SCREAMING', rotate: 3 },
-    { id: 'whining', Icon: Frown, color: '#6366f1', label: 'WHINING', rotate: -3 },
+    { id: 'tantrums', icon: 'flash-outline' as const, color: '#f59e0b', label: 'TANTRUMS', rotate: -6 },
+    { id: 'ignoring', icon: 'ear-outline' as const, color: '#3b82f6', label: 'IGNORING', rotate: 5 },
+    { id: 'fighting', icon: 'heart-dislike-outline' as const, color: '#f43f5e', label: 'HITTING', rotate: 4 },
+    { id: 'no', icon: 'close-circle-outline' as const, color: '#64748b', label: '"NO!"', rotate: -4 },
+    { id: 'bedtime', icon: 'time-outline' as const, color: '#8b5cf6', label: 'BEDTIME', rotate: 5 },
+    { id: 'picky', icon: 'restaurant-outline' as const, color: '#10b981', label: 'PICKY EATER', rotate: -5 },
+    { id: 'screaming', icon: 'volume-high-outline' as const, color: '#ef4444', label: 'SCREAMING', rotate: 3 },
+    { id: 'whining', icon: 'sad-outline' as const, color: '#6366f1', label: 'WHINING', rotate: -3 },
 ];
+
+// Floating chaos card component - hooks are called at component level (not in a loop)
+const FloatingChaosCard = ({
+    item,
+    index,
+    enterDelay,
+}: {
+    item: typeof CHAOS_ELEMENTS[0];
+    index: number;
+    enterDelay: number;
+}) => {
+    const floatY = useSharedValue(0);
+    const floatX = useSharedValue(0);
+
+    useEffect(() => {
+        floatY.value = withRepeat(
+            withSequence(
+                withTiming(-8, { duration: 1500 + index * 200 }),
+                withTiming(0, { duration: 1500 + index * 200 })
+            ),
+            -1,
+            true
+        );
+        floatX.value = withRepeat(
+            withSequence(
+                withTiming(3, { duration: 2000 + index * 300 }),
+                withTiming(-3, { duration: 2000 + index * 300 })
+            ),
+            -1,
+            true
+        );
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- animation values are stable refs
+    }, []);
+
+    const floatStyle = useAnimatedStyle(() => ({
+        transform: [
+            { translateY: floatY.value },
+            { translateX: floatX.value }
+        ],
+    }));
+
+    return (
+        <View
+            style={[
+                styles.chaosCard,
+                { transform: [{ rotate: `${item.rotate}deg` }] }
+            ]}
+        >
+            <Animated.View
+                entering={ZoomIn.delay(enterDelay).duration(400).springify()}
+            >
+                <Animated.View style={[styles.chaosCardInner, floatStyle]}>
+                    <Ionicons name={item.icon} size={18} color={item.color} />
+                    <Text style={styles.chaosLabel}>{item.label}</Text>
+                </Animated.View>
+            </Animated.View>
+        </View>
+    );
+};
 
 export default function IntroSlide1() {
     const router = useRouter();
@@ -127,6 +187,7 @@ export default function IntroSlide1() {
         );
 
         return () => clearTimeout(timer);
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- animation values are stable refs, run once on mount
     }, []);
 
     const emojiStyle = useAnimatedStyle(() => ({
@@ -135,37 +196,6 @@ export default function IntroSlide1() {
             { rotate: `${emojiRotate.value}deg` }
         ],
     }));
-
-    const createFloatStyle = (index: number) => {
-        const floatY = useSharedValue(0);
-        const floatX = useSharedValue(0);
-
-        useEffect(() => {
-            floatY.value = withRepeat(
-                withSequence(
-                    withTiming(-8, { duration: 1500 + index * 200 }),
-                    withTiming(0, { duration: 1500 + index * 200 })
-                ),
-                -1,
-                true
-            );
-            floatX.value = withRepeat(
-                withSequence(
-                    withTiming(3, { duration: 2000 + index * 300 }),
-                    withTiming(-3, { duration: 2000 + index * 300 })
-                ),
-                -1,
-                true
-            );
-        }, []);
-
-        return useAnimatedStyle(() => ({
-            transform: [
-                { translateY: floatY.value },
-                { translateX: floatX.value }
-            ],
-        }));
-    };
 
     const handleNext = () => {
         router.push('/(onboarding)/intro/slide-2');
@@ -181,6 +211,7 @@ export default function IntroSlide1() {
             showNextButton={showButton}
             showProgressBar={false}
             backgroundColor="#fff0f0"
+            fadeInButton={true}
         >
             <View style={styles.container}>
 
@@ -200,102 +231,49 @@ export default function IntroSlide1() {
                     >
                         <Text style={styles.titleTop}>IS PARENTING ALWAYS</Text>
                         <GlitchText text="THIS HARD?" />
-                        <Text style={styles.subtitle}>YOU AREN'T FAILING. IT'S RELENTLESS.</Text>
+                        <Text style={styles.subtitle}>YOU AREN&apos;T FAILING. IT&apos;S RELENTLESS.</Text>
                     </Animated.View>
 
                     <View style={styles.chaosContainer}>
                         <View style={styles.chaosRow}>
-                            {CHAOS_ELEMENTS.slice(0, 2).map((item, index) => {
-                                const floatStyle = createFloatStyle(index);
-                                return (
-                                    // Outer View handles static rotation to avoid conflict with entering animation
-                                    <View
-                                        key={item.id}
-                                        style={[
-                                            styles.chaosCard,
-                                            { transform: [{ rotate: `${item.rotate}deg` }] }
-                                        ]}
-                                    >
-                                        <Animated.View
-                                            entering={ZoomIn.delay(400 + index * 80).duration(400).springify()}
-                                        >
-                                            <Animated.View style={[styles.chaosCardInner, floatStyle]}>
-                                                <item.Icon size={18} color={item.color} strokeWidth={2.5} />
-                                                <Text style={styles.chaosLabel}>{item.label}</Text>
-                                            </Animated.View>
-                                        </Animated.View>
-                                    </View>
-                                );
-                            })}
+                            {CHAOS_ELEMENTS.slice(0, 2).map((item, index) => (
+                                <FloatingChaosCard
+                                    key={item.id}
+                                    item={item}
+                                    index={index}
+                                    enterDelay={400 + index * 80}
+                                />
+                            ))}
                         </View>
                         <View style={styles.chaosRow}>
-                            {CHAOS_ELEMENTS.slice(2, 4).map((item, index) => {
-                                const floatStyle = createFloatStyle(index + 2);
-                                return (
-                                    <View
-                                        key={item.id}
-                                        style={[
-                                            styles.chaosCard,
-                                            { transform: [{ rotate: `${item.rotate}deg` }] }
-                                        ]}
-                                    >
-                                        <Animated.View
-                                            entering={ZoomIn.delay(560 + index * 80).duration(400).springify()}
-                                        >
-                                            <Animated.View style={[styles.chaosCardInner, floatStyle]}>
-                                                <item.Icon size={18} color={item.color} strokeWidth={2.5} />
-                                                <Text style={styles.chaosLabel}>{item.label}</Text>
-                                            </Animated.View>
-                                        </Animated.View>
-                                    </View>
-                                );
-                            })}
+                            {CHAOS_ELEMENTS.slice(2, 4).map((item, index) => (
+                                <FloatingChaosCard
+                                    key={item.id}
+                                    item={item}
+                                    index={index + 2}
+                                    enterDelay={560 + index * 80}
+                                />
+                            ))}
                         </View>
                         <View style={styles.chaosRow}>
-                            {CHAOS_ELEMENTS.slice(4, 6).map((item, index) => {
-                                const floatStyle = createFloatStyle(index + 4);
-                                return (
-                                    <View
-                                        key={item.id}
-                                        style={[
-                                            styles.chaosCard,
-                                            { transform: [{ rotate: `${item.rotate}deg` }] }
-                                        ]}
-                                    >
-                                        <Animated.View
-                                            entering={ZoomIn.delay(720 + index * 80).duration(400).springify()}
-                                        >
-                                            <Animated.View style={[styles.chaosCardInner, floatStyle]}>
-                                                <item.Icon size={18} color={item.color} strokeWidth={2.5} />
-                                                <Text style={styles.chaosLabel}>{item.label}</Text>
-                                            </Animated.View>
-                                        </Animated.View>
-                                    </View>
-                                );
-                            })}
+                            {CHAOS_ELEMENTS.slice(4, 6).map((item, index) => (
+                                <FloatingChaosCard
+                                    key={item.id}
+                                    item={item}
+                                    index={index + 4}
+                                    enterDelay={720 + index * 80}
+                                />
+                            ))}
                         </View>
                         <View style={styles.chaosRow}>
-                            {CHAOS_ELEMENTS.slice(6, 8).map((item, index) => {
-                                const floatStyle = createFloatStyle(index + 6);
-                                return (
-                                    <View
-                                        key={item.id}
-                                        style={[
-                                            styles.chaosCard,
-                                            { transform: [{ rotate: `${item.rotate}deg` }] }
-                                        ]}
-                                    >
-                                        <Animated.View
-                                            entering={ZoomIn.delay(880 + index * 80).duration(400).springify()}
-                                        >
-                                            <Animated.View style={[styles.chaosCardInner, floatStyle]}>
-                                                <item.Icon size={18} color={item.color} strokeWidth={2.5} />
-                                                <Text style={styles.chaosLabel}>{item.label}</Text>
-                                            </Animated.View>
-                                        </Animated.View>
-                                    </View>
-                                );
-                            })}
+                            {CHAOS_ELEMENTS.slice(6, 8).map((item, index) => (
+                                <FloatingChaosCard
+                                    key={item.id}
+                                    item={item}
+                                    index={index + 6}
+                                    enterDelay={880 + index * 80}
+                                />
+                            ))}
                         </View>
                     </View>
                 </View>

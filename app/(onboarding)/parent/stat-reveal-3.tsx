@@ -47,6 +47,8 @@ export default function StatReveal3Screen() {
             showNextButton={showCitation}
             onNext={handleNext}
             nextLabel="What this means for you"
+            isScrollable={true}
+            fadeInButton={true}
         >
             <View style={styles.container}>
                 <Animated.View entering={FadeIn.delay(200)} style={styles.headerContainer}>

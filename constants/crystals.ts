@@ -4,21 +4,21 @@
  */
 
 /** Maximum number of crystals a free user can hold */
-export const MAX_CRYSTALS = 160;
+export const MAX_CRYSTALS = 150;
 
-/** Time in seconds for one crystal to regenerate */
-export const REGEN_TIME_SECONDS = 1800; // 30 minutes
+/** Time in seconds for one crystal to regenerate (30 minutes) */
+export const REGEN_TIME_SECONDS = 1800;
 
 /** Maximum crystals for StoryMAX subscribers */
-export const MAX_CRYSTALS_PREMIUM = 320;
+export const MAX_CRYSTALS_PREMIUM = 300;
 
-/** Regen time for StoryMAX subscribers (15 minutes) */
-export const REGEN_TIME_SECONDS_PREMIUM = 900;
+/** Regen time for StoryMAX subscribers (20 minutes) */
+export const REGEN_TIME_SECONDS_PREMIUM = 1200;
 
 /** Cost tiers for crystal purchases */
 export const CRYSTAL_PURCHASE_OPTIONS = {
-    small: { amount: 100, price: '$1.99' },
-    large: { amount: 500, price: '$4.99' },
+  small: { amount: 100, price: '$1.99' },
+  large: { amount: 500, price: '$4.99' },
 } as const;
 
 /** StoryMAX subscription pricing */

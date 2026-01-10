@@ -15,14 +15,14 @@ const GENDER_OPTIONS: SelectOption[] = [
 export default function ChildGenderScreen() {
     const router = useRouter();
     const { data, updateData } = useOnboarding();
-    const [selectedGender, setSelectedGender] = useState<'boy' | 'girl' | null>(data.gender || null);
+    const [selectedGender, setSelectedGender] = useState<'boy' | 'girl' | null>(null);
 
     const canProceed = selectedGender !== null;
 
     const handleNext = () => {
         if (canProceed) {
             updateData({ gender: selectedGender! });
-            router.push('/(onboarding)/quiz/goals-timeline');
+            router.push('/(onboarding)/quiz/parenting-style');
         }
     };
 
@@ -32,6 +32,7 @@ export default function ChildGenderScreen() {
             progress={0.12}
             onNext={handleNext}
             nextLabel="Continue"
+            showNextButton={canProceed}
         >
             <View style={styles.contentContainer}>
                 <OnboardingTitle>Is {data.childName || 'your child'} a boy or girl?</OnboardingTitle>

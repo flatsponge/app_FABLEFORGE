@@ -26,6 +26,7 @@ export default function ParentGuiltScreen() {
 
     const handleNext = () => {
         if (selected) {
+            updateData({ parentReaction: selected });
             router.push('/(onboarding)/quiz/commitment');
         }
     };

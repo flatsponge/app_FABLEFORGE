@@ -93,6 +93,7 @@ function FrustrationCard({
         }, item.delay);
 
         return () => clearTimeout(timeout);
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- animation values are stable refs, item props are static
     }, []);
 
     const animatedStyle = useAnimatedStyle(() => ({
@@ -145,6 +146,7 @@ export default function IntroSlide2() {
             showNextButton={showButton}
             showProgressBar={false}
             backgroundColor="#F8FAFC" // slate-50
+            fadeInButton={true}
         >
             <View style={styles.container}>
                 {/* Header with highlighted "CONSTANT BATTLE" text */}

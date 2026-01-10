@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable, Image, StyleSheet } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, ScrollView, Pressable, Image, StyleSheet, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ChevronLeft, Play, Baby, Glasses, Clock, Zap, Sparkles, ThumbsUp, ThumbsDown } from 'lucide-react-native';
-import { BOOKS } from '@/constants/data';
 import { ReadingMode } from '@/types';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import { Id } from '@/convex/_generated/dataModel';
 
 const getDifficultyStyle = (level: string) => {
   switch (level) {
@@ -17,16 +19,62 @@ const getDifficultyStyle = (level: string) => {
 export default function BookDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const book = BOOKS.find(b => b.id === Number(id));
-  const [userRating, setUserRating] = useState<'up' | 'down' | null>(book?.userRating || null);
+  
+  const convexBook = useQuery(
+    api.storyGeneration.getBook,
+    id ? { bookId: id as Id<"books"> } : "skip"
+  );
+  
+  const rateBookMutation = useMutation(api.storyGeneration.rateBook);
+  
+  const [userRating, setUserRating] = useState<'up' | 'down' | null>(null);
+  const hasInitializedRatingRef = useRef(false);
+  
+  useEffect(() => {
+    if (convexBook?.userRating && !hasInitializedRatingRef.current) {
+      hasInitializedRatingRef.current = true;
+      setUserRating(convexBook.userRating);
+    }
+  }, [convexBook?.userRating]);
+  
+  // Create a unified book object for display
+  const book = convexBook ? {
+    id: convexBook._id,
+    title: convexBook.title,
+    author: "",
+    progress: convexBook.readingProgress,
+    color: "from-purple-400 to-indigo-500",
+    coverImage: convexBook.coverImageUrl || "",
+    iconName: "Sparkles" as const,
+    userRating: convexBook.userRating || null,
+    duration: `${convexBook.durationMinutes} min`,
+    description: convexBook.description,
+    vocabularyLevel: convexBook.vocabularyLevel.charAt(0).toUpperCase() + convexBook.vocabularyLevel.slice(1),
+    generatedDate: "Just now",
+  } : null;
 
-  const handleRating = (rating: 'up' | 'down') => {
+  const handleRating = async (rating: 'up' | 'down') => {
     if (userRating === rating) {
       setUserRating(null);
     } else {
       setUserRating(rating);
+      if (id) {
+        await rateBookMutation({
+          bookId: id as Id<"books">,
+          rating,
+        }).catch(console.error);
+      }
     }
   };
+
+  if (convexBook === undefined) {
+    return (
+      <View className="flex-1 bg-background items-center justify-center">
+        <ActivityIndicator size="large" color="#a855f7" />
+        <Text className="text-slate-500 mt-4">Loading book...</Text>
+      </View>
+    );
+  }
 
   if (!book) {
     return (

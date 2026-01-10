@@ -26,6 +26,8 @@ export default function ParentWarningScreen() {
             showNextButton={showStat}
             onNext={handleNext}
             nextLabel="See The Path Forward"
+            isScrollable={true}
+            fadeInButton={true}
         >
             <View style={styles.container}>
                 <Animated.View entering={FadeIn.delay(200)} style={styles.header}>

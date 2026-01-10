@@ -24,7 +24,7 @@ interface CrystalModalProps {
     max: number;
     timeToNext: number;
     onClose: () => void;
-    onRefill: (amount: number) => void;
+    onRefill: (amount: number) => void | Promise<void>;
 }
 
 /**

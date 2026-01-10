@@ -75,7 +75,7 @@ export default function OnboardingOptionCard({
 const styles = StyleSheet.create({
   container: {
     backgroundColor: OnboardingTheme.Colors.Background,
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: OnboardingTheme.Colors.Border,
     borderRadius: 16, // Rounded 2xl
     padding: OnboardingTheme.Spacing.md,
@@ -92,8 +92,7 @@ const styles = StyleSheet.create({
   },
   containerSelected: {
     borderColor: OnboardingTheme.Colors.Primary,
-    backgroundColor: OnboardingTheme.Colors.Surface, 
-    borderWidth: 2,
+    backgroundColor: OnboardingTheme.Colors.Surface,
   },
   content: {
     flexDirection: 'row',

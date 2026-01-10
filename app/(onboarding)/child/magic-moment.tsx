@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ActivityIndicator, Pressable, Image, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, ActivityIndicator, Pressable, Image, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
@@ -21,9 +21,13 @@ import Animated, {
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft, Mic, Lock, Sparkles } from 'lucide-react-native';
+import { useAction } from 'convex/react';
+import { api } from '@/convex/_generated/api';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import { BASE_AVATARS } from '../../../constants/data';
+
+// Feature flag for voice input - set to true to enable voice recording
+const ENABLE_VOICE_INPUT = false;
 
 // Premium Recording Bubble Component
 const RecordingBubble = ({
@@ -267,7 +271,7 @@ const RecordingBubble = ({
         {isRecording ? (
           <View style={{ width: 16, height: 16, borderRadius: 3, backgroundColor: 'white' }} />
         ) : (
-          <Mic size={22} color="white" strokeWidth={2.5} />
+          <Ionicons name="mic" size={22} color="white" />
         )}
       </Animated.View>
     </Pressable>
@@ -437,10 +441,22 @@ export default function MagicMomentScreen() {
   const { data } = useOnboarding();
   const [phase, setPhase] = useState<'input' | 'recording' | 'generating' | 'preview'>('input');
 
+  // Text input state
+  const [promptText, setPromptText] = useState('');
+
+  // Generated teaser state
+  const [generatedTeaser, setGeneratedTeaser] = useState<{ title: string; teaserText: string } | null>(null);
+  const [generationError, setGenerationError] = useState<string | null>(null);
+
+  // Convex action for teaser generation
+  const generateTeaser = useAction(api.storyGenerationActions.generateOnboardingTeaser);
+
   // Get selected avatar
   const selectedAvatarData = BASE_AVATARS.find(a => a.id === data.avatarId) || BASE_AVATARS[0];
 
+  // Voice recording handler (disabled by feature flag)
   const handleAvatarPress = () => {
+    if (!ENABLE_VOICE_INPUT) return;
     if (phase === 'input') {
       setPhase('recording');
     } else if (phase === 'recording') {
@@ -449,11 +465,46 @@ export default function MagicMomentScreen() {
   };
 
   const finishRecording = () => {
+    if (!ENABLE_VOICE_INPUT) return;
     setPhase('generating');
-    // Simulate API call / processing time
+    // Voice recording would be processed here
     setTimeout(() => {
       setPhase('preview');
     }, 10000);
+  };
+
+  // Text input submission handler
+  const handleSubmitPrompt = async () => {
+    if (!promptText.trim() || promptText.length < 3) return;
+
+    setPhase('generating');
+    setGenerationError(null);
+
+    try {
+      // Use a temporary identifier since email is collected during auth (after this screen)
+      // We'll use the child's name + timestamp to create a unique teaser identifier
+      const tempTeaserEmail = `teaser-${data.childName || 'child'}-${Date.now()}@temp.local`;
+
+      const result = await generateTeaser({
+        prompt: promptText.trim(),
+        childName: data.childName || 'Little One',
+        childAge: data.childAge || '5',
+        gender: data.gender || 'child',
+        email: tempTeaserEmail,
+      });
+
+      if (result.success && result.teaser) {
+        setGeneratedTeaser(result.teaser);
+        setPhase('preview');
+      } else {
+        setGenerationError(result.error || 'Something went wrong');
+        setPhase('input');
+      }
+    } catch (error) {
+      console.error('Teaser generation error:', error);
+      setGenerationError('Failed to create your story. Please try again!');
+      setPhase('input');
+    }
   };
 
   const handleBack = () => {
@@ -481,7 +532,7 @@ export default function MagicMomentScreen() {
       }}>
         <ChunkyButton onPress={handleBack} bgColor="#FFFFFF" borderColor="#E5E7EB" size="small">
           <View style={{ padding: 10 }}>
-            <ArrowLeft size={24} color="#4B5563" />
+            <Ionicons name="arrow-back" size={24} color="#4B5563" />
           </View>
         </ChunkyButton>
       </View>
@@ -492,59 +543,31 @@ export default function MagicMomentScreen() {
         {(phase === 'input' || phase === 'recording') && (
           <Animated.View entering={FadeIn} exiting={FadeOut} style={{ alignItems: 'center', width: '100%' }}>
 
-            {/* Premium Recording Bubble */}
-            <View style={{ marginBottom: 32 }}>
-              <RecordingBubble
-                isRecording={phase === 'recording'}
-                avatarImage={selectedAvatarData.image}
-                onPress={handleAvatarPress}
-              />
+            {/* Avatar Display */}
+            <View style={{ marginBottom: 24 }}>
+              <View style={{
+                width: 140,
+                height: 140,
+                borderRadius: 70,
+                backgroundColor: '#EDE9FE',
+                borderWidth: 5,
+                borderColor: '#DDD6FE',
+                alignItems: 'center',
+                justifyContent: 'center',
+                overflow: 'hidden',
+                shadowColor: '#7C3AED',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.15,
+                shadowRadius: 8,
+                elevation: 8,
+              }}>
+                <Image
+                  source={selectedAvatarData.image}
+                  style={{ width: 100, height: 100 }}
+                  resizeMode="contain"
+                />
+              </View>
             </View>
-
-            {/* Recording Controls */}
-            {phase === 'recording' && (
-              <Animated.View
-                entering={FadeInUp.springify()}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 20,
-                  marginBottom: 24,
-                  width: '100%',
-                }}
-              >
-                {/* Redo Button - Using ChunkyButton style */}
-                <ChunkyButton
-                  onPress={() => setPhase('input')}
-                  bgColor="#FFFFFF"
-                  borderColor="#E5E7EB"
-                  size="medium"
-                >
-                  <View style={{ padding: 16, alignItems: 'center' }}>
-                    <Ionicons name="refresh" size={36} color="#6B7280" />
-                    <Text style={{ fontSize: 14, fontWeight: '700', color: '#6B7280', marginTop: 4 }}>
-                      Redo
-                    </Text>
-                  </View>
-                </ChunkyButton>
-
-                {/* Done Button - Primary action */}
-                <ChunkyButton
-                  onPress={finishRecording}
-                  bgColor="#10B981"
-                  borderColor="#059669"
-                  size="large"
-                >
-                  <View style={{ paddingVertical: 20, paddingHorizontal: 32, alignItems: 'center' }}>
-                    <Ionicons name="checkmark-circle" size={48} color="white" />
-                    <Text style={{ fontSize: 18, fontWeight: '800', color: 'white', marginTop: 4 }}>
-                      Done!
-                    </Text>
-                  </View>
-                </ChunkyButton>
-              </Animated.View>
-            )}
 
             <Animated.Text
               entering={FadeInDown.delay(100)}
@@ -553,49 +576,113 @@ export default function MagicMomentScreen() {
                 fontWeight: '800',
                 color: '#1F2937',
                 textAlign: 'center',
-                marginBottom: 16,
+                marginBottom: 12,
               }}
             >
-              {phase === 'recording' ? "I'm listening..." : "What did you do today?"}
+              What did you do today?
             </Animated.Text>
 
             <Animated.Text
               entering={FadeInDown.delay(200)}
               style={{
-                fontSize: 18,
-                color: phase === 'recording' ? '#EC4899' : '#6B7280',
+                fontSize: 16,
+                color: '#6B7280',
                 textAlign: 'center',
-                marginBottom: 32,
+                marginBottom: 24,
                 fontWeight: '600',
-                lineHeight: 26,
+                lineHeight: 24,
                 paddingHorizontal: 16,
               }}
             >
-              {phase === 'recording'
-                ? "Press Done when finished!"
-                : `Tap ${selectedAvatarData.name} to talk!`}
+              Tell us about your day and we'll create a magical story just for you!
             </Animated.Text>
 
-            {/* Suggestions - Only show when not recording */}
-            {phase === 'input' && (
-              <Animated.View entering={FadeInUp.delay(300)} style={{ width: '100%' }}>
-                <ChunkyButton
-                  onPress={() => setPhase('recording')}
-                  bgColor="#3B82F6"
-                  borderColor="#1D4ED8"
-                  size="large"
-                >
-                  <View style={{ padding: 20, alignItems: 'center' }}>
-                    <Text style={{ fontSize: 20, fontWeight: '700', color: 'white' }}>
-                      "I played with my dog!"
-                    </Text>
-                    <Text style={{ fontSize: 13, color: '#BFDBFE', marginTop: 4, fontWeight: '600' }}>
-                      (Tap to say this)
-                    </Text>
-                  </View>
-                </ChunkyButton>
+            {/* Error Message */}
+            {generationError && (
+              <Animated.View entering={FadeInDown} style={{
+                backgroundColor: '#FEE2E2',
+                paddingHorizontal: 16,
+                paddingVertical: 10,
+                borderRadius: 12,
+                marginBottom: 16,
+              }}>
+                <Text style={{ color: '#DC2626', fontWeight: '600', textAlign: 'center' }}>
+                  {generationError}
+                </Text>
               </Animated.View>
             )}
+
+            {/* Text Input */}
+            <Animated.View entering={FadeInUp.delay(300)} style={{ width: '100%', marginBottom: 20 }}>
+              <View style={{
+                backgroundColor: '#FFFFFF',
+                borderRadius: 20,
+                borderWidth: 3,
+                borderColor: promptText.length > 0 ? '#A78BFA' : '#E5E7EB',
+                padding: 4,
+                shadowColor: '#7C3AED',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.1,
+                shadowRadius: 8,
+                elevation: 4,
+              }}>
+                <TextInput
+                  value={promptText}
+                  onChangeText={setPromptText}
+                  placeholder="I played with my dog and we found a rainbow!"
+                  placeholderTextColor="#9CA3AF"
+                  multiline
+                  style={{
+                    fontSize: 18,
+                    color: '#1F2937',
+                    fontWeight: '600',
+                    padding: 16,
+                    minHeight: 100,
+                    textAlignVertical: 'top',
+                  }}
+                />
+              </View>
+            </Animated.View>
+
+            {/* Submit Button */}
+            <Animated.View entering={FadeInUp.delay(400)} style={{ width: '100%' }}>
+              <ChunkyButton
+                onPress={handleSubmitPrompt}
+                bgColor={promptText.length >= 3 ? '#10B981' : '#9CA3AF'}
+                borderColor={promptText.length >= 3 ? '#059669' : '#6B7280'}
+                size="large"
+                disabled={promptText.length < 3}
+              >
+                <View style={{ padding: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+                  <Ionicons name="sparkles" size={24} color="white" />
+                  <Text style={{ fontSize: 20, fontWeight: '800', color: 'white' }}>
+                    Create My Story!
+                  </Text>
+                </View>
+              </ChunkyButton>
+            </Animated.View>
+
+            {/* Quick Suggestions */}
+            <Animated.View entering={FadeInUp.delay(500)} style={{ marginTop: 20, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8 }}>
+              {['I played outside! 🌳', 'I made art! 🎨', 'I read a book! 📚'].map((suggestion) => (
+                <Pressable
+                  key={suggestion}
+                  onPress={() => setPromptText(suggestion.replace(/[🌳🎨📚]/g, '').trim())}
+                  style={{
+                    backgroundColor: '#F3E8FF',
+                    paddingHorizontal: 14,
+                    paddingVertical: 8,
+                    borderRadius: 20,
+                    borderWidth: 1,
+                    borderColor: '#DDD6FE',
+                  }}
+                >
+                  <Text style={{ color: '#7C3AED', fontWeight: '600', fontSize: 14 }}>
+                    {suggestion}
+                  </Text>
+                </Pressable>
+              ))}
+            </Animated.View>
           </Animated.View>
         )}
 
@@ -691,10 +778,10 @@ export default function MagicMomentScreen() {
 
                     {/* Simple decorative sparkles */}
                     <View style={{ position: 'absolute', top: 20, right: 30 }}>
-                      <Sparkles size={24} color="#C4B5FD" />
+                      <Ionicons name="sparkles" size={24} color="#C4B5FD" />
                     </View>
                     <View style={{ position: 'absolute', bottom: 30, left: 30 }}>
-                      <Sparkles size={20} color="#DDD6FE" />
+                      <Ionicons name="sparkles" size={20} color="#DDD6FE" />
                     </View>
                   </View>
 
@@ -709,7 +796,7 @@ export default function MagicMomentScreen() {
                       marginBottom: 16,
                       textAlign: 'center',
                     }}>
-                      The Space Explorer & The Dog's Big Adventure
+                      {generatedTeaser?.title || 'Your Magical Story'}
                     </Text>
 
                     {/* Divider */}
@@ -726,9 +813,12 @@ export default function MagicMomentScreen() {
                       fontSize: 18,
                       color: '#4B5563',
                       lineHeight: 28,
-                      fontFamily: 'System', // Use default system serif if available or just clean sans
+                      fontFamily: 'System',
                     }}>
-                      <Text style={{ fontSize: 24, color: '#7C3AED', fontWeight: 'bold' }}>O</Text>nce upon a time, in a galaxy not so far away, there lived a brave young explorer who loved nothing more than discovering new stars. But this explorer wasn't alone—they had the best copilot in the universe...
+                      <Text style={{ fontSize: 24, color: '#7C3AED', fontWeight: 'bold' }}>
+                        {generatedTeaser?.teaserText?.charAt(0) || 'O'}
+                      </Text>
+                      {generatedTeaser?.teaserText?.slice(1) || 'nce upon a time, a wonderful adventure was about to begin...'}
                     </Text>
 
                     {/* Fade out effect at the bottom of the text */}
@@ -780,7 +870,7 @@ export default function MagicMomentScreen() {
                   padding: 18,
                   gap: 10,
                 }}>
-                  <Lock size={22} color="white" strokeWidth={2.5} />
+                  <Ionicons name="lock-closed" size={22} color="white" />
                   <Text style={{ fontSize: 20, fontWeight: '800', color: 'white' }}>
                     Ask Parent to Unlock!
                   </Text>

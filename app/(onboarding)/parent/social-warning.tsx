@@ -26,6 +26,8 @@ export default function SocialWarningScreen() {
             showNextButton={showStat}
             onNext={handleNext}
             nextLabel="And the toll on you..."
+            isScrollable={true}
+            fadeInButton={true}
         >
             <View style={styles.container}>
                 <Animated.View entering={FadeIn.delay(200)} style={styles.header}>

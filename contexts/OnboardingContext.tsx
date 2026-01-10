@@ -1,58 +1,161 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useRef, useCallback } from 'react';
+import * as SecureStore from 'expo-secure-store';
+
+const STORAGE_KEY = 'onboarding_progress';
 
 type OnboardingData = {
-    // Goal
-    primaryGoal: string;
-    // Assessment
-    struggleBehavior: string; // 'arguing', 'aggression', 'shut_down', 'tantrums'
-    aggressionTarget?: string;
-    aggressionFrequency?: string;
-    // Moral Baseline
-    moralScore: number;
-    // Child
+    // Child info
     childName: string;
     childAge: string;
-    childBirthMonth?: number; // 0-11
+    childBirthMonth?: number;
     childBirthYear?: number;
-    gender: 'boy' | 'girl';
+    gender: 'boy' | 'girl' | '';
+    childPersonality: string[];
+    // Goals & timeline
+    primaryGoal: string[];
+    goalsTimeline: string;
+    // Parenting
+    parentingStyle: string;
+    parentChallenges: string[];
+    parentReaction: string;
+    previousAttempts: string;
+    // Daily routine & reading
+    dailyRoutine: string;
+    readingTime: string;
+    storyLength: string;
+    storyThemes: string[];
+    // Behavior & struggles
+    struggleBehavior: string;
+    aggressionTarget?: string;
+    aggressionFrequency?: string;
+    triggerSituations: string[];
+    struggleAreas: string[];
+    struggleFrequency: string;
+    // Moral baseline ratings (1-5 scale)
+    moralSharing: string;
+    moralHonesty: string;
+    moralPatience: string;
+    moralKindness: string;
+    moralScore: number; // Calculated average * 20
+    // Avatar (existing)
     avatarId: string;
     lockedCosmeticClicked: boolean;
     audioEnabled: boolean;
+    // Generated mascot (AI-generated character)
+    generatedMascotId?: string;
+    generatedMascotUrl?: string;
+    // Email (for teaser lookup after auth)
+    email?: string;
 };
 
 type OnboardingContextType = {
     data: OnboardingData;
     updateData: (updates: Partial<OnboardingData>) => void;
-    nextStep: () => void; // Placeholder for navigation logic if needed here
+    nextStep: () => void;
+    clearOnboardingData: () => Promise<void>;
+    isLoaded: boolean;
+    hasPersistedData: boolean;
 };
 
 const defaultData: OnboardingData = {
-    primaryGoal: '',
-    struggleBehavior: '',
-    moralScore: 50,
     childName: '',
-    childAge: '4-5',
-    gender: 'boy',
-    avatarId: 'hero_1',
+    childAge: '',
+    gender: '',
+    childPersonality: [],
+    primaryGoal: [],
+    goalsTimeline: '',
+    parentingStyle: '',
+    parentChallenges: [],
+    parentReaction: '',
+    previousAttempts: '',
+    dailyRoutine: '',
+    readingTime: '',
+    storyLength: '',
+    storyThemes: [],
+    struggleBehavior: '',
+    triggerSituations: [],
+    struggleAreas: [],
+    struggleFrequency: '',
+    moralSharing: '',
+    moralHonesty: '',
+    moralPatience: '',
+    moralKindness: '',
+    moralScore: 50,
+    avatarId: 'bears',
     lockedCosmeticClicked: false,
     audioEnabled: false,
+    generatedMascotId: undefined,
+    generatedMascotUrl: undefined,
+    email: undefined,
 };
 
 const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);
 
 export function OnboardingProvider({ children }: { children: ReactNode }) {
     const [data, setData] = useState<OnboardingData>(defaultData);
+    const [isLoaded, setIsLoaded] = useState(false);
+    const [hasPersistedData, setHasPersistedData] = useState(false);
+    const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const updateData = (updates: Partial<OnboardingData>) => {
-        setData((prev) => ({ ...prev, ...updates }));
-    };
+    // Load persisted data on mount
+    useEffect(() => {
+        const loadPersistedData = async () => {
+            try {
+                const stored = await SecureStore.getItemAsync(STORAGE_KEY);
+                if (stored) {
+                    const parsed = JSON.parse(stored) as Partial<OnboardingData>;
+                    // Merge with defaults to handle any new fields
+                    setData({ ...defaultData, ...parsed });
+                    setHasPersistedData(true);
+                }
+            } catch (error) {
+                console.warn('Failed to load onboarding progress:', error);
+            } finally {
+                setIsLoaded(true);
+            }
+        };
+        loadPersistedData();
+    }, []);
 
-    const nextStep = () => {
-        // Logic to be handled by router, but exposure here helps
-    };
+    // Debounced save to SecureStore
+    const saveToStorage = useCallback((dataToSave: OnboardingData) => {
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+        saveTimeoutRef.current = setTimeout(async () => {
+            try {
+                await SecureStore.setItemAsync(STORAGE_KEY, JSON.stringify(dataToSave));
+            } catch (error) {
+                console.warn('Failed to save onboarding progress:', error);
+            }
+        }, 300);
+    }, []);
+
+    const updateData = useCallback((updates: Partial<OnboardingData>) => {
+        setData((prev) => {
+            const newData = { ...prev, ...updates };
+            saveToStorage(newData);
+            return newData;
+        });
+    }, [saveToStorage]);
+
+    const clearOnboardingData = useCallback(async () => {
+        try {
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+            }
+            await SecureStore.deleteItemAsync(STORAGE_KEY);
+            setData(defaultData);
+            setHasPersistedData(false);
+        } catch (error) {
+            console.warn('Failed to clear onboarding progress:', error);
+        }
+    }, []);
+
+    const nextStep = () => { };
 
     return (
-        <OnboardingContext.Provider value={{ data, updateData, nextStep }}>
+        <OnboardingContext.Provider value={{ data, updateData, nextStep, clearOnboardingData, isLoaded, hasPersistedData }}>
             {children}
         </OnboardingContext.Provider>
     );
@@ -65,3 +168,4 @@ export function useOnboarding() {
     }
     return context;
 }
+

@@ -35,6 +35,7 @@ export default function TriggerSituationsScreen() {
 
     const handleNext = () => {
         if (canProceed) {
+            updateData({ triggerSituations: selected });
             router.push('/(onboarding)/quiz/struggle-areas');
         }
     };
@@ -44,6 +45,7 @@ export default function TriggerSituationsScreen() {
             showProgressBar={false} skipTopSafeArea progress={0.65}
             onNext={handleNext}
             nextLabel="Continue"
+            showNextButton={canProceed}
             isScrollable={true}
         >
             <View style={styles.contentContainer}>

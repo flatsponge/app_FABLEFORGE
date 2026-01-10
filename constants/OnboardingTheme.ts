@@ -26,26 +26,30 @@ export const OnboardingTheme = {
     Title: {
       fontSize: 30,
       fontWeight: '700' as const,
-      // Intentionally leaving out fontFamily here to allow component-level overrides 
-      // or global font configuration usage.
+      lineHeight: 36,
       color: '#111827',
+      fontFamily: undefined as string | undefined,
     },
     Subtitle: {
       fontSize: 12,
       fontWeight: '700' as const,
       letterSpacing: 1.5,
       textTransform: 'uppercase' as const,
+      lineHeight: 16,
       color: '#9CA3AF', // Gray 400
+      fontFamily: undefined as string | undefined,
     },
     Body: {
       fontSize: 18,
       lineHeight: 28,
       color: '#4B5563',
+      fontFamily: undefined as string | undefined,
     },
     Button: {
       fontSize: 18,
       fontWeight: '700' as const,
       color: '#FFFFFF',
+      fontFamily: undefined as string | undefined,
     },
   },
   Spacing: {

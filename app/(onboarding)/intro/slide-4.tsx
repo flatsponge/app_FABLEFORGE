@@ -47,6 +47,7 @@ const AnimatedAvatar = ({ seed, index }: { seed: number, index: number }) => {
         scale.value = withDelay(delay, withTiming(1, config));
         translateX.value = withDelay(delay, withTiming(0, config));
         rotate.value = withDelay(delay, withTiming(0, config));
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- animation values are stable refs, index is static
     }, []);
 
     const animatedStyle = useAnimatedStyle(() => ({
@@ -72,7 +73,6 @@ const AnimatedAvatar = ({ seed, index }: { seed: number, index: number }) => {
 
 export default function IntroSlide4() {
     const router = useRouter();
-    const { width } = Dimensions.get('window'); // Keep this for ConfettiCannon only if needed, or better use useWindowDimensions
     const windowDim = Dimensions.get('window');
 
     // Use dynamic width with slightly more padding to prevent cutoff
@@ -81,7 +81,6 @@ export default function IntroSlide4() {
 
     const [showButton, setShowButton] = useState(false);
     const confettiRef = useRef<ConfettiCannon>(null);
-    const isNavigatingRef = useRef(false);
 
     useEffect(() => {
         const timer = setTimeout(() => setShowButton(true), 1500);
@@ -89,19 +88,16 @@ export default function IntroSlide4() {
     }, []);
 
     const handleNext = () => {
-        // Prevent multiple navigation calls when user spams the button
-        if (isNavigatingRef.current) return;
-        isNavigatingRef.current = true;
-
-        router.replace('/(onboarding)/quiz/goals');
+        router.push('/(onboarding)/quiz/goals');
     };
 
     return (
         <OnboardingLayout
             onNext={handleNext}
-            nextLabel="Start my 14-day journey"
+            nextLabel="Get Started"
             showNextButton={showButton}
             showProgressBar={false}
+            fadeInButton={true}
         >
             {/* Confetti Explosion - fires on mount */}
             <ConfettiCannon

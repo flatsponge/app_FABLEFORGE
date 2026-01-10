@@ -96,6 +96,8 @@ export default function RealityCheckScreen() {
             onNext={handleNext}
             nextLabel="Start My Child's Transformation"
             isScrollable={true}
+            showNextButton={showStats}
+            fadeInButton={true}
         >
             <View style={styles.container}>
                 {/* Critical Header */}

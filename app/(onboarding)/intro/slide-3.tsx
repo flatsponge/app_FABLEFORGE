@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { View, Text, findNodeHandle, StyleSheet } from 'react-native';
+import { View, Text, findNodeHandle } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, {
     useAnimatedStyle,
@@ -10,7 +10,7 @@ import Animated, {
     Easing,
     interpolateColor,
 } from 'react-native-reanimated';
-import { ScanFace, Sparkles, Sprout } from 'lucide-react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 
@@ -22,21 +22,21 @@ const LENS_SIZE = ICON_BOX_SIZE + (LENS_PADDING * 2);
 const PROCESS_STEPS = [
     {
         id: 'identify',
-        icon: ScanFace,
+        icon: 'scan-outline' as const,
         title: 'Pinpoint',
         desc: 'Select the behavior.',
         activeColor: '#2563eb', // blue-600
     },
     {
         id: 'create',
-        icon: Sparkles,
+        icon: 'sparkles-outline' as const,
         title: 'Generate',
         desc: 'Get a magic story.',
         activeColor: '#7c3aed', // violet-600
     },
     {
         id: 'grow',
-        icon: Sprout,
+        icon: 'leaf-outline' as const,
         title: 'Transform',
         desc: 'Watch habits change.',
         activeColor: '#059669', // emerald-600
@@ -189,6 +189,7 @@ export default function Slide3() {
             nextLabel="Show me the magic"
             showNextButton={showButton}
             showProgressBar={false}
+            fadeInButton={true}
         >
             {/* Ambient Background Light */}
             <View className="absolute top-[-20%] left-[-20%] w-[140%] h-[60%] pointer-events-none">
@@ -216,7 +217,7 @@ export default function Slide3() {
                             <Text className="text-5xl font-black text-violet-600 tracking-tighter">
                                 3 STEPS
                             </Text>
-                            <Sparkles size={32} color="#7c3aed" fill="#ddd6fe" style={{ marginLeft: 8 }} />
+                            <Ionicons name="sparkles" size={32} color="#7c3aed" style={{ marginLeft: 8 }} />
                         </View>
                         <View className="h-[2px] flex-1 bg-violet-200 rounded-full" />
                     </View>
@@ -290,8 +291,6 @@ interface StepItemProps {
 }
 
 function StepItem({ step, index, isActive, setIconRef }: StepItemProps) {
-    const Icon = step.icon;
-
     return (
         <Animated.View
             entering={FadeInDown.delay(200 + (index * 200)).duration(500)}
@@ -316,9 +315,9 @@ function StepItem({ step, index, isActive, setIconRef }: StepItemProps) {
                         transform: [{ scale: isActive ? 1 : 0.9 }],
                     }}
                 >
-                    <Icon
+                    <Ionicons
+                        name={step.icon}
                         size={28}
-                        strokeWidth={2}
                         color={isActive ? step.activeColor : '#94a3b8'}
                     />
                 </View>
@@ -358,5 +357,3 @@ function StepItem({ step, index, isActive, setIconRef }: StepItemProps) {
         </Animated.View>
     );
 }
-
-const styles = StyleSheet.create({});

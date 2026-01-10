@@ -26,6 +26,8 @@ export default function FinalWarningScreen() {
             onNext={handleNext}
             nextLabel="See The Solution"
             isScrollable={true}
+            showNextButton={showCards}
+            fadeInButton={true}
         >
             <View style={styles.container}>
                 {/* Header */}

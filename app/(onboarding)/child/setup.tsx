@@ -11,7 +11,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Sparkles, ArrowRight, Users, User, Mic } from 'lucide-react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 
 // Chunky 3D button matching child flow
@@ -165,7 +165,7 @@ export default function ChildSetupScreen() {
                                     alignItems: 'center',
                                     justifyContent: 'center'
                                 }}>
-                                    <Users size={24} color="#7C3AED" strokeWidth={2.5} />
+                                    <Ionicons name="people" size={24} color="#7C3AED" />
                                 </View>
                                 <View style={{ width: 2, height: 20, backgroundColor: '#E5E7EB', marginTop: 8 }} />
                             </View>
@@ -187,7 +187,7 @@ export default function ChildSetupScreen() {
                                     </View>
                                 </View>
                                 <Text style={{ fontSize: 15, color: '#4B5563', lineHeight: 22 }}>
-                                    Hand the device over and let them pick their favorite character. It's more fun!
+                                    Do this step together with your child. Let them pick their favorite character—it's more fun!
                                 </Text>
                             </View>
                         </View>
@@ -203,7 +203,7 @@ export default function ChildSetupScreen() {
                                     alignItems: 'center',
                                     justifyContent: 'center'
                                 }}>
-                                    <User size={24} color="#9CA3AF" strokeWidth={2.5} />
+                                    <Ionicons name="person" size={24} color="#9CA3AF" />
                                 </View>
                             </View>
                             <View style={{ flex: 1 }}>
@@ -242,7 +242,7 @@ export default function ChildSetupScreen() {
                                     marginRight: 12,
                                     flexShrink: 0,
                                 }}>
-                                    <Mic size={24} color={data.audioEnabled ? '#16A34A' : '#D97706'} strokeWidth={2.5} />
+                                    <Ionicons name="mic" size={24} color={data.audioEnabled ? '#16A34A' : '#D97706'} />
                                 </View>
                                 <View style={{ flex: 1, paddingRight: 8 }}>
                                     <Text style={{ fontSize: 16, fontWeight: '700', color: '#1F2937', marginBottom: 2 }}>
@@ -250,22 +250,22 @@ export default function ChildSetupScreen() {
                                     </Text>
                                     {!data.audioEnabled && (
                                         <View style={{
-                                            backgroundColor: '#FEF3C7',
-                                            paddingHorizontal: 6,
-                                            paddingVertical: 2,
+                                            backgroundColor: '#FEE2E2',
+                                            paddingHorizontal: 8,
+                                            paddingVertical: 3,
                                             borderRadius: 4,
                                             alignSelf: 'flex-start',
                                             marginBottom: 4,
                                         }}>
-                                            <Text style={{ fontSize: 9, fontWeight: '800', color: '#D97706' }}>
-                                                RECOMMENDED
+                                            <Text style={{ fontSize: 10, fontWeight: '700', color: '#DC2626' }}>
+                                                Not Recommended
                                             </Text>
                                         </View>
                                     )}
                                     <Text style={{ fontSize: 12, color: '#6B7280', lineHeight: 16 }}>
                                         {data.audioEnabled
-                                            ? '✓ Your child can speak their stories naturally!'
-                                            : 'Let your child speak their adventures aloud.'}
+                                            ? '✓ Your child can speak story ideas naturally!'
+                                            : 'Used for story suggestions from your child.'}
                                     </Text>
                                 </View>
                             </View>
@@ -281,9 +281,9 @@ export default function ChildSetupScreen() {
 
                         {/* Benefits / Warning */}
                         {!data.audioEnabled ? (
-                            <View style={{ marginTop: 12, backgroundColor: '#FFFBEB', borderRadius: 8, padding: 10 }}>
-                                <Text style={{ fontSize: 11, color: '#92400E', lineHeight: 15, fontWeight: '500' }}>
-                                    ⚠️ Without voice input, your child will need to type or select preset options. Voice makes storytelling much more engaging and personal!
+                            <View style={{ marginTop: 12, backgroundColor: '#FEF2F2', borderRadius: 8, padding: 10 }}>
+                                <Text style={{ fontSize: 11, color: '#991B1B', lineHeight: 16, fontWeight: '500' }}>
+                                    Without voice, your child must type or tap to suggest story ideas. Voice input makes it easier and more engaging.
                                 </Text>
                             </View>
                         ) : (
@@ -315,7 +315,7 @@ export default function ChildSetupScreen() {
                                     padding: 18,
                                     gap: 10
                                 }}>
-                                    <Sparkles size={24} color="white" strokeWidth={2.5} />
+                                    <Ionicons name="sparkles" size={24} color="white" />
                                     <Text style={{
                                         fontSize: 20,
                                         fontWeight: '800',
@@ -324,7 +324,7 @@ export default function ChildSetupScreen() {
                                     }}>
                                         Continue
                                     </Text>
-                                    <ArrowRight size={24} color="white" strokeWidth={2.5} />
+                                    <Ionicons name="arrow-forward" size={24} color="white" />
                                 </View>
                             </ChunkyButton>
                         </View>

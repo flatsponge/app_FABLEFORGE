@@ -42,6 +42,7 @@ export default function TrajectoryScreen() {
             showNextButton={showLabels}
             onNext={handleNext}
             nextLabel="Change The Future"
+            isScrollable={true}
         >
             <View style={styles.container}>
                 <Animated.View entering={FadeIn.delay(200)} style={styles.header}>

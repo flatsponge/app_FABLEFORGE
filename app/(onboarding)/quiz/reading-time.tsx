@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
-import OnboardingSingleSelect, { SelectOption } from '../../../components/OnboardingSingleSelect';
+import OnboardingMultiSelect, { SelectOption } from '../../../components/OnboardingMultiSelect';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
 const TIMES: SelectOption[] = [
@@ -17,14 +17,20 @@ const TIMES: SelectOption[] = [
 export default function ReadingTimeScreen() {
     const router = useRouter();
     const { updateData } = useOnboarding();
-    const [selected, setSelected] = useState<string | null>(null);
+    const [selected, setSelected] = useState<string[]>([]);
 
-    const handleSelect = (id: string) => {
-        setSelected(id);
+    const handleToggle = (id: string) => {
+        setSelected(prev => {
+            if (prev.includes(id)) {
+                return prev.filter(item => item !== id);
+            }
+            return [...prev, id];
+        });
     };
 
     const handleNext = () => {
-        if (selected) {
+        if (selected.length > 0) {
+            updateData({ readingTime: selected.join(',') });
             router.push('/(onboarding)/quiz/story-length');
         }
     };
@@ -32,20 +38,22 @@ export default function ReadingTimeScreen() {
     return (
         <OnboardingLayout
             showProgressBar={false} skipTopSafeArea progress={0.25}
-            showNextButton={!!selected}
+            showNextButton={selected.length > 0}
             onNext={handleNext}
+            isScrollable={true}
         >
             <View style={styles.contentContainer}>
                 <OnboardingTitle>When do you usually read together?</OnboardingTitle>
                 <OnboardingBody>
                     We'll remind you at the perfect moment.
                 </OnboardingBody>
+                <Text style={styles.selectLabel}>Select all that apply</Text>
 
-                <OnboardingSingleSelect
+                <OnboardingMultiSelect
                     options={TIMES}
-                    selectedId={selected}
-                    onSelect={handleSelect}
-                    showCheckbox={false}
+                    selectedValues={selected}
+                    onToggle={handleToggle}
+                    showCheckbox={true}
                 />
             </View>
         </OnboardingLayout>
@@ -55,5 +63,12 @@ export default function ReadingTimeScreen() {
 const styles = StyleSheet.create({
     contentContainer: {
         width: '100%',
+    },
+    selectLabel: {
+        fontSize: 14,
+        color: OnboardingTheme.Colors.Primary,
+        fontWeight: '600',
+        marginTop: OnboardingTheme.Spacing.sm,
+        fontFamily: OnboardingTheme.Typography.Body.fontFamily,
     },
 });

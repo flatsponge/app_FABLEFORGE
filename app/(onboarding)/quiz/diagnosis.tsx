@@ -42,6 +42,7 @@ export default function DiagnosisScreen() {
             showNextButton={!!selected}
             onNext={handleNext}
             nextLabel="Continue"
+            isScrollable={true}
         >
             <View style={styles.contentContainer}>
                 <OnboardingTitle>How does your child typically handle frustration?</OnboardingTitle>

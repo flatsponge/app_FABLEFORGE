@@ -26,7 +26,8 @@ export default function StruggleFrequencyScreen() {
 
     const handleNext = () => {
         if (selected) {
-            router.push('/(onboarding)/quiz/moral-baseline');
+            updateData({ struggleFrequency: selected });
+            router.push('/(onboarding)/quiz/moral-sharing');
         }
     };
 
@@ -35,6 +36,7 @@ export default function StruggleFrequencyScreen() {
             showProgressBar={false} skipTopSafeArea progress={0.75}
             showNextButton={!!selected}
             onNext={handleNext}
+            isScrollable={true}
         >
             <View style={styles.contentContainer}>
                 <OnboardingTitle>How often do these issues come up?</OnboardingTitle>

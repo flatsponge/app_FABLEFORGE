@@ -26,6 +26,8 @@ export default function StatReveal2Screen() {
             showNextButton={showContext}
             onNext={handleNext}
             nextLabel="Continue"
+            isScrollable={true}
+            fadeInButton={true}
         >
             <View style={styles.container}>
                 <Animated.View entering={FadeIn.delay(200)} style={styles.headerContainer}>

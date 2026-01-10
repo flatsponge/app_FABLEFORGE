@@ -1,28 +1,33 @@
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import 'react-native-reanimated';
-import '../global.css';
+// Polyfills must be imported first before Convex
+import "../lib/polyfills";
 
-import { useColorScheme } from '@/components/useColorScheme';
-import { lockToPortrait } from '@/components/useOrientation';
-import { OnboardingProvider } from '../contexts/OnboardingContext';
+import FontAwesome from "@expo/vector-icons/FontAwesome";
+import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
+import { useFonts } from "expo-font";
+import { Stack } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
+import { useEffect } from "react";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import "react-native-reanimated";
+import "../global.css";
 
-export { ErrorBoundary } from 'expo-router';
+import { useColorScheme } from "@/components/useColorScheme";
+import { lockToPortrait } from "@/components/useOrientation";
+import { OnboardingProvider } from "../contexts/OnboardingContext";
+import { AuthProvider } from "../contexts/AuthContext";
+import { ConvexProvider } from "../lib/convex";
+
+export { ErrorBoundary } from "expo-router";
 
 export const unstable_settings = {
-  initialRouteName: '(tabs)',
+  initialRouteName: "(tabs)",
 };
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
     ...FontAwesome.font,
   });
 
@@ -57,56 +62,60 @@ function RootLayoutNav() {
     ...DefaultTheme,
     colors: {
       ...DefaultTheme.colors,
-      background: '#FDFBF7',
+      background: "#FDFBF7",
     },
   };
 
   return (
-    <SafeAreaProvider>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : customLightTheme}>
-        <OnboardingProvider>
-          <Stack>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen
-              name="(onboarding)"
-              options={{
-                headerShown: false,
-                animation: 'slide_from_right',
-                gestureEnabled: false,
-              }}
-            />
-            <Stack.Screen
-              name="book/[id]"
-              options={{
-                headerShown: false,
-                presentation: 'modal',
-              }}
-            />
-            <Stack.Screen
-              name="reading/[id]"
-              options={{
-                headerShown: false,
-                presentation: 'fullScreenModal',
-              }}
-            />
-            <Stack.Screen
-              name="manage-assets"
-              options={{
-                headerShown: false,
-                presentation: 'modal',
-              }}
-            />
-            <Stack.Screen
-              name="asset-studio"
-              options={{
-                headerShown: false,
-                presentation: 'transparentModal',
-                animation: 'slide_from_bottom',
-              }}
-            />
-          </Stack>
-        </OnboardingProvider>
-      </ThemeProvider>
-    </SafeAreaProvider>
+    <ConvexProvider>
+      <SafeAreaProvider>
+        <ThemeProvider value={colorScheme === "dark" ? DarkTheme : customLightTheme}>
+          <AuthProvider>
+            <OnboardingProvider>
+              <Stack>
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen
+                  name="(onboarding)"
+                  options={{
+                    headerShown: false,
+                    animation: "slide_from_right",
+                    gestureEnabled: false,
+                  }}
+                />
+                <Stack.Screen
+                  name="book/[id]"
+                  options={{
+                    headerShown: false,
+                    presentation: "modal",
+                  }}
+                />
+                <Stack.Screen
+                  name="reading/[id]"
+                  options={{
+                    headerShown: false,
+                    presentation: "fullScreenModal",
+                  }}
+                />
+                <Stack.Screen
+                  name="manage-assets"
+                  options={{
+                    headerShown: false,
+                    presentation: "modal",
+                  }}
+                />
+                <Stack.Screen
+                  name="asset-studio"
+                  options={{
+                    headerShown: false,
+                    presentation: "transparentModal",
+                    animation: "slide_from_bottom",
+                  }}
+                />
+              </Stack>
+            </OnboardingProvider>
+          </AuthProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    </ConvexProvider>
   );
 }

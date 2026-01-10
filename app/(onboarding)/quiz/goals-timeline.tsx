@@ -25,6 +25,7 @@ export default function GoalsTimelineScreen() {
 
     const handleNext = () => {
         if (selected) {
+            updateData({ goalsTimeline: selected });
             router.push('/(onboarding)/quiz/parenting-style');
         }
     };
@@ -34,6 +35,7 @@ export default function GoalsTimelineScreen() {
             showProgressBar={false} skipTopSafeArea progress={0.2}
             showNextButton={!!selected}
             onNext={handleNext}
+            isScrollable={true}
         >
             <View style={styles.contentContainer}>
                 <OnboardingTitle>How quickly do you want to see changes?</OnboardingTitle>

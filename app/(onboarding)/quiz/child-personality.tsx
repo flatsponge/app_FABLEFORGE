@@ -34,6 +34,7 @@ export default function ChildPersonalityScreen() {
 
     const handleNext = () => {
         if (canProceed) {
+            updateData({ childPersonality: selected });
             router.push('/(onboarding)/quiz/daily-routine');
         }
     };
@@ -43,6 +44,7 @@ export default function ChildPersonalityScreen() {
             showProgressBar={false} skipTopSafeArea progress={0.15}
             onNext={handleNext}
             nextLabel="Continue"
+            showNextButton={canProceed}
             isScrollable={true}
         >
             <View style={styles.contentContainer}>

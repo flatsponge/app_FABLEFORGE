@@ -9,6 +9,8 @@ import Animated, {
   interpolateColor,
   useDerivedValue
 } from 'react-native-reanimated';
+import { useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
 import { GrowthScoreArc } from '@/components/GrowthScoreArc';
 import {
@@ -697,9 +699,105 @@ const getMotivationalMessage = (score: number) => {
   return "Keep Growing! ✨";
 };
 
-const GrowthScoreWidget = () => {
-  const score = calculateTotalScore(SKILLS_DATA);
+// Skill metadata (colors, icons, descriptions)
+const SKILL_META: Record<string, Omit<Skill, 'progress' | 'subSkills' | 'weeklyData' | 'contributingStories'>> = {
+  empathy: { id: 'empathy', name: 'Compassion & Empathy', color: '#F43F5E', bgClass: 'bg-rose-50', textColor: '#E11D48', icon: Heart, description: 'Understanding feelings and caring for others.' },
+  bravery: { id: 'bravery', name: 'Bravery & Resilience', color: '#F59E0B', bgClass: 'bg-amber-50', textColor: '#D97706', icon: Shield, description: 'Understanding conflict and resolution.' },
+  honesty: { id: 'honesty', name: 'Honesty', color: '#3B82F6', bgClass: 'bg-blue-50', textColor: '#2563EB', icon: Scale, description: 'Valuing truth and integrity.' },
+  teamwork: { id: 'teamwork', name: 'Teamwork', color: '#6366F1', bgClass: 'bg-indigo-50', textColor: '#4F46E5', icon: Users, description: 'Working together to solve problems.' },
+  creativity: { id: 'creativity', name: 'Creativity & Imagination', color: '#8B5CF6', bgClass: 'bg-violet-50', textColor: '#7C3AED', icon: Sparkles, description: 'World building and creative thinking.' },
+  gratitude: { id: 'gratitude', name: 'Gratitude', color: '#EAB308', bgClass: 'bg-yellow-50', textColor: '#CA8A04', icon: Sun, description: 'Appreciating the good things.' },
+  problemSolving: { id: 'problem_solving', name: 'Problem Solving', color: '#14B8A6', bgClass: 'bg-teal-50', textColor: '#0D9488', icon: Puzzle, description: 'Finding solutions to challenges.' },
+  responsibility: { id: 'responsibility', name: 'Responsibility', color: '#64748B', bgClass: 'bg-slate-50', textColor: '#475569', icon: ClipboardList, description: 'Taking ownership of actions.' },
+  patience: { id: 'patience', name: 'Patience', color: '#10B981', bgClass: 'bg-emerald-50', textColor: '#059669', icon: Hourglass, description: 'Waiting calmly and self-control.' },
+  curiosity: { id: 'curiosity', name: 'Curiosity', color: '#06B6D4', bgClass: 'bg-cyan-50', textColor: '#0891B2', icon: Search, description: 'Eagerness to learn and explore.' },
+};
 
+type DbSkillData = {
+  progress: number;
+  subSkills: { name: string; value: number }[];
+};
+
+type DbSkills = {
+  overallScore: number;
+  empathy: DbSkillData;
+  bravery: DbSkillData;
+  honesty: DbSkillData;
+  teamwork: DbSkillData;
+  creativity: DbSkillData;
+  gratitude: DbSkillData;
+  problemSolving: DbSkillData;
+  responsibility: DbSkillData;
+  patience: DbSkillData;
+  curiosity: DbSkillData;
+};
+
+type SkillContribution = {
+  skillKey: string;
+  contributions: Array<{
+    bookId: string;
+    bookTitle: string;
+    bookCoverUrl: string | null;
+    pointsAdded: number;
+    createdAt: number;
+  }>;
+};
+
+// Build skills array from database data with contributions
+const buildSkillsFromDb = (
+  dbSkills: DbSkills,
+  contributions: SkillContribution[]
+): Skill[] => {
+  const skillKeys = ['empathy', 'bravery', 'honesty', 'teamwork', 'creativity', 'gratitude', 'problemSolving', 'responsibility', 'patience', 'curiosity'] as const;
+  
+  // Create a map of contributions by skill key
+  const contributionMap: Record<string, StoryImpact[]> = {};
+  for (const contrib of contributions) {
+    contributionMap[contrib.skillKey] = contrib.contributions.map((c, idx) => ({
+      id: idx,
+      title: c.bookTitle,
+      coverGradient: 'bg-gradient-to-br from-purple-200 to-indigo-300',
+      date: formatRelativeDate(c.createdAt),
+      impact: `Added +${c.pointsAdded} points to this skill`,
+      liked: true,
+    }));
+  }
+  
+  return skillKeys.map(key => {
+    const meta = SKILL_META[key];
+    const dbSkill = dbSkills[key];
+    // Derive main score from sub-scores (average of sub-skill values)
+    const derivedProgress = dbSkill.subSkills.length > 0
+      ? Math.round(dbSkill.subSkills.reduce((sum, sub) => sum + sub.value, 0) / dbSkill.subSkills.length)
+      : dbSkill.progress;
+    return {
+      ...meta,
+      progress: derivedProgress,
+      subSkills: dbSkill.subSkills,
+      weeklyData: [derivedProgress],
+      contributingStories: contributionMap[key] || [],
+    };
+  });
+};
+
+// Format relative date for contributions
+const formatRelativeDate = (timestamp: number): string => {
+  const now = Date.now();
+  const diff = now - timestamp;
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+
+  if (minutes < 1) return 'Just now';
+  if (minutes < 60) return `${minutes} min ago`;
+  if (hours < 24) return hours === 1 ? '1 hour ago' : `${hours} hours ago`;
+  if (days === 0) return 'Today';
+  if (days === 1) return 'Yesterday';
+  if (days < 7) return `${days} days ago`;
+  return `${Math.floor(days / 7)} weeks ago`;
+};
+
+const GrowthScoreWidget = ({ score }: { score: number }) => {
   return (
     <View className="mb-12 mt-6">
       <GrowthScoreArc score={score} size={240} showMotivation={false} />
@@ -708,9 +806,21 @@ const GrowthScoreWidget = () => {
 };
 
 export default function StatsScreen() {
+  const dbSkills = useQuery(api.onboarding.getUserSkills);
+  const skillContributions = useQuery(api.storyGeneration.getSkillContributions);
   const [selectedSkillId, setSelectedSkillId] = useState<string | null>(null);
-  const selectedSkill = SKILLS_DATA.find(s => s.id === selectedSkillId);
   const scrollY = useSharedValue(0);
+
+  // Use database skills if available, otherwise fall back to static data
+  const skillsData = dbSkills 
+    ? buildSkillsFromDb(dbSkills, skillContributions || []) 
+    : SKILLS_DATA;
+  // Derive overall score from main scores (which are derived from sub-scores)
+  const overallScore = skillsData.length > 0
+    ? Math.round(skillsData.reduce((sum, skill) => sum + skill.progress, 0) / skillsData.length)
+    : (dbSkills?.overallScore ?? calculateTotalScore(SKILLS_DATA));
+  
+  const selectedSkill = skillsData.find(s => s.id === selectedSkillId);
 
   const scrollHandler = useAnimatedScrollHandler((event) => {
     scrollY.value = event.contentOffset.y;
@@ -742,7 +852,7 @@ export default function StatsScreen() {
         <View className="px-6">
           <ReadingStreakWidget />
 
-          <GrowthScoreWidget />
+          <GrowthScoreWidget score={overallScore} />
 
           <View className="mb-8">
             <View className="flex-row items-center gap-2 mb-5 px-1">
@@ -753,7 +863,7 @@ export default function StatsScreen() {
             </View>
 
             <View>
-              {SKILLS_DATA.map(skill => (
+              {skillsData.map(skill => (
                 <SkillRow
                   key={skill.id}
                   skill={skill}

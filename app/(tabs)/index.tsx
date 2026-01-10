@@ -2,6 +2,8 @@ import React from 'react';
 import { View, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { useSharedValue, useAnimatedScrollHandler } from 'react-native-reanimated';
+import { useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
 
 import { UnifiedHeader } from '@/components/UnifiedHeader';
 import { FeaturedCard } from '@/components/FeaturedCard';
@@ -12,6 +14,22 @@ import { Book } from '@/types';
 export default function HomeScreen() {
   const router = useRouter();
   const scrollY = useSharedValue(0);
+  const dbSkills = useQuery(api.onboarding.getUserSkills);
+  // Derive overall score from main scores (which are derived from sub-scores)
+  const growthScore = dbSkills 
+    ? (() => {
+        const skillKeys = ['empathy', 'bravery', 'honesty', 'teamwork', 'creativity', 'gratitude', 'problemSolving', 'responsibility', 'patience', 'curiosity'] as const;
+        let total = 0;
+        for (const key of skillKeys) {
+          const skill = dbSkills[key];
+          const mainScore = skill.subSkills.length > 0
+            ? Math.round(skill.subSkills.reduce((sum, sub) => sum + sub.value, 0) / skill.subSkills.length)
+            : skill.progress;
+          total += mainScore;
+        }
+        return Math.round(total / skillKeys.length);
+      })()
+    : 84;
 
   const scrollHandler = useAnimatedScrollHandler((event) => {
     scrollY.value = event.contentOffset.y;
@@ -49,7 +67,7 @@ export default function HomeScreen() {
         </View>
 
         <FeaturedCard onRead={handleRead} />
-        <FulfillmentTracker onPress={handleFulfillmentPress} />
+        <FulfillmentTracker score={growthScore} onPress={handleFulfillmentPress} />
         <LibraryView onBookClick={handleBookClick} isHome={true} />
       </Animated.ScrollView>
     </View>

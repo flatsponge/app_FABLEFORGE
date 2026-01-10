@@ -35,6 +35,7 @@ export default function ParentChallengesScreen() {
 
     const handleNext = () => {
         if (canProceed) {
+            updateData({ parentChallenges: selected });
             router.push('/(onboarding)/quiz/diagnosis');
         }
     };
@@ -44,6 +45,7 @@ export default function ParentChallengesScreen() {
             showProgressBar={false} skipTopSafeArea progress={0.45}
             onNext={handleNext}
             nextLabel="Continue"
+            showNextButton={canProceed}
             isScrollable={true}
         >
             <View style={styles.contentContainer}>

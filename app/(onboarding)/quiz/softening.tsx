@@ -18,6 +18,7 @@ export default function SofteningScreen() {
             showProgressBar={false} skipTopSafeArea progress={0.9}
             onNext={handleNext}
             nextLabel="Build My Personalized Plan"
+            isScrollable={true}
         >
             <View style={styles.contentContainer}>
                 <View style={styles.iconContainer}>
