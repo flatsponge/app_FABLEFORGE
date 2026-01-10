@@ -1,26 +1,14 @@
 "use node";
 
 import { v } from "convex/values";
-import { action, ActionCtx } from "./_generated/server";
+import { action } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
+import {
+  getAuthEmailForAction,
+  logAuthDebugForAction,
+} from "./actionAuthHelpers";
 
-// Helper to get authenticated user's email for actions
-// With @convex-dev/auth, the email is NOT in the JWT token - only the user ID is.
-// We need to fetch the email from the database using identity.subject (user ID).
-async function getAuthEmail(ctx: ActionCtx): Promise<string | null> {
-  const identity = await ctx.auth.getUserIdentity();
-  if (!identity?.subject) {
-    return null;
-  }
-  // The subject is the user ID - fetch email from database
-  const email = await ctx.runQuery(internal.authHelpers.getUserEmailById, {
-    userId: identity.subject,
-  });
-  return email;
-}
-
-// Type for rate limit check result
 type RateLimitResult = {
   hasGenerated: boolean;
   existingStorageId: Id<"_storage"> | null;
@@ -64,7 +52,7 @@ export const generateMascotFromDescription = action({
   }),
   handler: async (ctx, args) => {
     // Get authenticated user's email
-    const email = await getAuthEmail(ctx);
+    const email = await getAuthEmailForAction(ctx);
     if (!email) {
       return { success: false, error: "Not authenticated" };
     }
@@ -187,9 +175,10 @@ export const generateMascotFromImage = action({
   }),
   handler: async (ctx, args) => {
     // Get authenticated user's email
-    const email = await getAuthEmail(ctx);
+    const email = await getAuthEmailForAction(ctx);
     if (!email) {
-      return { success: false, error: "Not authenticated" };
+      await logAuthDebugForAction(ctx, "generateMascotFromImage: No email found");
+      return { success: false, error: "Not authenticated. Please try logging in again." };
     }
 
     // Check rate limit
@@ -309,8 +298,9 @@ export const generateUploadUrl = action({
   returns: v.string(),
   handler: async (ctx) => {
     // Verify user is authenticated
-    const email = await getAuthEmail(ctx);
+    const email = await getAuthEmailForAction(ctx);
     if (!email) {
+      await logAuthDebugForAction(ctx, "generateUploadUrl: No email found");
       throw new Error("Not authenticated");
     }
 
@@ -327,7 +317,7 @@ export const getExistingMascot = action({
     imageUrl: v.union(v.string(), v.null()),
   }),
   handler: async (ctx) => {
-    const email = await getAuthEmail(ctx);
+    const email = await getAuthEmailForAction(ctx);
     if (!email) {
       return { hasGenerated: false, storageId: null, imageUrl: null };
     }
@@ -412,7 +402,7 @@ export const addClothesToMascot = action({
   }),
   handler: async (ctx, args) => {
     // Get authenticated user's email
-    const email = await getAuthEmail(ctx);
+    const email = await getAuthEmailForAction(ctx);
     if (!email) {
       return { success: false, error: "Not authenticated" };
     }
@@ -555,7 +545,7 @@ export const addAccessoryToMascot = action({
   }),
   handler: async (ctx, args) => {
     // Get authenticated user's email
-    const email = await getAuthEmail(ctx);
+    const email = await getAuthEmailForAction(ctx);
     if (!email) {
       return { success: false, error: "Not authenticated" };
     }
@@ -700,7 +690,7 @@ export const resetMascotOutfit = action({
   }),
   handler: async (ctx): Promise<ResetOutfitResult> => {
     // Get authenticated user's email
-    const email = await getAuthEmail(ctx);
+    const email = await getAuthEmailForAction(ctx);
     if (!email) {
       return { success: false, error: "Not authenticated" };
     }

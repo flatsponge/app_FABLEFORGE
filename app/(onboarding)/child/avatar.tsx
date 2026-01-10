@@ -30,7 +30,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BASE_AVATARS } from '../../../constants/data';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useAction } from 'convex/react';
+import { useAction, useConvexAuth } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { Id } from '../../../convex/_generated/dataModel';
 
@@ -196,6 +196,7 @@ const AnimatedAvatarItem = ({
 export default function AvatarSelectionScreen() {
   const router = useRouter();
   const { updateData } = useOnboarding();
+  const { isAuthenticated } = useConvexAuth();
   const scrollViewRef = useRef<ScrollView>(null);
 
   // Convex actions
@@ -246,8 +247,21 @@ export default function AvatarSelectionScreen() {
     );
   };
 
+
   const stopShakeAnimation = () => {
     shake.value = withTiming(0, { duration: 100 });
+  };
+
+  // Simple UUID generator fallback
+  const generateUUID = () => {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      return crypto.randomUUID();
+    }
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
   };
 
   // Handle generation completion
@@ -260,7 +274,7 @@ export default function AvatarSelectionScreen() {
     };
     setGeneratedAvatar(result);
     setSelectedAvatar(result.id);
-    updateData({ 
+    updateData({
       generatedMascotId: storageId,
       generatedMascotUrl: imageUrl,
     });
@@ -288,9 +302,17 @@ export default function AvatarSelectionScreen() {
     setIsGenerating(true);
     setGenerationError(null);
 
+    if (!isAuthenticated) {
+      setGenerationError("Not authenticated");
+      setIsGenerating(false);
+      stopShakeAnimation();
+      Alert.alert("Authentication Error", "You need to be logged in to generate a mascot. Please try restarting the app.");
+      return;
+    }
+
     try {
       const result = await generateFromDescription({ description: text });
-      
+
       if (result.success && result.imageUrl && result.storageId) {
         handleGenerationSuccess(result.imageUrl, result.storageId);
       } else {
@@ -316,7 +338,7 @@ export default function AvatarSelectionScreen() {
       // Step 2: Upload the image
       const response = await fetch(imageUri);
       const blob = await response.blob();
-      
+
       const uploadResponse = await fetch(uploadUrl, {
         method: 'POST',
         headers: {
@@ -332,10 +354,10 @@ export default function AvatarSelectionScreen() {
       const { storageId } = await uploadResponse.json();
 
       // Step 3: Generate mascot from uploaded image
-      const result = await generateFromImage({ 
-        sourceImageId: storageId as Id<"_storage"> 
+      const result = await generateFromImage({
+        sourceImageId: storageId as Id<"_storage">
       });
-      
+
       if (result.success && result.imageUrl && result.storageId) {
         handleGenerationSuccess(result.imageUrl, result.storageId);
       } else {
@@ -383,9 +405,9 @@ export default function AvatarSelectionScreen() {
 
   const handleNext = async () => {
     if (!selectedAvatar || isGenerating) return;
-    
+
     setIsGenerating(true);
-    
+
     try {
       // If user selected a base avatar (not AI-generated), upload it to storage
       if (!generatedAvatar) {
@@ -394,24 +416,24 @@ export default function AvatarSelectionScreen() {
           // Load and upload the local asset
           const asset = Asset.fromModule(avatarData.image);
           await asset.downloadAsync();
-          
+
           if (asset.localUri) {
             const uploadUrl = await generateUploadUrl({});
             const response = await fetch(asset.localUri);
             const blob = await response.blob();
-            
+
             const uploadResponse = await fetch(uploadUrl, {
               method: 'POST',
               headers: { 'Content-Type': blob.type || 'image/png' },
               body: blob,
             });
-            
+
             if (!uploadResponse.ok) {
               throw new Error('Upload failed');
             }
-            
+
             const { storageId } = await uploadResponse.json();
-            updateData({ 
+            updateData({
               avatarId: selectedAvatar,
               generatedMascotId: storageId,
             });
@@ -424,7 +446,7 @@ export default function AvatarSelectionScreen() {
       } else {
         updateData({ avatarId: selectedAvatar });
       }
-      
+
       // Only navigate on success
       router.push('/(onboarding)/child/magic-moment');
     } catch (error) {
@@ -675,7 +697,7 @@ export default function AvatarSelectionScreen() {
         Creating Magic... ✨
       </Text>
       <Text style={{ fontSize: 16, color: '#9CA3AF', textAlign: 'center', marginTop: 8 }}>
-        {mode === 'upload' 
+        {mode === 'upload'
           ? 'Transforming your photo into a magical friend!'
           : 'Bringing your imagination to life!'}
       </Text>

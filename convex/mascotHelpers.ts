@@ -80,12 +80,12 @@ export const getMascotOutfitByEmail = internalQuery({
     if (!user) {
       return null;
     }
-    
+
     const outfit = await ctx.db
       .query("mascotOutfit")
       .withIndex("by_user", (q) => q.eq("userId", user._id))
       .unique();
-    
+
     if (outfit) {
       return {
         outfitId: outfit._id,
@@ -100,13 +100,13 @@ export const getMascotOutfitByEmail = internalQuery({
         generationHistory: outfit.generationHistory,
       };
     }
-    
+
     // No outfit yet - check if user has a generated mascot from onboarding
     const onboarding = await ctx.db
       .query("onboardingResponses")
       .withIndex("by_user", (q) => q.eq("userId", user._id))
       .unique();
-    
+
     if (onboarding?.generatedMascotId) {
       return {
         outfitId: null,
@@ -121,7 +121,7 @@ export const getMascotOutfitByEmail = internalQuery({
         generationHistory: [],
       };
     }
-    
+
     return null;
   },
 });
@@ -146,19 +146,19 @@ export const updateMascotOutfitClothes = internalMutation({
     if (!user) {
       throw new Error("User not found");
     }
-    
+
     const existingOutfit = await ctx.db
       .query("mascotOutfit")
       .withIndex("by_user", (q) => q.eq("userId", user._id))
       .unique();
-    
+
     const historyItem = {
       itemType: "clothes",
       itemId: args.clothesId,
       storageId: args.newMascotStorageId,
       generatedAt: Date.now(),
     };
-    
+
     if (existingOutfit) {
       // Update existing outfit - when clothes change, reset accessory too
       // because the accessory was generated on top of old clothes
@@ -209,19 +209,19 @@ export const updateMascotOutfitAccessory = internalMutation({
     if (!user) {
       throw new Error("User not found");
     }
-    
+
     const existingOutfit = await ctx.db
       .query("mascotOutfit")
       .withIndex("by_user", (q) => q.eq("userId", user._id))
       .unique();
-    
+
     const historyItem = {
       itemType: args.accessoryType,
       itemId: args.accessoryId,
       storageId: args.newMascotStorageId,
       generatedAt: Date.now(),
     };
-    
+
     if (existingOutfit) {
       // Update existing outfit - only update accessory, keep clothes
       await ctx.db.patch(existingOutfit._id, {
@@ -260,12 +260,12 @@ export const resetMascotOutfitInternal = internalMutation({
     if (!user) {
       throw new Error("User not found");
     }
-    
+
     const outfit = await ctx.db
       .query("mascotOutfit")
       .withIndex("by_user", (q) => q.eq("userId", user._id))
       .unique();
-    
+
     if (outfit) {
       await ctx.db.patch(outfit._id, {
         currentMascotId: outfit.originalMascotId,
@@ -279,7 +279,7 @@ export const resetMascotOutfitInternal = internalMutation({
       });
       return true;
     }
-    
+
     return false;
   },
 });

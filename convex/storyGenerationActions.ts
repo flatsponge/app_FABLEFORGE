@@ -1,24 +1,10 @@
 "use node";
 
 import { v } from "convex/values";
-import { internalAction, action, ActionCtx } from "./_generated/server";
+import { internalAction, action } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
-
-// Helper to get authenticated user's email for actions
-// With @convex-dev/auth, the email is NOT in the JWT token - only the user ID is.
-// We need to fetch the email from the database using identity.subject (user ID).
-async function getAuthEmail(ctx: ActionCtx): Promise<string | null> {
-  const identity = await ctx.auth.getUserIdentity();
-  if (!identity?.subject) {
-    return null;
-  }
-  // The subject is the user ID - fetch email from database
-  const email = await ctx.runQuery(internal.authHelpers.getUserEmailById, {
-    userId: identity.subject,
-  });
-  return email;
-}
+import { getAuthEmailForAction } from "./actionAuthHelpers";
 
 const RUNWARE_API_URL = "https://api.runware.ai/v1";
 const FLUX_KONTEXT_MODEL = "runware:106@1";
@@ -675,8 +661,7 @@ export const generateOutline = action({
     error: v.optional(v.string()),
   }),
   handler: async (ctx, args) => {
-    // Get authenticated user's email
-    const email = await getAuthEmail(ctx);
+    const email = await getAuthEmailForAction(ctx);
     if (!email) {
       return { success: false, error: "Not authenticated" };
     }

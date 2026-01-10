@@ -3,6 +3,16 @@ import { Doc, Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import { getAuthUserId as getConvexAuthUserId } from "@convex-dev/auth/server";
 
+// ============================================================================
+// QUERY/MUTATION AUTH HELPERS
+// ============================================================================
+// These helpers are for Convex Queries and Mutations ONLY.
+// They use getAuthUserId from @convex-dev/auth which requires direct DB access.
+//
+// For Actions (with "use node"), use the helpers in actionAuthHelpers.ts instead.
+// Actions cannot use getAuthUserId because they don't have direct DB access.
+// ============================================================================
+
 /**
  * Get the authenticated user from the current context.
  * 
@@ -98,23 +108,15 @@ export async function getAuthUserId(
 // ============================================================================
 // INTERNAL QUERIES FOR ACTIONS
 // ============================================================================
-// Actions don't have direct database access and receive only JWT tokens.
-// With @convex-dev/auth, the JWT contains `subject` (user ID) but NOT the email.
-// These internal queries allow actions to fetch user data from the database.
+// Actions use actionAuthHelpers.ts which calls these internal queries.
+// The userId passed here should already be parsed (first part before "|").
 // ============================================================================
 
-/**
- * Internal query for actions to get the authenticated user's email.
- * 
- * @param userId - The user ID from identity.subject
- * @returns The user's email or null if not found
- */
 export const getUserEmailById = internalQuery({
   args: { userId: v.string() },
   returns: v.union(v.string(), v.null()),
   handler: async (ctx, args) => {
     try {
-      // The userId from identity.subject is the user's _id as a string
       const user = await ctx.db.get(args.userId as Id<"users">);
       return user?.email ?? null;
     } catch {

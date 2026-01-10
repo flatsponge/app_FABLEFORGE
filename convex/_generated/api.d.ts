@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as actionAuthHelpers from "../actionAuthHelpers.js";
 import type * as auth from "../auth.js";
 import type * as authHelpers from "../authHelpers.js";
 import type * as credits from "../credits.js";
@@ -26,6 +27,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  actionAuthHelpers: typeof actionAuthHelpers;
   auth: typeof auth;
   authHelpers: typeof authHelpers;
   credits: typeof credits;
