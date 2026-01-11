@@ -1,0 +1,41 @@
+# Mascot Generation - COMPLETED
+
+## Phase 1: Job-Based Refactor (DONE)
+Refactored mascot generation to follow Convex best practices (job-based, offline-first pattern).
+
+## Phase 2: Email to UserId Migration (DONE)
+Fixed authentication error by converting from email-based to userId-based lookups.
+
+### Changes Made
+
+#### Schema Changes (`convex/schema.ts`)
+- `mascotGenerations`: Made `userId` optional, added optional `email` for backward compat
+- `mascotJobs`: Uses required `userId`, removed email field, added `by_user` and `by_user_and_status` indexes
+
+#### Backend Changes
+- `convex/mascotGeneration.ts`: `queueMascotJob` uses `requireAuthUser(ctx)` to get userId from auth context
+- `convex/mascotHelpers.ts`: All functions take `userId` instead of `email`
+- `convex/mascotGenerationActions.ts`: Uses `userId` for `recordGeneration`
+- `convex/imageGeneration.ts`: Uses `getAuthUserIdForAction` instead of email lookup
+
+#### Frontend Changes  
+- `app/(onboarding)/child/avatar.tsx`: Removed `email` param from `queueMascotJob` calls
+
+## Tasks
+- [x] Fix import error in mascotGeneration.ts
+- [x] Split into mascotGeneration.ts (queries/mutations) and mascotGenerationActions.ts (action)
+- [x] Run npx convex dev to regenerate API types
+- [x] Add mascotJobId to OnboardingContext
+- [x] Update avatar.tsx to use queueMascotJob mutation
+- [x] Update magic-moment.tsx to subscribe to mascot job status
+- [x] Convert schema from email to userId
+- [x] Update all mascot helpers to use userId
+- [x] Update avatar.tsx to remove email parameter
+- [x] Run TypeScript check - PASSED
+
+## Architecture
+1. Frontend calls `queueMascotJob` mutation (uses auth context for userId)
+2. Mutation schedules `processMascotJob` internalAction via `ctx.scheduler.runAfter(0, ...)`
+3. Action processes the job, updating progress via `updateMascotJobProgress` internalMutation
+4. Frontend subscribes to job status via `getMascotJob` query (reactive updates)
+5. When job completes, frontend shows mascot reveal overlay

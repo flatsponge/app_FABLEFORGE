@@ -17,8 +17,8 @@ import { useAuth } from "../../../contexts/AuthContext";
 export default function EmailScreen() {
   const router = useRouter();
   const { signIn } = useAuthActions();
-  const { setEmail: setAuthEmail } = useAuth();
-  const [email, setEmail] = useState("");
+  const { email: authEmail, setEmail: setAuthEmail } = useAuth();
+  const [email, setEmail] = useState(authEmail);
   const [isLoading, setIsLoading] = useState(false);
   const [emailExistsError, setEmailExistsError] = useState(false);
 

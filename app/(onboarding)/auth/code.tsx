@@ -200,10 +200,39 @@ export default function CodeScreen() {
     }
   };
 
-  const handleChange = (text: string, index: number) => {
-    // Take only numeric and last char
-    const digit = text.replace(/[^0-9]/g, "").slice(-1);
+  const handleChangeEmail = () => {
+    if (isLoading) return;
 
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+
+    router.replace("/(onboarding)/auth/email");
+  };
+
+  const handleChange = (text: string, index: number) => {
+    const numericText = text.replace(/[^0-9]/g, "");
+    
+    // Handle paste of full code
+    if (numericText.length > 1) {
+      const newCode = [...code];
+      const pastedDigits = numericText.slice(0, CODE_LENGTH);
+      
+      for (let i = 0; i < pastedDigits.length && (index + i) < CODE_LENGTH; i++) {
+        newCode[index + i] = pastedDigits[i];
+      }
+      
+      setCode(newCode);
+      
+      // Focus last filled input or next empty
+      const lastIndex = Math.min(index + pastedDigits.length - 1, CODE_LENGTH - 1);
+      inputRefs.current[lastIndex]?.focus();
+      return;
+    }
+
+    // Handle single digit
+    const digit = numericText.slice(-1);
     const newCode = [...code];
     newCode[index] = digit;
     setCode(newCode);
@@ -305,6 +334,21 @@ export default function CodeScreen() {
           </TouchableOpacity>
         </Animated.View>
 
+        <Animated.View entering={FadeIn.delay(650).duration(500)}>
+          <TouchableOpacity
+            style={styles.changeEmailButton}
+            onPress={handleChangeEmail}
+            disabled={isLoading}
+          >
+            <Ionicons
+              name="create-outline"
+              size={18}
+              color={OnboardingTheme.Colors.TextSecondary}
+            />
+            <Text style={styles.changeEmailText}>Change email</Text>
+          </TouchableOpacity>
+        </Animated.View>
+
         {/* Trust indicator */}
         <Animated.View
           entering={FadeIn.delay(700).duration(500)}
@@ -396,6 +440,19 @@ const styles = StyleSheet.create({
   },
   resendText: {
     color: OnboardingTheme.Colors.Primary,
+    fontWeight: "600",
+    fontSize: 16,
+  },
+  changeEmailButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: OnboardingTheme.Spacing.sm,
+    paddingHorizontal: OnboardingTheme.Spacing.md,
+    gap: 6,
+    marginTop: OnboardingTheme.Spacing.xs,
+  },
+  changeEmailText: {
+    color: OnboardingTheme.Colors.TextSecondary,
     fontWeight: "600",
     fontSize: 16,
   },

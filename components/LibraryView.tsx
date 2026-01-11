@@ -119,24 +119,24 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onBookClick, isHome = 
 
   // Fetch user's generated books from Convex
   const userBooks = useQuery(api.storyGeneration.getUserBooks, {});
-  
+
   // Fetch active/generating jobs
   const activeJobs = useQuery(api.storyGeneration.getUserActiveJobs);
 
   // Convert active jobs to QueuedBook format
   const queuedBooks = useMemo<QueuedBook[]>(() => {
     if (!activeJobs) return [];
-    
+
     return activeJobs.map(job => {
       let task = 'Queued';
       if (job.status === 'generating_story') task = 'Writing Story';
       else if (job.status === 'generating_images') task = 'Creating Art';
-      
+
       // Truncate prompt for title
-      const title = job.prompt.length > 40 
-        ? job.prompt.substring(0, 40) + '...' 
+      const title = job.prompt.length > 40
+        ? job.prompt.substring(0, 40) + '...'
         : job.prompt;
-      
+
       return {
         id: job._id,
         title,
@@ -174,7 +174,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onBookClick, isHome = 
     const minutes = Math.floor(diff / 60000);
     const hours = Math.floor(diff / 3600000);
     const days = Math.floor(diff / 86400000);
-    
+
     if (minutes < 5) return 'Just now';
     if (minutes < 60) return `${minutes} min ago`;
     if (hours < 24) return hours === 1 ? '1 hour ago' : `${hours} hours ago`;
@@ -188,7 +188,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onBookClick, isHome = 
   // Convert Convex books to Book type format
   const convexBooksAsBooks = useMemo<Book[]>(() => {
     if (!userBooks) return [];
-    
+
     return userBooks.map((book) => ({
       id: book._id,
       title: book.title,
@@ -262,6 +262,8 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onBookClick, isHome = 
           showsHorizontalScrollIndicator={false}
           className="-mx-6 px-6"
           contentContainerStyle={{ paddingRight: 24, gap: 8 }}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
         >
           {FILTERS.map(f => {
             const isActive = filter === f.id;
@@ -271,8 +273,8 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onBookClick, isHome = 
                 key={f.id}
                 onPress={() => setFilter(f.id)}
                 className={`flex-row items-center gap-1.5 px-4 py-2.5 rounded-full border ${isActive
-                    ? 'bg-slate-800 border-slate-800'
-                    : 'bg-white border-slate-200'
+                  ? 'bg-slate-800 border-slate-800'
+                  : 'bg-white border-slate-200'
                   } active:scale-95`}
               >
                 {Icon && (

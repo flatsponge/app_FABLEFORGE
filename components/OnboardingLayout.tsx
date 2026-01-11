@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { View, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Platform, ScrollView, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { useAnimatedStyle, withTiming, useSharedValue } from 'react-native-reanimated';
@@ -112,8 +112,44 @@ export default function OnboardingLayout({
       ],
     };
 
+  const handleDismissKeyboard = () => {
+    Keyboard.dismiss();
+  };
+
+  const [keyboardHeight, setKeyboardHeight] = React.useState(0);
+  const isKeyboardVisible = keyboardHeight > 0;
+
+  React.useEffect(() => {
+    const showSubscription = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (event) => {
+        setKeyboardHeight(event?.endCoordinates?.height ?? 0);
+      }
+    );
+    const hideSubscription = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setKeyboardHeight(0);
+      }
+    );
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
+
   return (
-    <View style={[styles.container, { paddingTop: containerPaddingTop, paddingBottom: insets.bottom, backgroundColor }]}>
+    <View
+      style={[
+        styles.container,
+        {
+          paddingTop: containerPaddingTop,
+          paddingBottom: isKeyboardVisible ? keyboardHeight : 0,
+          backgroundColor,
+        },
+      ]}
+    >
       {/* Header */}
       {showProgressBar ? (
         <View style={styles.header}>
@@ -143,28 +179,36 @@ export default function OnboardingLayout({
 
       {/* Content */}
       {isScrollable ? (
-        <ScrollView ref={scrollViewRef} {...contentWrapperProps}>
+        <ScrollView
+          ref={scrollViewRef}
+          {...contentWrapperProps}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+        >
           {children}
         </ScrollView>
       ) : (
-        <View {...contentWrapperProps}>
-          {children}
-        </View>
+        <TouchableWithoutFeedback onPress={handleDismissKeyboard}>
+          <View {...contentWrapperProps}>
+            {children}
+          </View>
+        </TouchableWithoutFeedback>
       )}
 
       {/* Footer - always rendered to preserve layout, visibility controlled by animated opacity */}
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      <Animated.View
+        style={[
+          styles.footer,
+          buttonStyle,
+          { paddingBottom: isKeyboardVisible ? OnboardingTheme.Spacing.md : (insets.bottom + OnboardingTheme.Spacing.md) }
+        ]}
       >
-        <Animated.View style={[styles.footer, buttonStyle]}>
-          <OnboardingButton 
-            onPress={showNextButton ? onNext : undefined} 
-            title={nextLabel} 
-            disabled={!showNextButton} 
-          />
-        </Animated.View>
-      </KeyboardAvoidingView>
+        <OnboardingButton
+          onPress={showNextButton ? onNext : undefined}
+          title={nextLabel}
+          disabled={!showNextButton}
+        />
+      </Animated.View>
     </View>
   );
 }
@@ -213,6 +257,7 @@ const styles = StyleSheet.create({
     // Using flex-start prevents layout shifts when content animates in
   },
   scrollContentContainer: {
+    flexGrow: 1,
     paddingHorizontal: OnboardingTheme.Spacing.lg,
     paddingTop: OnboardingTheme.Spacing.md,
     paddingBottom: 100, // Extra buffer to ensure content doesn't get hidden behind footer button

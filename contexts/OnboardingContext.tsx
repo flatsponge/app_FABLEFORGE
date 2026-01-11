@@ -46,7 +46,7 @@ type OnboardingData = {
     // Generated mascot (AI-generated character)
     generatedMascotId?: string;
     generatedMascotUrl?: string;
-    // Email (for teaser lookup after auth)
+    mascotJobId?: string;
     email?: string;
     // User acquisition tracking
     trafficSource?: string;
@@ -92,6 +92,7 @@ const defaultData: OnboardingData = {
     mascotName: '',
     generatedMascotId: undefined,
     generatedMascotUrl: undefined,
+    mascotJobId: undefined,
     email: undefined,
 };
 

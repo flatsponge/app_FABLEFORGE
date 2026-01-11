@@ -9,7 +9,7 @@ import Animated, {
     withDelay,
     Easing,
 } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
+
 import OnboardingLayout from '../../../components/OnboardingLayout';
 
 // Fan Card Component using Images
@@ -49,7 +49,7 @@ const FanCard = ({
             translateX.value = withDelay(delay + 200, withTiming(finalX, CONFIG));
             translateY.value = withDelay(delay + 200, withTiming(finalY, CONFIG));
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- animation values are stable refs, triggerAnimation is the only real dependency
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- animation values are stable refs, triggerAnimation is the only real dependency
     }, [triggerAnimation]);
 
     const animatedStyle = useAnimatedStyle(() => ({
@@ -128,15 +128,10 @@ export default function IntroSlide0() {
             showBack={true}
             showNextButton={showButton}
             showProgressBar={false}
-            backgroundColor="#F8FAFC"
+            backgroundColor="#FFFFFF"
             fadeInButton={true}
         >
-            <View style={StyleSheet.absoluteFill} pointerEvents="none">
-                <LinearGradient
-                    colors={['rgba(241, 245, 249, 1)', 'rgba(255, 255, 255, 1)']}
-                    style={{ flex: 1 }}
-                />
-            </View>
+            <View style={StyleSheet.absoluteFill} pointerEvents="none" />
 
             <View style={styles.container}>
 

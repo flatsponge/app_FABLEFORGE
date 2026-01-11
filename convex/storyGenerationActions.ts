@@ -4,13 +4,18 @@ import { v } from "convex/values";
 import { internalAction, action } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
-import { getAuthEmailForAction } from "./actionAuthHelpers";
+import { getAuthUserIdForAction } from "./actionAuthHelpers";
+import {
+  generateImageUrl,
+  generateTextContent,
+  getImageApiKey,
+  getTextApiKey,
+  parseJsonFromContent,
+} from "./aiProviders";
 
-const RUNWARE_API_URL = "https://api.runware.ai/v1";
-const FLUX_KONTEXT_MODEL = "runware:106@1";
-
-// Child-safety negative prompt to prevent inappropriate imagery
-const CHILD_SAFE_NEGATIVE_PROMPT = "scary, frightening, dark shadows, violent, blood, weapons, horror, monsters with sharp teeth, dangerous, inappropriate, adult content, realistic human faces, photorealistic, grotesque, creepy, nightmare, death, gore, ugly, deformed, bad anatomy, extra limbs";
+// Child-safety negative prompt for Runware/Flux - prevents inappropriate imagery
+// Note: Flux doesn't natively support negative prompts, but Runware may use guidance
+const CHILD_SAFE_NEGATIVE_PROMPT = "scary, frightening, horror, violent, blood, weapons, gore, death, monsters with sharp teeth, dangerous animals attacking, inappropriate, adult content, nudity, suggestive, realistic human faces, photorealistic humans, grotesque, creepy, nightmare, dark threatening shadows, ugly, deformed, bad anatomy, extra limbs, missing limbs, disfigured, mutated, blurry, low quality, watermark, signature, text overlay";
 
 const MORAL_DESCRIPTIONS: Record<string, { name: string; description: string }> = {
   empathy: { name: "Compassion & Empathy", description: "Understanding feelings and caring for others" },
@@ -77,11 +82,13 @@ function buildOutlinePrompt(
   storyLength: StoryLength,
   storyVibe: StoryVibe,
   childName: string,
+  mascotName?: string,
   extraCharacterName?: string,
   locationName?: string
 ): string {
   const pageCount = PAGE_COUNTS[storyLength];
   const moralInfo = MORAL_DESCRIPTIONS[moral] || { name: moral, description: "" };
+  const mascot = mascotName || "their magical friend";
 
   const vibeDescriptions: Record<StoryVibe, string> = {
     energizing: "exciting, adventurous, and full of wonder",
@@ -102,7 +109,8 @@ ${modeInstructions[mode]}
 
 STORY CONTEXT:
 - Hero of the story: ${childName} (the reader's own name - make them feel special!)
-${extraCharacterName ? `- Loyal companion: ${extraCharacterName} (a supportive friend who helps along the journey)` : ""}
+- Mascot companion: ${mascot} (${childName}'s loyal magical friend who adventures with them)
+${extraCharacterName ? `- Additional friend: ${extraCharacterName} (a supporting character)` : ""}
 ${locationName ? `- Magical setting: ${locationName}` : ""}
 - Core value to teach: ${moralInfo.name} - ${moralInfo.description}
 - Emotional tone: ${vibeDescriptions[storyVibe]}
@@ -140,7 +148,7 @@ function buildStoryPrompt(
     extraCharacterName?: string;
     locationName?: string;
   },
-  childContext: { childName: string; childAge: string; gender: string } | null
+  childContext: { childName: string; childAge: string; gender: string; mascotName?: string | null } | null
 ): string {
   const pageCount = PAGE_COUNTS[job.storyLength];
   const moralInfo = MORAL_DESCRIPTIONS[job.moral] || { name: job.moral, description: "" };
@@ -148,6 +156,7 @@ function buildStoryPrompt(
   const childName = childContext?.childName || "the child";
   const childAge = childContext?.childAge || "5";
   const gender = childContext?.gender || "child";
+  const mascotName = childContext?.mascotName || "their magical friend";
   const pronoun = gender === "boy" ? "he" : gender === "girl" ? "she" : "they";
   const possessive = gender === "boy" ? "his" : gender === "girl" ? "her" : "their";
 
@@ -229,11 +238,18 @@ Final Page: Resolution, reconnection with loved ones, and ${childName} feeling c
       ? "Choose a setting that is safe, familiar, and comforting to young children."
       : "Choose a setting that feels magical yet relatable to young children.";
 
-  const companionContext = job.extraCharacterName
-    ? `${childName}'s loyal friend ${job.extraCharacterName} joins the adventure. This companion should:
-  - Provide emotional support and encouragement
-  - Sometimes need help too (showing that helping others feels good)
-  - Celebrate ${childName}'s victories genuinely`
+  // The mascot is ALWAYS the child's loyal companion in the story
+  const mascotContext = `MASCOT COMPANION: ${mascotName}
+${mascotName} is ${childName}'s loyal magical friend who appears throughout the story. This companion should:
+  - Be by ${childName}'s side during the adventure
+  - Provide emotional support, encouragement, and sometimes comic relief
+  - React expressively to story events (excited, worried, proud, curious)
+  - Help ${childName} but never solve problems FOR ${pronoun} - ${childName} is the hero
+  - Celebrate ${childName}'s victories genuinely`;
+
+  // Extra character is an additional friend beyond the mascot
+  const extraCharacterContext = job.extraCharacterName
+    ? `ADDITIONAL FRIEND: ${job.extraCharacterName} also joins the adventure as a supporting character.`
     : "";
 
   return `You are an acclaimed children's picture book author whose stories are treasured by families worldwide. Your gift is creating tales that children BEG to hear again and again - stories that make them feel brave, loved, and capable.
@@ -247,7 +263,9 @@ ${therapeuticGuidelines}
 HERO: ${childName}, ${childAge} years old (${gender})
 This is the reader's story - ${childName} IS the child listening. Make ${pronoun} feel heroic, capable, and deeply loved.
 
-${companionContext}
+${mascotContext}
+
+${extraCharacterContext}
 
 ${locationContext}
 
@@ -297,15 +315,29 @@ STRUCTURE:
 - Text must work when read aloud by a parent
 
 ═══════════════════════════════════════
-          IMAGE PROMPTS
+          IMAGE PROMPTS (CRITICAL)
 ═══════════════════════════════════════
 
-For each page, create a detailed illustration prompt that includes:
-- Characters present and their expressions/emotions
-- Setting details and atmosphere
-- Action or moment captured
-- Color palette and lighting mood
-- Style: "Children's picture book illustration, soft watercolor style, warm and inviting"
+IMPORTANT: The mascot character (from the reference image) is the HERO of the illustrations. 
+The mascot can be any creature - animal, dragon, unicorn, robot, magical being, etc.
+NO human children appear in the images - only the mascot character goes on adventures.
+
+For each page, create a detailed illustration prompt following this structure:
+SUBJECT + ACTION + SETTING + LIGHTING/MOOD
+
+Each imagePrompt MUST include:
+1. WHO: "The friendly character from the reference image" with specific pose and expression (smiling proudly, looking curious, eyes wide with wonder)
+2. WHAT: The specific action being performed (running through, reaching toward, hugging, discovering, jumping over)
+3. WHERE: Detailed setting with specific environmental elements (cozy treehouse interior, sunny meadow with wildflowers, moonlit pond with lily pads)
+4. ATMOSPHERE: Lighting quality and color mood (warm golden sunlight, soft pink sunset glow, magical sparkles floating in air)
+
+EXAMPLE imagePrompt: "The friendly character from the reference image with wide excited eyes, reaching toward a glowing butterfly, standing in an enchanted garden with oversized colorful flowers and mushrooms, warm dappled sunlight filtering through giant leaves, magical dust particles floating in the air"
+
+DO NOT include:
+- Character names (the image model doesn't know names)  
+- Human children (the mascot is the main character)
+- Abstract concepts without visual representation
+- Style instructions (these are added separately)
 
 RESPOND IN THIS EXACT JSON FORMAT:
 {
@@ -316,12 +348,16 @@ RESPOND IN THIS EXACT JSON FORMAT:
     {
       "pageIndex": 0,
       "text": "Story text for this page...",
-      "imagePrompt": "Detailed illustration prompt...",
+      "imagePrompt": "Detailed illustration prompt following the structure above...",
       "hasMascot": true,
       "hasExtraCharacter": false
     }
   ]
-}`;
+}
+
+IMPORTANT FLAGS:
+- "hasMascot": Set to TRUE for pages where the mascot appears in the scene (should be most/all pages)
+- "hasExtraCharacter": Set to TRUE only if the additional friend character appears on this page`;
 }
 
 function buildImagePrompt(
@@ -330,32 +366,34 @@ function buildImagePrompt(
   mascotUrl: string | null,
   storyVibe?: string
 ): string {
-  // Vibe-specific style enhancements for visual consistency
+  // Flux-optimized vibe styles: specific visual descriptions, lighting, color palette
   const vibeStyles: Record<string, string> = {
-    energizing: "vibrant colors, dynamic composition, sense of adventure and excitement, bright sunshine",
-    soothing: "soft pastel colors, gentle diffused light, dreamy calm atmosphere, cozy feeling",
-    whimsical: "magical sparkles, fantastical elements, playful bright colors, enchanted feeling",
-    thoughtful: "warm earth tones, cozy golden hour lighting, emotional depth, gentle mood",
+    energizing: "vibrant saturated colors, dynamic diagonal composition, bright warm sunshine, lens flare effects, high energy atmosphere",
+    soothing: "soft pastel color palette, gentle diffused lighting, dreamy bokeh background, calm serene atmosphere, muted shadows",
+    whimsical: "magical glowing particles, iridescent sparkles, candy-bright colors, fantastical floating elements, enchanted forest atmosphere",
+    thoughtful: "warm amber earth tones, golden hour soft lighting, shallow depth of field, intimate emotional atmosphere, cozy indoor or sunset setting",
   };
 
-  const vibeStyle = storyVibe && vibeStyles[storyVibe] ? vibeStyles[storyVibe] : "warm inviting colors";
+  const vibeStyle = storyVibe && vibeStyles[storyVibe] ? vibeStyles[storyVibe] : "warm inviting color palette, soft natural lighting";
 
-  const styleGuide = `Children's picture book illustration, soft watercolor style, ${vibeStyle}, rounded friendly shapes, expressive cartoon eyes, warm and inviting atmosphere, child-safe wholesome content suitable for ages 2-8, high quality detailed background, professional illustration, no text or words in image.`;
-
+  // Flux prompt structure: Subject + Action + Style + Context
+  // Reference image instruction for mascot consistency - mascot is the main hero
   const mascotInstruction = hasMascot && mascotUrl
-    ? "The main character from the reference image should be prominently featured, maintaining their exact appearance and clothing."
+    ? "The mascot character from the reference image is the main subject, maintaining exact appearance, proportions, colors, and any clothing or accessories."
     : "";
+
+  // Core style for children's book illustration - Flux-optimized
+  const styleGuide = `Children's picture book illustration style, soft watercolor textures with clean linework, rounded friendly character designs, large expressive eyes, ${vibeStyle}, professional publishing quality, detailed whimsical background elements, no text or typography in image`;
 
   return `${basePrompt}. ${mascotInstruction} ${styleGuide}`.replace(/\s+/g, " ").trim();
 }
 
-interface RunwareImageResponse {
-  data: Array<{
-    taskType: string;
-    imageUUID: string;
-    taskUUID: string;
-    imageURL: string;
-  }>;
+function buildTeaserImageBasePrompt(args: {
+  prompt: string;
+}): string {
+  const safePrompt = args.prompt.replace(/\s+/g, " ").trim();
+
+  return `The friendly character from the reference image in a magical adventure scene, inspired by: ${safePrompt}. The character stands heroically in an enchanted setting, warm golden hour lighting, magical sparkles and soft glow in the air, whimsical background with fantastical elements.`;
 }
 
 async function generatePageImage(
@@ -364,44 +402,13 @@ async function generatePageImage(
   referenceImages: string[]
 ): Promise<{ imageUrl: string | null }> {
   try {
-    const requestBody: Record<string, unknown> = {
-      taskType: "imageInference",
-      taskUUID: crypto.randomUUID(),
-      model: referenceImages.length > 0 ? FLUX_KONTEXT_MODEL : "runware:101@1",
+    const imageUrl = await generateImageUrl(apiKey, {
       positivePrompt: prompt,
       negativePrompt: CHILD_SAFE_NEGATIVE_PROMPT,
-      width: 1024,
-      height: 1024,
-      steps: 25,
-      CFGScale: 7.5,
-      numberResults: 1,
-    };
-
-    if (referenceImages.length > 0) {
-      requestBody.referenceImages = referenceImages;
-    }
-
-    const response = await fetch(RUNWARE_API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify([requestBody]),
+      referenceImages: referenceImages.length > 0 ? referenceImages : undefined,
     });
 
-    if (!response.ok) {
-      console.error("Runware API error:", await response.text());
-      return { imageUrl: null };
-    }
-
-    const result = (await response.json()) as RunwareImageResponse;
-
-    if (result.data && result.data.length > 0) {
-      return { imageUrl: result.data[0].imageURL };
-    }
-
-    return { imageUrl: null };
+    return { imageUrl };
   } catch (error) {
     console.error("Image generation error:", error);
     return { imageUrl: null };
@@ -432,7 +439,7 @@ export const generateStory = internalAction({
       userId: job.userId,
     });
 
-    const openRouterApiKey = process.env.OPENROUTER_API_KEY;
+    const openRouterApiKey = getTextApiKey();
     if (!openRouterApiKey) {
       await ctx.runMutation(internal.storyGeneration.updateJobProgress, {
         jobId: args.jobId,
@@ -457,53 +464,26 @@ export const generateStory = internalAction({
         childContext
       );
 
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${openRouterApiKey}`,
-          "HTTP-Referer": "https://storytime.app",
-          "X-Title": "Storytime",
-        },
-        body: JSON.stringify({
-          model: "moonshotai/kimi-k2-thinking",
-          messages: [
-            {
-              role: "system",
-              content: "You are an award-winning children's book author. Always respond with valid JSON only, no additional text or markdown.",
-            },
-            {
-              role: "user",
-              content: prompt,
-            },
-          ],
-          response_format: { type: "json_object" },
-          temperature: 0.85,
-        }),
+      const content = await generateTextContent(openRouterApiKey, {
+        messages: [
+          {
+            role: "system",
+            content: "You are an award-winning children's book author. Always respond with valid JSON only, no additional text or markdown.",
+          },
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+        title: "Storytime",
       });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`OpenRouter API error: ${errorText}`);
-      }
-
-      const result = await response.json();
-      const content = result.choices?.[0]?.message?.content;
-
-      if (!content) {
-        throw new Error("No content in OpenRouter response");
-      }
 
       let story: GeneratedStory;
       try {
-        story = JSON.parse(content);
+        story = parseJsonFromContent<GeneratedStory>(content, /\{[\s\S]*?"title"[\s\S]*\}/);
       } catch {
-        const jsonMatch = content.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          story = JSON.parse(jsonMatch[0]);
-        } else {
-          throw new Error("Failed to parse story JSON");
-        }
+        console.error("Story generation - Failed to parse JSON from content:", content);
+        throw new Error("Failed to parse story JSON");
       }
 
       await ctx.runMutation(internal.storyGeneration.updateJobProgress, {
@@ -546,7 +526,7 @@ export const generateStory = internalAction({
         bookId,
       });
 
-      const runwareApiKey = process.env.RUNWARE_API_KEY;
+      const runwareApiKey = getImageApiKey();
       if (!runwareApiKey) {
         await ctx.runMutation(internal.storyGeneration.updateJobProgress, {
           jobId: args.jobId,
@@ -627,6 +607,109 @@ export const generateStory = internalAction({
   },
 });
 
+export const generateOnboardingTeaserImage = internalAction({
+  args: { teaserId: v.id("onboardingTeasers") },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const teaser = await ctx.runQuery(internal.storyGeneration.getOnboardingTeaserById, {
+      teaserId: args.teaserId,
+    });
+
+    if (!teaser) {
+      console.error("Onboarding teaser image - Teaser not found:", args.teaserId);
+      return null;
+    }
+
+    if (teaser.teaserImageStatus === "complete" && teaser.teaserImageStorageId) {
+      return null;
+    }
+
+    if (teaser.teaserImageStatus === "generating") {
+      return null;
+    }
+
+    if (!teaser.mascotStorageId) {
+      await ctx.runMutation(internal.storyGeneration.updateOnboardingTeaser, {
+        teaserId: args.teaserId,
+        teaserImageStatus: "failed",
+        teaserImageError: "Mascot not available",
+      });
+      return null;
+    }
+
+    const runwareApiKey = getImageApiKey();
+    if (!runwareApiKey) {
+      await ctx.runMutation(internal.storyGeneration.updateOnboardingTeaser, {
+        teaserId: args.teaserId,
+        teaserImageStatus: "failed",
+        teaserImageError: "Image generation service not configured",
+      });
+      return null;
+    }
+
+    await ctx.runMutation(internal.storyGeneration.updateOnboardingTeaser, {
+      teaserId: args.teaserId,
+      teaserImageStatus: "generating",
+    });
+
+    try {
+      const mascotUrl = await ctx.storage.getUrl(teaser.mascotStorageId);
+      if (!mascotUrl) {
+        await ctx.runMutation(internal.storyGeneration.updateOnboardingTeaser, {
+          teaserId: args.teaserId,
+          teaserImageStatus: "failed",
+          teaserImageError: "Failed to load mascot reference",
+        });
+        return null;
+      }
+
+      const basePrompt = buildTeaserImageBasePrompt({
+        prompt: teaser.prompt,
+      });
+
+      const imagePrompt = buildImagePrompt(basePrompt, true, mascotUrl, "soothing");
+      const imageResult = await generatePageImage(runwareApiKey, imagePrompt, [mascotUrl]);
+
+      if (!imageResult.imageUrl) {
+        await ctx.runMutation(internal.storyGeneration.updateOnboardingTeaser, {
+          teaserId: args.teaserId,
+          teaserImageStatus: "failed",
+          teaserImageError: "Failed to generate teaser image",
+        });
+        return null;
+      }
+
+      const imageResponse = await fetch(imageResult.imageUrl);
+      if (!imageResponse.ok) {
+        await ctx.runMutation(internal.storyGeneration.updateOnboardingTeaser, {
+          teaserId: args.teaserId,
+          teaserImageStatus: "failed",
+          teaserImageError: "Failed to download teaser image",
+        });
+        return null;
+      }
+
+      const imageBlob = await imageResponse.blob();
+      const storageId = await ctx.storage.store(imageBlob);
+
+      await ctx.runMutation(internal.storyGeneration.updateOnboardingTeaser, {
+        teaserId: args.teaserId,
+        teaserImageStatus: "complete",
+        teaserImageStorageId: storageId,
+      });
+    } catch (error) {
+      console.error("Onboarding teaser image - Generation failed:", error);
+      await ctx.runMutation(internal.storyGeneration.updateOnboardingTeaser, {
+        teaserId: args.teaserId,
+        teaserImageStatus: "failed",
+        teaserImageError: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+
+    return null;
+  },
+});
+
 export const generateOutline = action({
   args: {
     mode: v.union(v.literal("creative"), v.literal("situation"), v.literal("auto")),
@@ -661,21 +744,22 @@ export const generateOutline = action({
     error: v.optional(v.string()),
   }),
   handler: async (ctx, args) => {
-    const email = await getAuthEmailForAction(ctx);
-    if (!email) {
+    const userId = await getAuthUserIdForAction(ctx);
+    if (!userId) {
       return { success: false, error: "Not authenticated" };
     }
 
-    const openRouterApiKey = process.env.OPENROUTER_API_KEY;
+    const openRouterApiKey = getTextApiKey();
     if (!openRouterApiKey) {
       return { success: false, error: "API not configured" };
     }
 
-    const childContext = await ctx.runQuery(internal.storyGeneration.getChildContextByEmail, {
-      email,
+    const childContext = await ctx.runQuery(internal.storyGeneration.getChildContext, {
+      userId: userId as Id<"users">,
     });
 
     const childName = childContext?.childName || "the child";
+    const mascotName = childContext?.mascotName || undefined;
     const moral = args.moral || "empathy";
 
     const prompt = buildOutlinePrompt(
@@ -685,56 +769,29 @@ export const generateOutline = action({
       args.storyLength as StoryLength,
       args.storyVibe as StoryVibe,
       childName,
+      mascotName,
       args.extraCharacterName,
       args.locationName
     );
 
     try {
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${openRouterApiKey}`,
-          "HTTP-Referer": "https://storytime.app",
-          "X-Title": "Storytime",
-        },
-        body: JSON.stringify({
-          model: "moonshotai/kimi-k2-thinking",
-          messages: [
-            {
-              role: "system",
-              content: "You are an award-winning children's book author. Always respond with valid JSON only, no additional text or markdown.",
-            },
-            { role: "user", content: prompt },
-          ],
-          response_format: { type: "json_object" },
-          temperature: 0.85,
-          max_tokens: 1500,
-        }),
+      const content = await generateTextContent(openRouterApiKey, {
+        messages: [
+          {
+            role: "system",
+            content: "You are an award-winning children's book author. Always respond with valid JSON only, no additional text or markdown.",
+          },
+          { role: "user", content: prompt },
+        ],
+        title: "Storytime",
       });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        return { success: false, error: `API error: ${errorText}` };
-      }
-
-      const result = await response.json();
-      const content = result.choices?.[0]?.message?.content;
-
-      if (!content) {
-        return { success: false, error: "No content in response" };
-      }
 
       let outline: GeneratedOutline;
       try {
-        outline = JSON.parse(content);
+        outline = parseJsonFromContent<GeneratedOutline>(content, /\{[\s\S]*?"title"[\s\S]*\}/);
       } catch {
-        const jsonMatch = content.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          outline = JSON.parse(jsonMatch[0]);
-        } else {
-          return { success: false, error: "Failed to parse outline" };
-        }
+        console.error("Outline generation - Failed to parse JSON from content:", content);
+        return { success: false, error: "Failed to parse outline" };
       }
 
       return {
@@ -764,7 +821,7 @@ export const generateOutline = action({
 /**
  * Generates a short story teaser during onboarding.
  * Fixed settings: friendship moral, soothing vibe, 4 pages
- * Only generates title + first page text (no images)
+ * Generates title + first page text and queues teaser image when possible
  */
 export const generateOnboardingTeaser = action({
   args: {
@@ -773,9 +830,12 @@ export const generateOnboardingTeaser = action({
     childAge: v.string(),
     gender: v.string(),
     email: v.string(),
+    mascotName: v.optional(v.string()),
+    mascotStorageId: v.optional(v.id("_storage")),
   },
   returns: v.object({
     success: v.boolean(),
+    teaserId: v.optional(v.id("onboardingTeasers")),
     teaser: v.optional(
       v.object({
         title: v.string(),
@@ -784,85 +844,121 @@ export const generateOnboardingTeaser = action({
     ),
     error: v.optional(v.string()),
   }),
-  handler: async (ctx, args) => {
-    const openRouterApiKey = process.env.OPENROUTER_API_KEY;
+  handler: async (ctx, args): Promise<{
+    success: boolean;
+    teaserId?: Id<"onboardingTeasers">;
+    teaser?: { title: string; teaserText: string };
+    error?: string;
+  }> => {
+    // Check if teaser already exists for this email - return existing instead of regenerating
+    const existingTeaser: {
+      _id: Id<"onboardingTeasers">;
+      title: string;
+      teaserText: string;
+      prompt: string;
+      childName: string;
+      childAge: string;
+      gender: string;
+      mascotStorageId: Id<"_storage"> | null;
+      teaserImageStatus: "queued" | "generating" | "complete" | "failed" | null;
+      fullStoryGenerated: boolean;
+      linkedBookId?: Id<"books">;
+    } | null = await ctx.runQuery(
+      internal.storyGeneration.getOnboardingTeaserByEmail,
+      { email: args.email }
+    );
+
+    if (existingTeaser) {
+      const shouldQueueImage =
+        !!args.mascotStorageId &&
+        (existingTeaser.teaserImageStatus === null || existingTeaser.teaserImageStatus === "failed");
+
+      if (shouldQueueImage) {
+        await ctx.runMutation(internal.storyGeneration.updateOnboardingTeaser, {
+          teaserId: existingTeaser._id,
+          mascotStorageId: args.mascotStorageId,
+          teaserImageStatus: "queued",
+        });
+
+        await ctx.scheduler.runAfter(0, internal.storyGenerationActions.generateOnboardingTeaserImage, {
+          teaserId: existingTeaser._id,
+        });
+      } else if (args.mascotStorageId && !existingTeaser.mascotStorageId) {
+        await ctx.runMutation(internal.storyGeneration.updateOnboardingTeaser, {
+          teaserId: existingTeaser._id,
+          mascotStorageId: args.mascotStorageId,
+        });
+      }
+
+      return {
+        success: true,
+        teaserId: existingTeaser._id,
+        teaser: {
+          title: existingTeaser.title,
+          teaserText: existingTeaser.teaserText,
+        },
+      };
+    }
+
+    const openRouterApiKey = getTextApiKey();
     if (!openRouterApiKey) {
       return { success: false, error: "API not configured" };
     }
 
     const pronoun = args.gender === "boy" ? "he" : args.gender === "girl" ? "she" : "they";
+    const mascotName = args.mascotName?.trim() || "their magical friend";
+    const possessive = args.gender === "boy" ? "his" : args.gender === "girl" ? "her" : "their";
 
     const teaserPrompt = `You are a beloved children's book author. Create a SHORT story teaser for a child.
 
 CHILD'S INPUT: "${args.prompt}"
 CHILD'S NAME: ${args.childName} (${args.childAge} years old, ${args.gender})
+MASCOT'S NAME: ${mascotName} (${args.childName}'s loyal adventure companion)
 
-CREATE A STORY ABOUT: Friendship and connection
+CREATE A STORY ABOUT: Friendship and connection between ${args.childName} and ${mascotName}
 TONE: Warm, soothing, and magical
 
 TASK: Generate ONLY:
-1. A captivating story title (5-8 words)
-2. The first page text (2-3 sentences that hook the reader)
+1. A captivating story title (5-8 words) - may include ${mascotName}'s name
+2. The first page text (2-3 sentences that hook the reader and introduce both ${args.childName} AND ${mascotName})
 
-The story should feature ${args.childName} as the main character. Make ${pronoun} feel special and loved.
-The teaser should make the child EXCITED to hear the rest of the story!
+REQUIREMENTS:
+- ${args.childName} is the main hero of the story
+- ${mascotName} is ${possessive} loyal companion who joins the adventure
+- Make ${pronoun} feel special and loved
+- The teaser should make the child EXCITED to hear the rest of the story!
 
 RESPOND IN THIS EXACT JSON FORMAT:
 {
   "title": "An Engaging Story Title",
-  "teaserText": "First page of the story that introduces ${args.childName} and hints at the adventure..."
+  "teaserText": "First page of the story that introduces ${args.childName} and ${mascotName}, hinting at the adventure..."
 }`;
 
     try {
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${openRouterApiKey}`,
-          "HTTP-Referer": "https://storytime.app",
-          "X-Title": "Storytime Onboarding",
-        },
-        body: JSON.stringify({
-          model: "moonshotai/kimi-k2-thinking",
-          messages: [
-            {
-              role: "system",
-              content: "You are a beloved children's book author. Always respond with valid JSON only.",
-            },
-            { role: "user", content: teaserPrompt },
-          ],
-          response_format: { type: "json_object" },
-          temperature: 0.8,
-          max_tokens: 500,
-        }),
+      const content = await generateTextContent(openRouterApiKey, {
+        messages: [
+          {
+            role: "system",
+            content: "You are a beloved children's book author. Always respond with valid JSON only.",
+          },
+          { role: "user", content: teaserPrompt },
+        ],
+        title: "Storytime Onboarding",
       });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        return { success: false, error: `API error: ${errorText}` };
-      }
-
-      const result = await response.json();
-      const content = result.choices?.[0]?.message?.content;
-
-      if (!content) {
-        return { success: false, error: "No content in response" };
-      }
 
       let teaser: { title: string; teaserText: string };
       try {
-        teaser = JSON.parse(content);
+        teaser = parseJsonFromContent<{ title: string; teaserText: string }>(
+          content,
+          /\{[\s\S]*?"title"[\s\S]*?"teaserText"[\s\S]*?\}/
+        );
       } catch {
-        const jsonMatch = content.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          teaser = JSON.parse(jsonMatch[0]);
-        } else {
-          return { success: false, error: "Failed to parse teaser" };
-        }
+        console.error("Teaser generation - Failed to parse JSON from content:", content);
+        return { success: false, error: "Failed to parse teaser" };
       }
 
       // Save teaser to database
-      await ctx.runMutation(internal.storyGeneration.saveOnboardingTeaser, {
+      const teaserId = await ctx.runMutation(internal.storyGeneration.saveOnboardingTeaser, {
         email: args.email,
         prompt: args.prompt,
         childName: args.childName,
@@ -870,10 +966,23 @@ RESPOND IN THIS EXACT JSON FORMAT:
         gender: args.gender,
         title: teaser.title,
         teaserText: teaser.teaserText,
+        mascotStorageId: args.mascotStorageId,
       });
+
+      if (args.mascotStorageId) {
+        await ctx.runMutation(internal.storyGeneration.updateOnboardingTeaser, {
+          teaserId,
+          teaserImageStatus: "queued",
+        });
+
+        await ctx.scheduler.runAfter(0, internal.storyGenerationActions.generateOnboardingTeaserImage, {
+          teaserId,
+        });
+      }
 
       return {
         success: true,
+        teaserId,
         teaser: {
           title: teaser.title,
           teaserText: teaser.teaserText,

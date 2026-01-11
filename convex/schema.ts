@@ -92,13 +92,13 @@ export default defineSchema({
     .index("by_user_and_skill", ["userId", "skillKey"])
     .index("by_book", ["bookId"]),
 
-  // Track mascot generations for rate limiting (1 per email)
   mascotGenerations: defineTable({
-    email: v.string(),
+    userId: v.optional(v.id("users")), // Optional for backward compat with old email-based records
+    email: v.optional(v.string()), // Deprecated: old records used email
     storageId: v.id("_storage"),
     generationType: v.union(v.literal("text"), v.literal("image")),
     prompt: v.optional(v.string()),
-  }).index("by_email", ["email"]),
+  }).index("by_user", ["userId"]),
 
   // Track current mascot outfit state
   // Due to FLUX Kontext 2-image limit:
@@ -106,24 +106,39 @@ export default defineSchema({
   // - Accessories (hats OR toys - merged): Uses clothedMascotId (mascot with clothes) + accessory image
   mascotOutfit: defineTable({
     userId: v.id("users"),
-    originalMascotId: v.id("_storage"), // Original bare mascot (never changes)
-    clothedMascotId: v.optional(v.id("_storage")), // Mascot with clothes (used as base for accessories)
-    currentMascotId: v.id("_storage"), // Latest generated mascot (final result)
-    // Equipped items - clothes is separate, hat/toy merged into accessory
-    equippedClothes: v.optional(v.string()), // e.g., "shirt-blue"
+    originalMascotId: v.id("_storage"),
+    clothedMascotId: v.optional(v.id("_storage")),
+    currentMascotId: v.id("_storage"),
+    equippedClothes: v.optional(v.string()),
     equippedClothesStorageId: v.optional(v.id("_storage")),
-    // Merged hat + toy into single accessory slot (user picks one OR the other)
-    equippedAccessory: v.optional(v.string()), // e.g., "crown-gold" or "sunglasses"
-    equippedAccessoryType: v.optional(v.union(v.literal("hat"), v.literal("toy"))), // Track which type
+    equippedAccessory: v.optional(v.string()),
+    equippedAccessoryType: v.optional(v.union(v.literal("hat"), v.literal("toy"))),
     equippedAccessoryStorageId: v.optional(v.id("_storage")),
     generationHistory: v.array(generationHistoryItemValidator),
   }).index("by_user", ["userId"]),
 
-  // ============================================
-  // STORY GENERATION TABLES
-  // ============================================
+  mascotJobs: defineTable({
+    userId: v.id("users"),
+    status: v.union(
+      v.literal("queued"),
+      v.literal("generating"),
+      v.literal("complete"),
+      v.literal("failed")
+    ),
+    progress: v.number(),
+    error: v.optional(v.string()),
+    generationType: v.union(v.literal("text"), v.literal("image")),
+    description: v.optional(v.string()),
+    sourceImageId: v.optional(v.id("_storage")),
+    resultStorageId: v.optional(v.id("_storage")),
+    resultImageUrl: v.optional(v.string()),
+    createdAt: v.number(),
+    startedAt: v.optional(v.number()),
+    finishedAt: v.optional(v.number()),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_and_status", ["userId", "status"]),
 
-  // Story generation jobs - tracks async generation progress
   storyJobs: defineTable({
     userId: v.id("users"),
     status: v.union(
@@ -239,6 +254,17 @@ export default defineSchema({
     // Generated content
     title: v.string(),
     teaserText: v.string(), // First page text only (preview)
+    mascotStorageId: v.optional(v.id("_storage")),
+    teaserImageStorageId: v.optional(v.id("_storage")),
+    teaserImageStatus: v.optional(
+      v.union(
+        v.literal("queued"),
+        v.literal("generating"),
+        v.literal("complete"),
+        v.literal("failed")
+      )
+    ),
+    teaserImageError: v.optional(v.string()),
     // Full story generation status
     fullStoryGenerated: v.boolean(),
     linkedBookId: v.optional(v.id("books")),

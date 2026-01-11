@@ -2,7 +2,6 @@ import { v } from "convex/values";
 import { internalMutation, internalQuery } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
 
-// Validator for generation history items
 const generationHistoryItemValidator = v.object({
   itemType: v.string(),
   itemId: v.string(),
@@ -10,9 +9,8 @@ const generationHistoryItemValidator = v.object({
   generatedAt: v.number(),
 });
 
-// Internal query to check if user has already generated a mascot
 export const checkRateLimit = internalQuery({
-  args: { email: v.string() },
+  args: { userId: v.id("users") },
   returns: v.object({
     hasGenerated: v.boolean(),
     existingStorageId: v.union(v.id("_storage"), v.null()),
@@ -20,7 +18,7 @@ export const checkRateLimit = internalQuery({
   handler: async (ctx, args) => {
     const existing = await ctx.db
       .query("mascotGenerations")
-      .withIndex("by_email", (q) => q.eq("email", args.email))
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
       .unique();
 
     return {
@@ -30,10 +28,9 @@ export const checkRateLimit = internalQuery({
   },
 });
 
-// Internal mutation to record a mascot generation
 export const recordGeneration = internalMutation({
   args: {
-    email: v.string(),
+    userId: v.id("users"),
     storageId: v.id("_storage"),
     generationType: v.union(v.literal("text"), v.literal("image")),
     prompt: v.optional(v.string()),
@@ -41,7 +38,7 @@ export const recordGeneration = internalMutation({
   returns: v.id("mascotGenerations"),
   handler: async (ctx, args) => {
     return await ctx.db.insert("mascotGenerations", {
-      email: args.email,
+      userId: args.userId,
       storageId: args.storageId,
       generationType: args.generationType,
       prompt: args.prompt,
@@ -49,22 +46,16 @@ export const recordGeneration = internalMutation({
   },
 });
 
-// Internal query to get mascot outfit for a user
-// Due to FLUX Kontext 2-image limit:
-// - Clothes: Uses originalMascotId (bare) + clothes image
-// - Accessories (hat OR toy): Uses clothedMascotId + accessory image
-export const getMascotOutfitByEmail = internalQuery({
-  args: { email: v.string() },
+export const getMascotOutfitByUser = internalQuery({
+  args: { userId: v.id("users") },
   returns: v.union(
     v.object({
       outfitId: v.union(v.id("mascotOutfit"), v.null()),
       originalMascotId: v.id("_storage"),
-      clothedMascotId: v.union(v.id("_storage"), v.null()), // Mascot with clothes (base for accessories)
+      clothedMascotId: v.union(v.id("_storage"), v.null()),
       currentMascotId: v.id("_storage"),
-      // Clothes
       equippedClothes: v.union(v.string(), v.null()),
       equippedClothesStorageId: v.union(v.id("_storage"), v.null()),
-      // Merged accessory (hat OR toy - only one allowed)
       equippedAccessory: v.union(v.string(), v.null()),
       equippedAccessoryType: v.union(v.literal("hat"), v.literal("toy"), v.null()),
       equippedAccessoryStorageId: v.union(v.id("_storage"), v.null()),
@@ -73,17 +64,9 @@ export const getMascotOutfitByEmail = internalQuery({
     v.null()
   ),
   handler: async (ctx, args) => {
-    const user = await ctx.db
-      .query("users")
-      .withIndex("email", (q) => q.eq("email", args.email))
-      .unique();
-    if (!user) {
-      return null;
-    }
-
     const outfit = await ctx.db
       .query("mascotOutfit")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
       .unique();
 
     if (outfit) {
@@ -101,10 +84,9 @@ export const getMascotOutfitByEmail = internalQuery({
       };
     }
 
-    // No outfit yet - check if user has a generated mascot from onboarding
     const onboarding = await ctx.db
       .query("onboardingResponses")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
       .unique();
 
     if (onboarding?.generatedMascotId) {
@@ -126,30 +108,19 @@ export const getMascotOutfitByEmail = internalQuery({
   },
 });
 
-// Internal mutation to update mascot outfit after adding CLOTHES
-// Clothes always use the original bare mascot as base
-// The result becomes the "clothedMascotId" for future accessory additions
 export const updateMascotOutfitClothes = internalMutation({
   args: {
-    email: v.string(),
+    userId: v.id("users"),
     clothesId: v.string(),
     clothesStorageId: v.id("_storage"),
-    newMascotStorageId: v.id("_storage"), // This becomes both clothedMascotId AND currentMascotId
+    newMascotStorageId: v.id("_storage"),
     originalMascotId: v.id("_storage"),
   },
   returns: v.id("mascotOutfit"),
   handler: async (ctx, args) => {
-    const user = await ctx.db
-      .query("users")
-      .withIndex("email", (q) => q.eq("email", args.email))
-      .unique();
-    if (!user) {
-      throw new Error("User not found");
-    }
-
     const existingOutfit = await ctx.db
       .query("mascotOutfit")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
       .unique();
 
     const historyItem = {
@@ -160,14 +131,11 @@ export const updateMascotOutfitClothes = internalMutation({
     };
 
     if (existingOutfit) {
-      // Update existing outfit - when clothes change, reset accessory too
-      // because the accessory was generated on top of old clothes
       await ctx.db.patch(existingOutfit._id, {
         equippedClothes: args.clothesId,
         equippedClothesStorageId: args.clothesStorageId,
-        clothedMascotId: args.newMascotStorageId, // Store the clothed version
+        clothedMascotId: args.newMascotStorageId,
         currentMascotId: args.newMascotStorageId,
-        // Clear accessory since clothes changed (it was on old clothes)
         equippedAccessory: undefined,
         equippedAccessoryType: undefined,
         equippedAccessoryStorageId: undefined,
@@ -175,9 +143,8 @@ export const updateMascotOutfitClothes = internalMutation({
       });
       return existingOutfit._id;
     } else {
-      // Create new outfit record
       return await ctx.db.insert("mascotOutfit", {
-        userId: user._id,
+        userId: args.userId,
         originalMascotId: args.originalMascotId,
         clothedMascotId: args.newMascotStorageId,
         currentMascotId: args.newMascotStorageId,
@@ -189,11 +156,9 @@ export const updateMascotOutfitClothes = internalMutation({
   },
 });
 
-// Internal mutation to update mascot outfit after adding ACCESSORY (hat OR toy)
-// Accessories use the clothedMascotId (or originalMascotId if no clothes) as base
 export const updateMascotOutfitAccessory = internalMutation({
   args: {
-    email: v.string(),
+    userId: v.id("users"),
     accessoryId: v.string(),
     accessoryType: v.union(v.literal("hat"), v.literal("toy")),
     accessoryStorageId: v.id("_storage"),
@@ -202,17 +167,9 @@ export const updateMascotOutfitAccessory = internalMutation({
   },
   returns: v.id("mascotOutfit"),
   handler: async (ctx, args) => {
-    const user = await ctx.db
-      .query("users")
-      .withIndex("email", (q) => q.eq("email", args.email))
-      .unique();
-    if (!user) {
-      throw new Error("User not found");
-    }
-
     const existingOutfit = await ctx.db
       .query("mascotOutfit")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
       .unique();
 
     const historyItem = {
@@ -223,7 +180,6 @@ export const updateMascotOutfitAccessory = internalMutation({
     };
 
     if (existingOutfit) {
-      // Update existing outfit - only update accessory, keep clothes
       await ctx.db.patch(existingOutfit._id, {
         equippedAccessory: args.accessoryId,
         equippedAccessoryType: args.accessoryType,
@@ -233,9 +189,8 @@ export const updateMascotOutfitAccessory = internalMutation({
       });
       return existingOutfit._id;
     } else {
-      // Create new outfit record (no clothes, just accessory)
       return await ctx.db.insert("mascotOutfit", {
-        userId: user._id,
+        userId: args.userId,
         originalMascotId: args.originalMascotId,
         currentMascotId: args.newMascotStorageId,
         equippedAccessory: args.accessoryId,
@@ -247,23 +202,13 @@ export const updateMascotOutfitAccessory = internalMutation({
   },
 });
 
-// Internal mutation to reset mascot outfit
-// Clears all equipped items and resets to original bare mascot
 export const resetMascotOutfitInternal = internalMutation({
-  args: { email: v.string() },
+  args: { userId: v.id("users") },
   returns: v.boolean(),
   handler: async (ctx, args) => {
-    const user = await ctx.db
-      .query("users")
-      .withIndex("email", (q) => q.eq("email", args.email))
-      .unique();
-    if (!user) {
-      throw new Error("User not found");
-    }
-
     const outfit = await ctx.db
       .query("mascotOutfit")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
       .unique();
 
     if (outfit) {

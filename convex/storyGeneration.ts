@@ -28,6 +28,13 @@ const DURATION_MINUTES: Record<string, number> = {
   long: 8,
 };
 
+const teaserImageStatusValidator = v.union(
+  v.literal("queued"),
+  v.literal("generating"),
+  v.literal("complete"),
+  v.literal("failed")
+);
+
 type StoryLength = "short" | "medium" | "long";
 type StoryVibe = "energizing" | "soothing" | "whimsical" | "thoughtful";
 type VocabularyLevel = "beginner" | "intermediate" | "advanced";
@@ -65,6 +72,7 @@ export const getChildContext = internalQuery({
       childName: v.string(),
       childAge: v.string(),
       gender: v.string(),
+      mascotName: v.union(v.string(), v.null()),
       mascotStorageId: v.union(v.id("_storage"), v.null()),
     }),
     v.null()
@@ -88,40 +96,8 @@ export const getChildContext = internalQuery({
       childName: onboarding.childName,
       childAge: onboarding.childAge,
       gender: onboarding.gender,
+      mascotName: onboarding.mascotName ?? null,
       mascotStorageId,
-    };
-  },
-});
-
-export const getChildContextByEmail = internalQuery({
-  args: { email: v.string() },
-  returns: v.union(
-    v.object({
-      childName: v.string(),
-      childAge: v.string(),
-      gender: v.string(),
-    }),
-    v.null()
-  ),
-  handler: async (ctx, args) => {
-    const user = await ctx.db
-      .query("users")
-      .withIndex("email", (q) => q.eq("email", args.email))
-      .unique();
-
-    if (!user) return null;
-
-    const onboarding = await ctx.db
-      .query("onboardingResponses")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .unique();
-
-    if (!onboarding) return null;
-
-    return {
-      childName: onboarding.childName,
-      childAge: onboarding.childAge,
-      gender: onboarding.gender,
     };
   },
 });
@@ -151,12 +127,59 @@ export const queueStoryJob = mutation({
   returns: v.object({
     success: v.boolean(),
     jobId: v.optional(v.id("storyJobs")),
+    existingJobId: v.optional(v.id("storyJobs")),
     error: v.optional(v.string()),
   }),
   handler: async (ctx, args) => {
     const user = await getAuthUser(ctx);
     if (!user) {
       return { success: false, error: "Not authenticated" };
+    }
+
+    // Check for existing pending job (queued or generating)
+    const existingPendingQueued = await ctx.db
+      .query("storyJobs")
+      .withIndex("by_user_and_status", (q) =>
+        q.eq("userId", user._id).eq("status", "queued")
+      )
+      .first();
+
+    if (existingPendingQueued) {
+      return {
+        success: true,
+        existingJobId: existingPendingQueued._id,
+        error: "Story generation already in progress",
+      };
+    }
+
+    const existingPendingStory = await ctx.db
+      .query("storyJobs")
+      .withIndex("by_user_and_status", (q) =>
+        q.eq("userId", user._id).eq("status", "generating_story")
+      )
+      .first();
+
+    if (existingPendingStory) {
+      return {
+        success: true,
+        existingJobId: existingPendingStory._id,
+        error: "Story generation already in progress",
+      };
+    }
+
+    const existingPendingImages = await ctx.db
+      .query("storyJobs")
+      .withIndex("by_user_and_status", (q) =>
+        q.eq("userId", user._id).eq("status", "generating_images")
+      )
+      .first();
+
+    if (existingPendingImages) {
+      return {
+        success: true,
+        existingJobId: existingPendingImages._id,
+        error: "Story generation already in progress",
+      };
     }
 
     const credits = await ctx.db
@@ -1040,6 +1063,7 @@ export const saveOnboardingTeaser = internalMutation({
     gender: v.string(),
     title: v.string(),
     teaserText: v.string(),
+    mascotStorageId: v.optional(v.id("_storage")),
   },
   returns: v.id("onboardingTeasers"),
   handler: async (ctx, args) => {
@@ -1059,6 +1083,7 @@ export const saveOnboardingTeaser = internalMutation({
         title: args.title,
         teaserText: args.teaserText,
         createdAt: Date.now(),
+        ...(args.mascotStorageId ? { mascotStorageId: args.mascotStorageId } : {}),
       });
       return existing._id;
     }
@@ -1072,6 +1097,7 @@ export const saveOnboardingTeaser = internalMutation({
       gender: args.gender,
       title: args.title,
       teaserText: args.teaserText,
+      ...(args.mascotStorageId ? { mascotStorageId: args.mascotStorageId } : {}),
       fullStoryGenerated: false,
       createdAt: Date.now(),
     });
@@ -1090,6 +1116,12 @@ export const getOnboardingTeaserByEmail = internalQuery({
       teaserText: v.string(),
       prompt: v.string(),
       childName: v.string(),
+      childAge: v.string(),
+      gender: v.string(),
+      mascotStorageId: v.union(v.id("_storage"), v.null()),
+      teaserImageStatus: v.union(teaserImageStatusValidator, v.null()),
+      teaserImageStorageId: v.union(v.id("_storage"), v.null()),
+      teaserImageError: v.union(v.string(), v.null()),
       fullStoryGenerated: v.boolean(),
       linkedBookId: v.optional(v.id("books")),
     }),
@@ -1109,9 +1141,166 @@ export const getOnboardingTeaserByEmail = internalQuery({
       teaserText: teaser.teaserText,
       prompt: teaser.prompt,
       childName: teaser.childName,
+      childAge: teaser.childAge,
+      gender: teaser.gender,
+      mascotStorageId: teaser.mascotStorageId ?? null,
+      teaserImageStatus: teaser.teaserImageStatus ?? null,
+      teaserImageStorageId: teaser.teaserImageStorageId ?? null,
+      teaserImageError: teaser.teaserImageError ?? null,
       fullStoryGenerated: teaser.fullStoryGenerated,
       linkedBookId: teaser.linkedBookId,
     };
+  },
+});
+
+/**
+ * Get onboarding teaser by id (for image generation)
+ */
+export const getOnboardingTeaserById = internalQuery({
+  args: { teaserId: v.id("onboardingTeasers") },
+  returns: v.union(
+    v.object({
+      _id: v.id("onboardingTeasers"),
+      prompt: v.string(),
+      childName: v.string(),
+      childAge: v.string(),
+      gender: v.string(),
+      teaserText: v.string(),
+      mascotStorageId: v.union(v.id("_storage"), v.null()),
+      teaserImageStatus: v.union(teaserImageStatusValidator, v.null()),
+      teaserImageStorageId: v.union(v.id("_storage"), v.null()),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    const teaser = await ctx.db.get(args.teaserId);
+    if (!teaser) return null;
+
+    return {
+      _id: teaser._id,
+      prompt: teaser.prompt,
+      childName: teaser.childName,
+      childAge: teaser.childAge,
+      gender: teaser.gender,
+      teaserText: teaser.teaserText,
+      mascotStorageId: teaser.mascotStorageId ?? null,
+      teaserImageStatus: teaser.teaserImageStatus ?? null,
+      teaserImageStorageId: teaser.teaserImageStorageId ?? null,
+    };
+  },
+});
+
+/**
+ * Update onboarding teaser (image status, mascot, image storage)
+ */
+export const updateOnboardingTeaser = internalMutation({
+  args: {
+    teaserId: v.id("onboardingTeasers"),
+    mascotStorageId: v.optional(v.id("_storage")),
+    teaserImageStatus: v.optional(teaserImageStatusValidator),
+    teaserImageStorageId: v.optional(v.id("_storage")),
+    teaserImageError: v.optional(v.string()),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const updates: Record<string, unknown> = {};
+
+    if (args.mascotStorageId !== undefined) {
+      updates.mascotStorageId = args.mascotStorageId;
+    }
+    if (args.teaserImageStatus !== undefined) {
+      updates.teaserImageStatus = args.teaserImageStatus;
+    }
+    if (args.teaserImageStorageId !== undefined) {
+      updates.teaserImageStorageId = args.teaserImageStorageId;
+    }
+    if (args.teaserImageError !== undefined) {
+      updates.teaserImageError = args.teaserImageError;
+    }
+
+    await ctx.db.patch(args.teaserId, updates);
+    return null;
+  },
+});
+
+/**
+ * Get onboarding teaser by id (for client polling)
+ */
+export const getOnboardingTeaser = query({
+  args: { teaserId: v.id("onboardingTeasers") },
+  returns: v.union(
+    v.object({
+      _id: v.id("onboardingTeasers"),
+      title: v.string(),
+      teaserText: v.string(),
+      teaserImageStatus: v.union(teaserImageStatusValidator, v.null()),
+      teaserImageUrl: v.union(v.string(), v.null()),
+      teaserImageError: v.union(v.string(), v.null()),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    const teaser = await ctx.db.get(args.teaserId);
+    if (!teaser) return null;
+
+    const teaserImageUrl = teaser.teaserImageStorageId
+      ? await ctx.storage.getUrl(teaser.teaserImageStorageId)
+      : null;
+
+    return {
+      _id: teaser._id,
+      title: teaser.title,
+      teaserText: teaser.teaserText,
+      teaserImageStatus: teaser.teaserImageStatus ?? null,
+      teaserImageUrl,
+      teaserImageError: teaser.teaserImageError ?? null,
+    };
+  },
+});
+
+/**
+ * Queue onboarding teaser image generation
+ */
+export const queueOnboardingTeaserImage = mutation({
+  args: {
+    teaserId: v.id("onboardingTeasers"),
+    mascotStorageId: v.optional(v.id("_storage")),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    status: v.optional(v.string()),
+    error: v.optional(v.string()),
+  }),
+  handler: async (ctx, args) => {
+    const teaser = await ctx.db.get(args.teaserId);
+    if (!teaser) {
+      return { success: false, error: "Teaser not found" };
+    }
+
+    if (args.mascotStorageId) {
+      await ctx.db.patch(args.teaserId, { mascotStorageId: args.mascotStorageId });
+    }
+
+    const mascotStorageId = args.mascotStorageId ?? teaser.mascotStorageId;
+    if (!mascotStorageId) {
+      return { success: false, error: "Mascot not available" };
+    }
+
+    const status = teaser.teaserImageStatus;
+    if (status === "complete" || status === "generating" || status === "queued") {
+      return { success: true, status };
+    }
+
+    await ctx.db.patch(args.teaserId, {
+      teaserImageStatus: "queued",
+      teaserImageError: undefined,
+    });
+
+    await ctx.scheduler.runAfter(0, internal.storyGenerationActions.generateOnboardingTeaserImage, {
+      teaserId: args.teaserId,
+    });
+
+    return { success: true, status: "queued" };
   },
 });
 

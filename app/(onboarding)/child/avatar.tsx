@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,8 +9,9 @@ import {
   Platform,
   Pressable,
   Alert,
+  BackHandler,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import Animated, {
   FadeIn, // Add FadeIn
   FadeInDown,
@@ -32,9 +33,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BASE_AVATARS } from '../../../constants/data';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useAction, useConvexAuth } from 'convex/react';
+import { useAction, useMutation, useConvexAuth } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { Id } from '../../../convex/_generated/dataModel';
+import { useFocusEffect } from '@react-navigation/native';
 
 // Types
 type SelectionMode = 'select' | 'upload' | 'describe' | null;
@@ -202,11 +204,13 @@ export default function AvatarSelectionScreen() {
   const { updateData, data } = useOnboarding();
   const { isAuthenticated } = useConvexAuth();
   const scrollViewRef = useRef<ScrollView>(null);
+  const isMountedRef = useRef(true);
+  const hasNavigatedRef = useRef(false);
 
   // Convex actions
-  const generateFromDescription = useAction(api.imageGeneration.generateMascotFromDescription);
-  const generateFromImage = useAction(api.imageGeneration.generateMascotFromImage);
   const generateUploadUrl = useAction(api.imageGeneration.generateUploadUrl);
+  const queueMascotJob = useMutation(api.mascotGeneration.queueMascotJob);
+  const saveGeneratedMascot = useMutation(api.onboarding.saveGeneratedMascot);
 
   // State
   const [mode, setMode] = useState<SelectionMode>(null);
@@ -228,6 +232,19 @@ export default function AvatarSelectionScreen() {
       scrollViewRef.current.scrollTo({ y: 0, animated: false });
     }
   }, [mode, generationStep]);
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      const subscription = BackHandler.addEventListener('hardwareBackPress', () => true);
+      return () => subscription.remove();
+    }, [])
+  );
 
   // Initial selection - set first avatar as default
   useEffect(() => {
@@ -268,78 +285,86 @@ export default function AvatarSelectionScreen() {
     });
   };
 
-  // Handle generation completion
-  const handleGenerationSuccess = (imageUrl: string, storageId: string) => {
-    const result = {
-      id: 'generated_custom',
-      name: data.mascotName || (uploadedImage ? 'Your Toy!' : 'Magic Friend!'),
-      image: { uri: imageUrl },
-      storageId,
-    };
-    setGeneratedAvatar(result);
-    setSelectedAvatar(result.id);
-    updateData({
-      generatedMascotId: storageId,
-      generatedMascotUrl: imageUrl,
-    });
-    setGenerationStep('reveal');
-    stopShakeAnimation();
-    setIsGenerating(false);
-  };
+  const setIfMounted = useCallback((update: () => void) => {
+    if (isMountedRef.current) {
+      update();
+    }
+  }, []);
 
-  const handleGenerationError = (error: string) => {
-    setGenerationError(error);
-    setGenerationStep('input');
-    stopShakeAnimation();
-    setIsGenerating(false);
-    Alert.alert(
-      'Oops!',
-      error || 'Something went wrong creating your friend. Try again!',
-      [{ text: 'OK', onPress: () => setMode(null) }]
-    );
-  };
+  const navigateToMagicMoment = useCallback(() => {
+    if (hasNavigatedRef.current) return;
+    hasNavigatedRef.current = true;
+    router.push('/(onboarding)/child/magic-moment');
+  }, [router]);
 
-  // Generate mascot from text description
+  const returnToAvatar = useCallback(() => {
+    if (!hasNavigatedRef.current) return;
+    router.replace('/(onboarding)/child/avatar');
+  }, [router]);
+
   const generateFromText = async (text: string) => {
-    setGenerationStep('processing');
-    startShakeAnimation();
-    setIsGenerating(true);
-    setGenerationError(null);
+    setIfMounted(() => {
+      setIsGenerating(true);
+      setGenerationError(null);
+    });
 
     if (!isAuthenticated) {
-      setGenerationError("Not authenticated");
-      setIsGenerating(false);
-      stopShakeAnimation();
+      setIfMounted(() => {
+        setGenerationError("Not authenticated");
+        setIsGenerating(false);
+      });
       Alert.alert("Authentication Error", "You need to be logged in to generate a mascot. Please try restarting the app.");
       return;
     }
 
-    try {
-      const result = await generateFromDescription({ description: text });
+    navigateToMagicMoment();
 
-      if (result.success && result.imageUrl && result.storageId) {
-        handleGenerationSuccess(result.imageUrl, result.storageId);
+    try {
+      const result = await queueMascotJob({
+        generationType: "text",
+        description: text,
+      });
+
+      if (result.success && result.jobId) {
+        updateData({ mascotJobId: result.jobId });
+      } else if (result.existingJobId) {
+        updateData({ mascotJobId: result.existingJobId });
       } else {
-        handleGenerationError(result.error || 'Failed to generate image');
+        setIfMounted(() => {
+          setGenerationError(result.error || 'Failed to queue mascot generation');
+        });
+        Alert.alert('Oops!', result.error || 'Something went wrong. Try again!');
+        returnToAvatar();
       }
     } catch (error) {
       console.error('Generation error:', error);
-      handleGenerationError(error instanceof Error ? error.message : 'Unknown error');
+      setIfMounted(() => {
+        setGenerationError(error instanceof Error ? error.message : 'Unknown error');
+      });
+      Alert.alert('Oops!', 'Something went wrong. Try again!');
+      returnToAvatar();
+    } finally {
+      setIfMounted(() => setIsGenerating(false));
     }
   };
 
   // Upload image to Convex and generate mascot
   const uploadAndGenerate = async (imageUri: string) => {
-    setGenerationStep('processing');
-    startShakeAnimation();
-    setIsGenerating(true);
-    setGenerationError(null);
+    setIfMounted(() => {
+      setIsGenerating(true);
+      setGenerationError(null);
+    });
+
+    if (!isAuthenticated) {
+      setIfMounted(() => setIsGenerating(false));
+      Alert.alert("Authentication Error", "You need to be logged in. Please try restarting the app.");
+      return;
+    }
+
+    navigateToMagicMoment();
 
     try {
-      // Step 1: Get upload URL from Convex
       const uploadUrl = await generateUploadUrl({});
-
-      // Step 2: Upload the image
       const response = await fetch(imageUri);
       const blob = await response.blob();
 
@@ -357,19 +382,33 @@ export default function AvatarSelectionScreen() {
 
       const { storageId } = await uploadResponse.json();
 
-      // Step 3: Generate mascot from uploaded image
-      const result = await generateFromImage({
-        sourceImageId: storageId as Id<"_storage">
+      const result = await queueMascotJob({
+        generationType: "image",
+        sourceImageId: storageId as Id<"_storage">,
       });
 
-      if (result.success && result.imageUrl && result.storageId) {
-        handleGenerationSuccess(result.imageUrl, result.storageId);
+      if (result.success && result.jobId) {
+        updateData({ mascotJobId: result.jobId });
+      } else if (result.existingJobId) {
+        updateData({ mascotJobId: result.existingJobId });
       } else {
-        handleGenerationError(result.error || 'Failed to generate image');
+        setIfMounted(() => {
+          setGenerationError(result.error || 'Failed to queue mascot generation');
+        });
+        Alert.alert('Oops!', result.error || 'Something went wrong. Try again!');
+        setIfMounted(() => setMode(null));
+        returnToAvatar();
       }
     } catch (error) {
       console.error('Upload/generation error:', error);
-      handleGenerationError(error instanceof Error ? error.message : 'Unknown error');
+      setIfMounted(() => {
+        setGenerationError(error instanceof Error ? error.message : 'Unknown error');
+      });
+      Alert.alert('Oops!', 'Something went wrong. Try again!');
+      setIfMounted(() => setMode(null));
+      returnToAvatar();
+    } finally {
+      setIfMounted(() => setIsGenerating(false));
     }
   };
 
@@ -441,6 +480,13 @@ export default function AvatarSelectionScreen() {
               avatarId: selectedAvatar,
               generatedMascotId: storageId,
             });
+            
+            // Persist the mascot to the database so it shows in "My Room"
+            try {
+              await saveGeneratedMascot({ storageId });
+            } catch (error) {
+              console.warn("Failed to persist base avatar to database:", error);
+            }
           } else {
             throw new Error('Failed to load asset');
           }
@@ -473,8 +519,6 @@ export default function AvatarSelectionScreen() {
       if (BASE_AVATARS.length > 0) {
         setSelectedAvatar(BASE_AVATARS[0].id);
       }
-    } else {
-      router.back();
     }
   };
 
@@ -824,24 +868,30 @@ export default function AvatarSelectionScreen() {
   const insets = useSafeAreaInsets();
 
   return (
-    <LinearGradient
-      colors={['#FEF7ED', '#FFF7ED', '#FFFBEB']}
-      style={{ flex: 1 }}
-    >
-      {/* Header - hide back button on reveal screen to prevent regeneration */}
-      {generationStep !== 'reveal' && (
-        <View style={{ paddingTop: insets.top + 20, paddingHorizontal: 20, paddingBottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 10 }}>
-          <ChunkyButton onPress={handleBack} bgColor="#FFFFFF" borderColor="#E5E7EB" size="small">
-            <View style={{ padding: 10 }}>
-              <Ionicons name="arrow-back" size={24} color="#4B5563" />
-            </View>
-          </ChunkyButton>
-        </View>
-      )}
-      {/* Spacer when back button is hidden (reveal screen) */}
-      {generationStep === 'reveal' && (
-        <View style={{ paddingTop: insets.top + 20, paddingBottom: 16 }} />
-      )}
+    <>
+      <Stack.Screen options={{ gestureEnabled: false }} />
+      <LinearGradient
+        colors={['#FEF7ED', '#FFF7ED', '#FFFBEB']}
+        style={{ flex: 1 }}
+      >
+        {/* Header - internal back only (no route back) */}
+        {generationStep !== 'reveal' && (
+          <View style={{ paddingTop: insets.top + 20, paddingHorizontal: 20, paddingBottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 10 }}>
+            {mode ? (
+              <ChunkyButton onPress={handleBack} bgColor="#FFFFFF" borderColor="#E5E7EB" size="small" disabled={isGenerating}>
+                <View style={{ padding: 10 }}>
+                  <Ionicons name="arrow-back" size={24} color="#4B5563" />
+                </View>
+              </ChunkyButton>
+            ) : (
+              <View style={{ width: 44, height: 44 }} />
+            )}
+          </View>
+        )}
+        {/* Spacer when back button is hidden (reveal screen) */}
+        {generationStep === 'reveal' && (
+          <View style={{ paddingTop: insets.top + 20, paddingBottom: 16 }} />
+        )}
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -880,6 +930,7 @@ export default function AvatarSelectionScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </LinearGradient>
+      </LinearGradient>
+    </>
   );
 }

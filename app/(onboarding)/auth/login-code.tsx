@@ -116,12 +116,32 @@ export default function LoginCodeScreen() {
   };
 
   const handleChange = (text: string, index: number) => {
-    const digit = text.replace(/[^0-9]/g, "").slice(-1);
+    const numericText = text.replace(/[^0-9]/g, "");
+    
+    // Handle paste of full code
+    if (numericText.length > 1) {
+      const newCode = [...code];
+      const pastedDigits = numericText.slice(0, CODE_LENGTH);
+      
+      for (let i = 0; i < pastedDigits.length && (index + i) < CODE_LENGTH; i++) {
+        newCode[index + i] = pastedDigits[i];
+      }
+      
+      setCode(newCode);
+      
+      // Focus last filled input or next empty
+      const lastIndex = Math.min(index + pastedDigits.length - 1, CODE_LENGTH - 1);
+      inputRefs.current[lastIndex]?.focus();
+      return;
+    }
 
+    // Handle single digit
+    const digit = numericText.slice(-1);
     const newCode = [...code];
     newCode[index] = digit;
     setCode(newCode);
 
+    // Auto-advance
     if (digit !== "" && index < CODE_LENGTH - 1) {
       inputRefs.current[index + 1]?.focus();
     }

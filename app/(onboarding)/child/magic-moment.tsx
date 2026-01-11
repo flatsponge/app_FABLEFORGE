@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, ActivityIndicator, Pressable, Image, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
-import { useRouter } from 'expo-router';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, Pressable, Image, ScrollView, TextInput, KeyboardAvoidingView, Platform, BackHandler } from 'react-native';
+import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   FadeIn,
@@ -18,13 +18,17 @@ import Animated, {
   Easing,
   interpolateColor,
   SharedValue,
+  ZoomIn,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAction } from 'convex/react';
+import { useAction, useQuery, useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import { BASE_AVATARS } from '../../../constants/data';
+import { StoryGenerationGrid } from '@/components/StoryGenerationGrid';
+import { Id } from '@/convex/_generated/dataModel';
+import { useFocusEffect } from '@react-navigation/native';
 
 // Feature flag for voice input - set to true to enable voice recording
 const ENABLE_VOICE_INPUT = false;
@@ -359,102 +363,288 @@ const ChunkyButton = ({
   );
 };
 
-const LOAD_MESSAGES = [
-  { title: "Weaving magic from your day...", subtitle: "Adding dragons... 🐉" },
-  { title: "Reviewing your adventure...", subtitle: "Sprinkling fairy dust... ✨" },
-  { title: "Building your story castle...", subtitle: "Polishing the gates... 🏰" },
-  { title: "Almost quite ready...", subtitle: "Getting the glitter ready! 🌟" },
-];
-
-const LoadingMessages = () => {
-  const [index, setIndex] = useState(0);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setIndex((prev) => (prev + 1) % LOAD_MESSAGES.length);
-    }, 2200);
-    return () => clearInterval(interval);
-  }, []);
-
-  const msg = LOAD_MESSAGES[index];
-
-  return (
-    <Animated.View
-      key={index}
-      entering={FadeInDown.springify()}
-      exiting={FadeOut.duration(200)}
-      style={{ alignItems: 'center', height: 80 }}
-    >
-      <Text style={{
-        fontSize: 22,
-        fontWeight: '800',
-        color: '#1F2937',
-        textAlign: 'center',
-        marginBottom: 8,
-      }}>
-        {msg.title}
-      </Text>
-      <Text style={{
-        fontSize: 16,
-        color: '#7C3AED',
-        fontWeight: '600',
-      }}>
-        {msg.subtitle}
-      </Text>
-    </Animated.View>
-  );
-};
-
-const ProgressBar = () => {
-  const progress = useSharedValue(0);
+const MascotRevealOverlay = ({
+  mascotImage,
+  mascotName,
+  onDismiss,
+}: {
+  mascotImage: any;
+  mascotName: string;
+  onDismiss: () => void;
+}) => {
+  const scale = useSharedValue(0);
+  const sparkleOpacity = useSharedValue(0);
 
   useEffect(() => {
-    progress.value = withTiming(1, { duration: 10000, easing: Easing.bezier(0.25, 0.1, 0.25, 1) });
+    scale.value = withSequence(
+      withTiming(1.2, { duration: 400, easing: Easing.out(Easing.back(2)) }),
+      withSpring(1, { damping: 12, stiffness: 100 })
+    );
+    sparkleOpacity.value = withTiming(1, { duration: 600 });
   }, []);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    width: `${progress.value * 100}%`,
+  const mascotStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const sparkleStyle = useAnimatedStyle(() => ({
+    opacity: sparkleOpacity.value,
   }));
 
   return (
-    <View style={{
-      width: '80%',
-      height: 12,
-      backgroundColor: '#F3F4F6',
-      borderRadius: 6,
-      overflow: 'hidden',
-      marginTop: 32,
-      borderWidth: 1,
-      borderColor: '#E5E7EB'
-    }}>
-      <Animated.View style={[
-        animatedStyle,
-        { height: '100%', backgroundColor: '#7C3AED', borderRadius: 6 }
-      ]} />
-    </View>
+    <Animated.View
+      entering={FadeIn.duration(300)}
+      exiting={FadeOut.duration(300)}
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(254, 247, 237, 0.98)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 100,
+        paddingHorizontal: 24,
+      }}
+    >
+      {/* Mascot with improved styling */}
+      <Animated.View style={mascotStyle}>
+        <View
+          style={{
+            width: 220,
+            height: 220,
+            borderRadius: 110,
+            backgroundColor: '#FFFFFF',
+            alignItems: 'center',
+            justifyContent: 'center',
+            shadowColor: '#7C3AED',
+            shadowOffset: { width: 0, height: 8 },
+            shadowOpacity: 0.15,
+            shadowRadius: 20,
+            elevation: 8,
+            borderWidth: 4,
+            borderColor: '#F3E8FF',
+          }}
+        >
+          <Image
+            source={mascotImage}
+            style={{ width: 160, height: 160 }}
+            resizeMode="contain"
+          />
+        </View>
+      </Animated.View>
+
+      {/* Improved text layout */}
+      <View style={{ alignItems: 'center', marginTop: 40, maxWidth: '90%' }}>
+        <Animated.Text
+          entering={FadeInUp.delay(400).springify()}
+          style={{
+            fontSize: 32,
+            fontWeight: '900',
+            color: '#1F2937',
+            textAlign: 'center',
+            marginBottom: 8,
+          }}
+        >
+          Meet {mascotName}!
+        </Animated.Text>
+        
+        <Animated.Text
+          entering={FadeInUp.delay(600).springify()}
+          style={{
+            fontSize: 18,
+            fontWeight: '600',
+            color: '#6B7280',
+            textAlign: 'center',
+            lineHeight: 24,
+            marginBottom: 32,
+          }}
+        >
+          Your story companion is here!
+        </Animated.Text>
+
+        <Animated.View
+          entering={FadeInUp.delay(1500).springify()}
+        >
+          <ChunkyButton
+            onPress={onDismiss}
+            bgColor="#10B981"
+            borderColor="#059669"
+            size="large"
+          >
+            <View style={{ paddingHorizontal: 32, paddingVertical: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+              <Text style={{ fontSize: 20, fontWeight: '800', color: 'white' }}>
+                Let's Go!
+              </Text>
+            </View>
+          </ChunkyButton>
+        </Animated.View>
+      </View>
+    </Animated.View>
   );
 };
 
 export default function MagicMomentScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { data } = useOnboarding();
+  const { data, updateData } = useOnboarding();
   const [phase, setPhase] = useState<'input' | 'recording' | 'generating' | 'preview'>('input');
+  const [showMascotReveal, setShowMascotReveal] = useState(false);
+  const [mascotRevealed, setMascotRevealed] = useState(false);
 
-  // Text input state
   const [promptText, setPromptText] = useState('');
 
-  // Generated teaser state
   const [generatedTeaser, setGeneratedTeaser] = useState<{ title: string; teaserText: string } | null>(null);
+  const [teaserId, setTeaserId] = useState<Id<"onboardingTeasers"> | null>(null);
   const [generationError, setGenerationError] = useState<string | null>(null);
 
-  // Convex action for teaser generation
   const generateTeaser = useAction(api.storyGenerationActions.generateOnboardingTeaser);
+  const retryMascotJob = useMutation(api.mascotGeneration.retryMascotJob);
+  const queueTeaserImage = useMutation(api.storyGeneration.queueOnboardingTeaserImage);
+  const saveGeneratedMascot = useMutation(api.onboarding.saveGeneratedMascot);
 
-  // Get selected avatar
+  const mascotJob = useQuery(
+    api.mascotGeneration.getMascotJob,
+    data.mascotJobId ? { jobId: data.mascotJobId as Id<"mascotJobs"> } : "skip"
+  );
+  const teaserRecord = useQuery(
+    api.storyGeneration.getOnboardingTeaser,
+    teaserId ? { teaserId } : "skip"
+  );
+
+  const [mascotJobError, setMascotJobError] = useState<string | null>(null);
+  const [isRetrying, setIsRetrying] = useState(false);
+  const [isRetryingTeaserImage, setIsRetryingTeaserImage] = useState(false);
+  const [isQueuingTeaserImage, setIsQueuingTeaserImage] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      const subscription = BackHandler.addEventListener('hardwareBackPress', () => true);
+      return () => subscription.remove();
+    }, [])
+  );
+
+  useEffect(() => {
+    if (mascotJob?.status === "complete" && mascotJob.resultImageUrl && mascotJob.resultStorageId && !mascotRevealed) {
+      updateData({
+        generatedMascotId: mascotJob.resultStorageId,
+        generatedMascotUrl: mascotJob.resultImageUrl,
+      });
+      
+      // Persist the generated mascot to the database (onboardingResponses table)
+      // This ensures the mascot shows up in "My Room" even after app restart
+      saveGeneratedMascot({ storageId: mascotJob.resultStorageId })
+        .catch((error) => {
+          // Don't block the flow if this fails - the mascot is still in local state
+          console.warn("Failed to persist mascot to database:", error);
+        });
+      
+      setMascotJobError(null);
+      setMascotRevealed(true);
+    } else if (mascotJob?.status === "failed") {
+      setMascotJobError(mascotJob.error || "Mascot generation failed");
+    }
+  }, [mascotJob?.status, mascotJob?.resultImageUrl, mascotJob?.resultStorageId, mascotJob?.error, mascotRevealed, updateData, saveGeneratedMascot]);
+
+  const teaserImageStatus = teaserRecord?.teaserImageStatus ?? null;
+  const teaserImageUrl = teaserRecord?.teaserImageUrl ?? null;
+  const teaserImageError = teaserRecord?.teaserImageStatus === "failed"
+    ? teaserRecord.teaserImageError || "Cover image generation failed"
+    : null;
+  const teaserDisplay = generatedTeaser ?? (teaserRecord ? {
+    title: teaserRecord.title,
+    teaserText: teaserRecord.teaserText,
+  } : null);
+
+  const mascotReady = !!data.generatedMascotId;
+  const teaserTextReady = !!teaserDisplay;
+  const teaserImageReady = teaserImageStatus === "complete" && !!teaserImageUrl;
+  const allAssetsReady = mascotReady && teaserTextReady && teaserImageReady;
+
+  useEffect(() => {
+    if (!teaserId || !data.generatedMascotId || isQueuingTeaserImage) return;
+    if (teaserImageStatus && teaserImageStatus !== "failed") return;
+
+    const queueImage = async () => {
+      setIsQueuingTeaserImage(true);
+      try {
+        const result = await queueTeaserImage({
+          teaserId,
+          mascotStorageId: data.generatedMascotId as Id<"_storage">,
+        });
+        if (!result.success && result.error) {
+          console.error("Failed to queue teaser image:", result.error);
+        }
+      } catch (error) {
+        console.error("Failed to queue teaser image:", error);
+      } finally {
+        setIsQueuingTeaserImage(false);
+      }
+    };
+
+    queueImage();
+  }, [teaserId, data.generatedMascotId, teaserImageStatus, isQueuingTeaserImage, queueTeaserImage]);
+
+  useEffect(() => {
+    if (phase !== 'generating') return;
+    if (!allAssetsReady || showMascotReveal) return;
+    setShowMascotReveal(true);
+  }, [phase, allAssetsReady, showMascotReveal]);
+
+  const handleRetryMascotJob = async () => {
+    if (!data.mascotJobId || isRetrying) return;
+    setIsRetrying(true);
+    setMascotJobError(null);
+    try {
+      const result = await retryMascotJob({ jobId: data.mascotJobId as Id<"mascotJobs"> });
+      if (!result.success) {
+        setMascotJobError(result.error || "Retry failed");
+      }
+    } catch (error) {
+      setMascotJobError("Failed to retry. Please try again.");
+    } finally {
+      setIsRetrying(false);
+    }
+  };
+
+  const handleRetryTeaserImage = async () => {
+    if (!teaserId || !data.generatedMascotId || isRetryingTeaserImage) return;
+    setIsRetryingTeaserImage(true);
+    try {
+      const result = await queueTeaserImage({
+        teaserId,
+        mascotStorageId: data.generatedMascotId as Id<"_storage">,
+      });
+      if (!result.success) {
+        console.error("Failed to retry teaser image:", result.error);
+      }
+    } catch (error) {
+      console.error("Failed to retry teaser image:", error);
+    } finally {
+      setIsRetryingTeaserImage(false);
+    }
+  };
+
   const selectedAvatarData = BASE_AVATARS.find(a => a.id === data.avatarId) || BASE_AVATARS[0];
 
-  // Voice recording handler (disabled by feature flag)
+  const mascotImage = data.generatedMascotUrl
+    ? { uri: data.generatedMascotUrl }
+    : selectedAvatarData.image ?? require('@/assets/images/friendly-star.png');
+
+  const mascotName = data.mascotName || selectedAvatarData.name || 'Your Friend';
+  const activeGenerationError = mascotJobError ?? teaserImageError;
+  const isMascotGenerationError = !!mascotJobError;
+  const isRetryingActive = isMascotGenerationError ? isRetrying : isRetryingTeaserImage;
+  const retryHandler = isMascotGenerationError ? handleRetryMascotJob : handleRetryTeaserImage;
+
+  const handleMascotRevealDismiss = useCallback(() => {
+    setShowMascotReveal(false);
+    if (allAssetsReady) {
+      setPhase('preview');
+    }
+  }, [allAssetsReady]);
+
   const handleAvatarPress = () => {
     if (!ENABLE_VOICE_INPUT) return;
     if (phase === 'input') {
@@ -467,23 +657,19 @@ export default function MagicMomentScreen() {
   const finishRecording = () => {
     if (!ENABLE_VOICE_INPUT) return;
     setPhase('generating');
-    // Voice recording would be processed here
-    setTimeout(() => {
-      setPhase('preview');
-    }, 10000);
   };
 
-  // Text input submission handler
   const handleSubmitPrompt = async () => {
     if (!promptText.trim() || promptText.length < 3) return;
 
     setPhase('generating');
     setGenerationError(null);
+    setGeneratedTeaser(null);
+    setTeaserId(null);
 
     try {
-      // Use a temporary identifier since email is collected during auth (after this screen)
-      // We'll use the child's name + timestamp to create a unique teaser identifier
       const tempTeaserEmail = `teaser-${data.childName || 'child'}-${Date.now()}@temp.local`;
+      const mascotStorageId = data.generatedMascotId ?? mascotJob?.resultStorageId;
 
       const result = await generateTeaser({
         prompt: promptText.trim(),
@@ -491,11 +677,15 @@ export default function MagicMomentScreen() {
         childAge: data.childAge || '5',
         gender: data.gender || 'child',
         email: tempTeaserEmail,
+        mascotName: data.mascotName || undefined,
+        mascotStorageId: mascotStorageId ? (mascotStorageId as Id<"_storage">) : undefined,
       });
 
       if (result.success && result.teaser) {
         setGeneratedTeaser(result.teaser);
-        setPhase('preview');
+        if (result.teaserId) {
+          setTeaserId(result.teaserId);
+        }
       } else {
         setGenerationError(result.error || 'Something went wrong');
         setPhase('input');
@@ -507,35 +697,18 @@ export default function MagicMomentScreen() {
     }
   };
 
-  const handleBack = () => {
-    if (phase === 'recording') {
-      setPhase('input');
-    } else {
-      router.back();
-    }
-  };
-
   return (
-    <LinearGradient
-      colors={['#FEF7ED', '#FFF7ED', '#FFFBEB']}
-      style={{ flex: 1 }}
-    >
-      {/* Header */}
-      <View style={{
-        paddingTop: insets.top + 20,
-        paddingHorizontal: 20,
-        paddingBottom: 16,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        zIndex: 10,
-      }}>
-        <ChunkyButton onPress={handleBack} bgColor="#FFFFFF" borderColor="#E5E7EB" size="small">
-          <View style={{ padding: 10 }}>
-            <Ionicons name="arrow-back" size={24} color="#4B5563" />
-          </View>
-        </ChunkyButton>
-      </View>
+    <>
+      <Stack.Screen options={{ gestureEnabled: false }} />
+      <LinearGradient
+        colors={['#FEF7ED', '#FFF7ED', '#FFFBEB']}
+        style={{ flex: 1 }}
+      >
+        {/* Header spacer */}
+        <View style={{
+          paddingTop: insets.top + 20,
+          paddingBottom: 16,
+        }} />
 
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 }}>
 
@@ -543,27 +716,17 @@ export default function MagicMomentScreen() {
         {(phase === 'input' || phase === 'recording') && (
           <Animated.View entering={FadeIn} exiting={FadeOut} style={{ alignItems: 'center', width: '100%' }}>
 
-            {/* Avatar Display */}
+            {/* Star Display */}
             <View style={{ marginBottom: 24 }}>
               <View style={{
-                width: 140,
-                height: 140,
-                borderRadius: 70,
-                backgroundColor: '#EDE9FE',
-                borderWidth: 5,
-                borderColor: '#DDD6FE',
+                width: 180,
+                height: 180,
                 alignItems: 'center',
                 justifyContent: 'center',
-                overflow: 'hidden',
-                shadowColor: '#7C3AED',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.15,
-                shadowRadius: 8,
-                elevation: 8,
               }}>
                 <Image
-                  source={selectedAvatarData.image}
-                  style={{ width: 100, height: 100 }}
+                  source={require('@/assets/images/friendly-star.png')}
+                  style={{ width: '100%', height: '100%' }}
                   resizeMode="contain"
                 />
               </View>
@@ -686,32 +849,103 @@ export default function MagicMomentScreen() {
           </Animated.View>
         )}
 
-        {/* PHASE 3: GENERATING */}
         {phase === 'generating' && (
           <Animated.View entering={FadeIn} exiting={FadeOut} style={{ alignItems: 'center', width: '100%' }}>
+            {activeGenerationError ? (
+              <Animated.View entering={FadeIn} style={{ alignItems: 'center', width: '100%', paddingHorizontal: 20 }}>
+                <View style={{
+                  width: 100,
+                  height: 100,
+                  borderRadius: 50,
+                  backgroundColor: '#FEE2E2',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: 24,
+                }}>
+                  <Ionicons name="alert-circle" size={48} color="#EF4444" />
+                </View>
 
-            {/* Animated Icon / Image */}
-            <Animated.View
-              style={{ marginBottom: 40 }}
-              entering={FadeInDown.springify()}
-            >
-              <Image
-                source={require('../../../assets/images/shooting-star.png')}
-                style={{ width: 160, height: 160 }}
-                resizeMode="contain"
-              />
-            </Animated.View>
+                <Text style={{
+                  fontSize: 22,
+                  fontWeight: '800',
+                  color: '#1F2937',
+                  textAlign: 'center',
+                  marginBottom: 8,
+                }}>
+                  Oops! Something went wrong
+                </Text>
 
-            {/* Rotating Loading Text */}
-            <LoadingMessages />
+                <Text style={{
+                  fontSize: 16,
+                  color: '#6B7280',
+                  textAlign: 'center',
+                  marginBottom: 24,
+                  lineHeight: 24,
+                }}>
+                  {activeGenerationError}
+                </Text>
 
-            {/* Custom Progress Bar */}
-            <ProgressBar />
+                <ChunkyButton
+                  onPress={retryHandler}
+                  bgColor="#7C3AED"
+                  borderColor="#5B21B6"
+                  size="large"
+                  disabled={isRetryingActive}
+                  style={{ width: '100%' }}
+                >
+                  <View style={{ padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+                    <Ionicons name="refresh" size={22} color="white" />
+                    <Text style={{ fontSize: 18, fontWeight: '700', color: 'white' }}>
+                      {isRetryingActive ? 'Retrying...' : 'Try Again'}
+                    </Text>
+                  </View>
+                </ChunkyButton>
 
+                <Pressable onPress={() => setPhase('input')} style={{ marginTop: 16, padding: 12 }}>
+                  <Text style={{ fontSize: 16, color: '#7C3AED', fontWeight: '600' }}>
+                    Go Back
+                  </Text>
+                </Pressable>
+              </Animated.View>
+            ) : (
+              <>
+                <Animated.View
+                  style={{ marginBottom: 32 }}
+                  entering={FadeInDown.springify()}
+                >
+                  <StoryGenerationGrid
+                    progress={100}
+                    onComplete={() => { }}
+                  />
+                </Animated.View>
+
+                <Animated.Text
+                  entering={FadeInUp.delay(200)}
+                  style={{
+                    fontSize: 22,
+                    fontWeight: '800',
+                    color: '#1F2937',
+                    textAlign: 'center',
+                  }}
+                >
+                  Creating your magical story...
+                </Animated.Text>
+                <Animated.Text
+                  entering={FadeInUp.delay(400)}
+                  style={{
+                    fontSize: 16,
+                    color: '#7C3AED',
+                    fontWeight: '600',
+                    marginTop: 8,
+                  }}
+                >
+                  ✨ This is going to be amazing! ✨
+                </Animated.Text>
+              </>
+            )}
           </Animated.View>
         )}
 
-        {/* PHASE 4: PREVIEW */}
         {phase === 'preview' && (
           <Animated.View
             entering={FadeIn.duration(600)}
@@ -774,15 +1008,25 @@ export default function MagicMomentScreen() {
                     borderBottomWidth: 1,
                     borderBottomColor: '#EDE9FE',
                   }}>
-                    <Text style={{ fontSize: 80 }}>📖</Text>
+                    {teaserImageUrl ? (
+                      <Image
+                        source={{ uri: teaserImageUrl }}
+                        style={{ width: '100%', height: '100%' }}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <>
+                        <Text style={{ fontSize: 80 }}>📖</Text>
 
-                    {/* Simple decorative sparkles */}
-                    <View style={{ position: 'absolute', top: 20, right: 30 }}>
-                      <Ionicons name="sparkles" size={24} color="#C4B5FD" />
-                    </View>
-                    <View style={{ position: 'absolute', bottom: 30, left: 30 }}>
-                      <Ionicons name="sparkles" size={20} color="#DDD6FE" />
-                    </View>
+                        {/* Simple decorative sparkles */}
+                        <View style={{ position: 'absolute', top: 20, right: 30 }}>
+                          <Ionicons name="sparkles" size={24} color="#C4B5FD" />
+                        </View>
+                        <View style={{ position: 'absolute', bottom: 30, left: 30 }}>
+                          <Ionicons name="sparkles" size={20} color="#DDD6FE" />
+                        </View>
+                      </>
+                    )}
                   </View>
 
                   {/* Story Content Teaser */}
@@ -796,7 +1040,7 @@ export default function MagicMomentScreen() {
                       marginBottom: 16,
                       textAlign: 'center',
                     }}>
-                      {generatedTeaser?.title || 'Your Magical Story'}
+                      {teaserDisplay?.title || 'Your Magical Story'}
                     </Text>
 
                     {/* Divider */}
@@ -816,9 +1060,9 @@ export default function MagicMomentScreen() {
                       fontFamily: 'System',
                     }}>
                       <Text style={{ fontSize: 24, color: '#7C3AED', fontWeight: 'bold' }}>
-                        {generatedTeaser?.teaserText?.charAt(0) || 'O'}
+                        {teaserDisplay?.teaserText?.charAt(0) || 'O'}
                       </Text>
-                      {generatedTeaser?.teaserText?.slice(1) || 'nce upon a time, a wonderful adventure was about to begin...'}
+                      {teaserDisplay?.teaserText?.slice(1) || 'nce upon a time, a wonderful adventure was about to begin...'}
                     </Text>
 
                     {/* Fade out effect at the bottom of the text */}
@@ -880,6 +1124,15 @@ export default function MagicMomentScreen() {
           </Animated.View>
         )}
       </View>
-    </LinearGradient>
+
+      {showMascotReveal && (
+        <MascotRevealOverlay
+          mascotImage={mascotImage}
+          mascotName={mascotName}
+          onDismiss={handleMascotRevealDismiss}
+        />
+      )}
+      </LinearGradient>
+    </>
   );
 }
