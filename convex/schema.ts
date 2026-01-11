@@ -56,6 +56,7 @@ export default defineSchema({
     struggleAreas: v.array(v.string()),
     struggleFrequency: v.string(),
     moralScore: v.number(),
+    mascotName: v.optional(v.string()),
     generatedMascotId: v.optional(v.id("_storage")),
     // Wardrobe unlock - unlocked after reading 90%+ of a story
     hasUnlockedWardrobe: v.optional(v.boolean()),

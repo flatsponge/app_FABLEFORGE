@@ -41,6 +41,8 @@ type OnboardingData = {
     avatarId: string;
     lockedCosmeticClicked: boolean;
     audioEnabled: boolean;
+    // Mascot Name
+    mascotName?: string;
     // Generated mascot (AI-generated character)
     generatedMascotId?: string;
     generatedMascotUrl?: string;
@@ -84,6 +86,7 @@ const defaultData: OnboardingData = {
     avatarId: 'bears',
     lockedCosmeticClicked: false,
     audioEnabled: false,
+    mascotName: '',
     generatedMascotId: undefined,
     generatedMascotUrl: undefined,
     email: undefined,

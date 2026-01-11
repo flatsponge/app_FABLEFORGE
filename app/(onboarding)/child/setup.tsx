@@ -89,19 +89,9 @@ export default function ChildSetupScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const { data, updateData } = useOnboarding();
-    const [timerComplete, setTimerComplete] = useState(false);
-
-    // Enable Continue button after 5 seconds
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setTimerComplete(true);
-        }, 5000);
-
-        return () => clearTimeout(timer);
-    }, []);
-
-    // Continue is enabled if audio is enabled OR 5 seconds have passed
-    const canContinue = data.audioEnabled || timerComplete;
+    
+    // Always allow continue in this new design, it's just instructions
+    const canContinue = true; 
 
     return (
         <LinearGradient
@@ -109,109 +99,98 @@ export default function ChildSetupScreen() {
             style={{ flex: 1 }}
         >
             <View style={{ flex: 1, paddingTop: insets.top }}>
-                {/* Main Content */}
-                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24 }}>
-                    {/* Engaging Header */}
+                <View style={{ flex: 1, paddingHorizontal: 24 }}>
+                    
+                    {/* Header Section */}
                     <Animated.View
                         entering={FadeInDown.delay(200).springify()}
-                        style={{ alignItems: 'center', marginBottom: 40 }}
+                        style={{ alignItems: 'center', marginTop: 20, marginBottom: 30 }}
                     >
-                        {/* Shooting Star Image */}
-                        <View style={{ marginBottom: 16 }}>
-                            <Image
-                                source={require('../../../assets/images/shooting-star.png')}
-                                style={{ width: 140, height: 140 }}
-                                resizeMode="contain"
-                            />
-                        </View>
-
-                        {/* Title with gradient feel */}
+                        <Image
+                            source={require('../../../assets/images/shooting-star.png')}
+                            style={{ width: 120, height: 120, marginBottom: 16 }}
+                            resizeMode="contain"
+                        />
                         <Text style={{
-                            fontSize: 34,
+                            fontSize: 32,
                             fontWeight: '900',
                             color: '#1F2937',
                             textAlign: 'center',
                             letterSpacing: -1,
                             marginBottom: 8,
                         }}>
-                            Let's Create Magic!
-                        </Text>
-
-                        {/* Subtitle */}
-                        <Text style={{
-                            fontSize: 16,
-                            color: '#6B7280',
-                            textAlign: 'center',
-                            lineHeight: 24,
-                            paddingHorizontal: 16,
-                        }}>
-                            Time to build your child's hero character.{'\n'}Here's how to get started:
+                            We're about to build your child's hero.
                         </Text>
                     </Animated.View>
 
-                    {/* Options List */}
+                    {/* Main "How to" Card */}
                     <Animated.View
-                        entering={FadeInUp.delay(500)}
-                        style={{ width: '100%', marginBottom: 40 }}
+                        entering={FadeInUp.delay(400).springify()}
+                        style={{
+                            backgroundColor: 'white',
+                            borderRadius: 24,
+                            padding: 24,
+                            shadowColor: '#000',
+                            shadowOffset: { width: 0, height: 4 },
+                            shadowOpacity: 0.05,
+                            shadowRadius: 12,
+                            elevation: 3,
+                            marginBottom: 24,
+                            borderWidth: 1,
+                            borderColor: '#F3F4F6'
+                        }}
                     >
-                        {/* Option 1: Recommended */}
-                        <View style={{ flexDirection: 'row', marginBottom: 28 }}>
-                            <View style={{ marginRight: 16, alignItems: 'center' }}>
-                                <View style={{
-                                    backgroundColor: '#EDE9FE',
-                                    width: 44,
-                                    height: 44,
-                                    borderRadius: 12,
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                }}>
-                                    <Ionicons name="people" size={24} color="#7C3AED" />
-                                </View>
-                                <View style={{ width: 2, height: 20, backgroundColor: '#E5E7EB', marginTop: 8 }} />
+                        {/* Primary Option: Together */}
+                        <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 24 }}>
+                            <View style={{
+                                backgroundColor: '#F5F3FF',
+                                width: 48,
+                                height: 48,
+                                borderRadius: 16,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                marginRight: 16
+                            }}>
+                                <Ionicons name="people" size={26} color="#7C3AED" />
                             </View>
                             <View style={{ flex: 1 }}>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
-                                    <Text style={{ fontSize: 18, fontWeight: '700', color: '#1F2937' }}>
-                                        Together with Your Child
+                                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                                    <Text style={{ fontSize: 18, fontWeight: '800', color: '#1F2937' }}>
+                                        Do it Together
                                     </Text>
                                     <View style={{
                                         backgroundColor: '#7C3AED',
                                         paddingHorizontal: 8,
-                                        paddingVertical: 3,
-                                        borderRadius: 6,
-                                        marginLeft: 10
+                                        paddingVertical: 2,
+                                        borderRadius: 100,
+                                        marginLeft: 8
                                     }}>
-                                        <Text style={{ fontSize: 10, fontWeight: '800', color: 'white' }}>
-                                            BEST
-                                        </Text>
+                                        <Text style={{ fontSize: 10, fontWeight: '800', color: 'white' }}>BEST</Text>
                                     </View>
                                 </View>
                                 <Text style={{ fontSize: 15, color: '#4B5563', lineHeight: 22 }}>
-                                    Do this step together with your child. Let them pick their favorite character—it's more fun!
+                                    Grab your child! Let them pick their favorite character—it's way more fun.
                                 </Text>
                             </View>
                         </View>
 
-                        {/* Option 2: Alternative */}
-                        <View style={{ flexDirection: 'row' }}>
-                            <View style={{ marginRight: 16 }}>
-                                <View style={{
-                                    backgroundColor: '#F3F4F6',
-                                    width: 44,
-                                    height: 44,
-                                    borderRadius: 12,
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                }}>
-                                    <Ionicons name="person" size={24} color="#9CA3AF" />
-                                </View>
+                        {/* Divider */}
+                        <View style={{ height: 1, backgroundColor: '#F3F4F6', marginLeft: 64, marginBottom: 20 }} />
+
+                        {/* Secondary Option: Solo */}
+                        <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+                            <View style={{
+                                width: 48,
+                                height: 48,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                marginRight: 16
+                            }}>
+                                <Ionicons name="person-outline" size={24} color="#9CA3AF" />
                             </View>
-                            <View style={{ flex: 1 }}>
-                                <Text style={{ fontSize: 18, fontWeight: '700', color: '#4B5563', marginBottom: 6 }}>
-                                    Set Up Yourself
-                                </Text>
+                            <View style={{ flex: 1, justifyContent: 'center', minHeight: 48 }}>
                                 <Text style={{ fontSize: 15, color: '#6B7280', lineHeight: 22 }}>
-                                    If they aren't around, you can create their character for them.
+                                    <Text style={{ fontWeight: '600', color: '#4B5563' }}>Or set it up yourself</Text> if they aren't around right now.
                                 </Text>
                             </View>
                         </View>
@@ -265,7 +244,7 @@ export default function ChildSetupScreen() {
                                     <Text style={{ fontSize: 12, color: '#6B7280', lineHeight: 16 }}>
                                         {data.audioEnabled
                                             ? '✓ Your child can speak story ideas naturally!'
-                                            : 'Used for story suggestions from your child.'}
+                                            : 'Used for story suggestions from your child. Without voice, your child must type or tap to suggest story ideas.'}
                                     </Text>
                                 </View>
                             </View>
@@ -280,13 +259,7 @@ export default function ChildSetupScreen() {
                         </View>
 
                         {/* Benefits / Warning */}
-                        {!data.audioEnabled ? (
-                            <View style={{ marginTop: 12, backgroundColor: '#FEF2F2', borderRadius: 8, padding: 10 }}>
-                                <Text style={{ fontSize: 11, color: '#991B1B', lineHeight: 16, fontWeight: '500' }}>
-                                    Without voice, your child must type or tap to suggest story ideas. Voice input makes it easier and more engaging.
-                                </Text>
-                            </View>
-                        ) : (
+                        {data.audioEnabled && (
                             <View style={{ marginTop: 12, backgroundColor: '#F0FDF4', borderRadius: 8, padding: 10, borderWidth: 1, borderColor: '#BBF7D0' }}>
                                 <Text style={{ fontSize: 10, color: '#166534', lineHeight: 14 }}>
                                     <Text style={{ fontWeight: '700' }}>Consent & Privacy: </Text>
@@ -296,43 +269,37 @@ export default function ChildSetupScreen() {
                         )}
                     </Animated.View>
 
-                    {/* CTA Button */}
-                    <Animated.View
-                        entering={FadeInUp.delay(600).springify()}
-                        style={{ width: '100%' }}
-                    >
-                        <View style={{ opacity: canContinue ? 1 : 0.5 }}>
-                            <ChunkyButton
-                                onPress={canContinue ? () => router.push('/(onboarding)/child/avatar') : undefined}
-                                bgColor={canContinue ? '#22C55E' : '#9CA3AF'}
-                                borderColor={canContinue ? '#16A34A' : '#6B7280'}
-                                size="large"
-                            >
-                                <View style={{
-                                    flexDirection: 'row',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    padding: 18,
-                                    gap: 10
-                                }}>
-                                    <Ionicons name="sparkles" size={24} color="white" />
-                                    <Text style={{
-                                        fontSize: 20,
-                                        fontWeight: '800',
-                                        color: 'white',
-                                        letterSpacing: 0.5,
-                                    }}>
-                                        Continue
-                                    </Text>
-                                    <Ionicons name="arrow-forward" size={24} color="white" />
-                                </View>
-                            </ChunkyButton>
-                        </View>
-                    </Animated.View>
                 </View>
 
-                {/* Bottom safe area */}
-                <View style={{ height: insets.bottom + 20 }} />
+                {/* Bottom CTA */}
+                <View style={{ paddingHorizontal: 24, paddingBottom: insets.bottom + 20 }}>
+                    <Animated.View entering={FadeInUp.delay(600).springify()}>
+                        <ChunkyButton
+                            onPress={() => router.push('/(onboarding)/child/mascot-name')}
+                            bgColor="#22C55E"
+                            borderColor="#16A34A"
+                            size="large"
+                        >
+                            <View style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                padding: 18,
+                                gap: 10
+                            }}>
+                                <Text style={{
+                                    fontSize: 20,
+                                    fontWeight: '800',
+                                    color: 'white',
+                                    letterSpacing: 0.5,
+                                }}>
+                                    Let's Start!
+                                </Text>
+                                <Ionicons name="arrow-forward" size={24} color="white" />
+                            </View>
+                        </ChunkyButton>
+                    </Animated.View>
+                </View>
             </View>
         </LinearGradient>
     );

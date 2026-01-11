@@ -38,6 +38,7 @@ export const saveOnboardingResponses = mutation({
     struggleAreas: v.array(v.string()),
     struggleFrequency: v.string(),
     moralScore: v.number(),
+    mascotName: v.optional(v.string()),
     generatedMascotId: v.optional(v.id("_storage")),
   },
   returns: v.id("onboardingResponses"),
@@ -72,6 +73,31 @@ export const saveGeneratedMascot = mutation({
 
     await ctx.db.patch(onboarding._id, {
       generatedMascotId: args.storageId,
+    });
+
+    return true;
+  },
+});
+
+export const updateMascotName = mutation({
+  args: {
+    mascotName: v.string(),
+  },
+  returns: v.boolean(),
+  handler: async (ctx, args) => {
+    const user = await requireAuthUser(ctx);
+
+    const onboarding = await ctx.db
+      .query("onboardingResponses")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .unique();
+
+    if (!onboarding) {
+      throw new Error("Onboarding record not found");
+    }
+
+    await ctx.db.patch(onboarding._id, {
+      mascotName: args.mascotName,
     });
 
     return true;
