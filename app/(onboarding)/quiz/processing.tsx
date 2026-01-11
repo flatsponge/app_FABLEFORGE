@@ -112,7 +112,7 @@ export default function ProcessingScreen() {
 
         // Navigation
         const navigationTimer = setTimeout(() => {
-            router.push('/(onboarding)/parent/results-intro');
+            router.push('/(onboarding)/parent/review');
         }, TOTAL_DURATION + 500);
 
         return () => {

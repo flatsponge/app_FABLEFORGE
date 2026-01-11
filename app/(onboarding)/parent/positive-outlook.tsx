@@ -32,7 +32,7 @@ export default function PositiveOutlookScreen() {
     }));
 
     const handleNext = () => {
-        router.push('/(onboarding)/parent/review');
+        router.push('/(onboarding)/paywall');
     };
 
     return (

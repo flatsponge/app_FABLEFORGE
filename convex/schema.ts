@@ -60,6 +60,9 @@ export default defineSchema({
     generatedMascotId: v.optional(v.id("_storage")),
     // Wardrobe unlock - unlocked after reading 90%+ of a story
     hasUnlockedWardrobe: v.optional(v.boolean()),
+    // User acquisition tracking
+    trafficSource: v.optional(v.string()),
+    referralCode: v.optional(v.string()),
   }).index("by_user", ["userId"]),
 
   userSkills: defineTable({

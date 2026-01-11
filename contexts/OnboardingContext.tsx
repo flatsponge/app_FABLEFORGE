@@ -48,6 +48,9 @@ type OnboardingData = {
     generatedMascotUrl?: string;
     // Email (for teaser lookup after auth)
     email?: string;
+    // User acquisition tracking
+    trafficSource?: string;
+    referralCode?: string;
 };
 
 type OnboardingContextType = {

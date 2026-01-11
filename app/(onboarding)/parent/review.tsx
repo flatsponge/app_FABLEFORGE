@@ -1,123 +1,118 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, Image } from 'react-native';
+import React from 'react';
+import { View, StyleSheet, Text, ScrollView, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
-// Try to import expo-store-review (not available in Expo Go)
-let StoreReview: typeof import('expo-store-review') | null = null;
-try {
-    StoreReview = require('expo-store-review');
-} catch {
-    // Module not available in Expo Go - review prompt will be skipped
-    console.warn('expo-store-review not available - review prompt disabled');
-}
+const TESTIMONIALS = [
+    {
+        id: 1,
+        name: "Sarah J.",
+        role: "Mom of 2",
+        text: "It used to take 45 mins to put him to bed. Now he asks for StoryTime and is asleep in 10 minutes!",
+        stars: 5,
+        color: "#dcfce7", // green-100
+        iconColor: "#16a34a" // green-600
+    },
+    {
+        id: 2,
+        name: "Michael T.",
+        role: "Dad of 5-year-old",
+        text: "The personalized stories are magic. He actually listens to the lessons about sharing because the hero is HIM.",
+        stars: 5,
+        color: "#dbeafe", // blue-100
+        iconColor: "#2563eb" // blue-600
+    },
+    {
+        id: 3,
+        name: "Jessica L.",
+        role: "Mom of 3",
+        text: "Finally, screen time I don't feel guilty about. It's calming, educational, and brings us closer together.",
+        stars: 5,
+        color: "#f3e8ff", // purple-100
+        iconColor: "#9333ea" // purple-600
+    }
+];
 
 export default function ReviewScreen() {
     const router = useRouter();
-    const [rating, setRating] = useState(0);
-    const [hasRated, setHasRated] = useState(false);
 
-    const handleRating = async (selectedRating: number) => {
-        setRating(selectedRating);
-        setHasRated(true);
-
-        if (selectedRating >= 4) {
-            // Delay slightly for UX, then request review
-            setTimeout(async () => {
-                if (StoreReview && await StoreReview.hasAction()) {
-                    try {
-                        await StoreReview.requestReview();
-                    } catch (e) {
-                        console.log('Error requesting review', e);
-                    }
-                }
-                // Navigate after attempt
-                setTimeout(() => {
-                    router.push('/(onboarding)/paywall');
-                }, 1000);
-            }, 800);
-        } else {
-            // If low rating, just move on (or could ask for feedback form)
-            setTimeout(() => {
-                router.push('/(onboarding)/paywall');
-            }, 800);
-        }
+    const handleNext = () => {
+        router.push('/(onboarding)/parent/results-intro');
     };
 
     return (
         <OnboardingLayout
             showProgressBar={false}
             progress={1.0}
-            showNextButton={false}
+            onNext={handleNext}
+            nextLabel="View My Analysis"
             isScrollable={true}
         >
             <View style={styles.container}>
-                <Animated.View entering={FadeInDown.delay(200)} style={styles.content}>
-                    {/* Social Proof Badge */}
-                    <View style={styles.socialProofBadge}>
-                        <View style={styles.avatarsRow}>
-                            {/* Placeholder avatars - using colors/icons if no images available */}
-                            {[1, 2, 3].map((i) => (
-                                <View key={i} style={[styles.avatarPlaceholder, { backgroundColor: i === 1 ? '#fca5a5' : i === 2 ? '#86efac' : '#93c5fd' }]}>
-                                    <Text style={styles.avatarText}>{i === 1 ? 'S' : i === 2 ? 'M' : 'J'}</Text>
-                                </View>
-                            ))}
-                        </View>
-                        <Text style={styles.socialProofText}>Join 50,000+ Happy Parents</Text>
+                {/* Header Section */}
+                <Animated.View entering={FadeInDown.delay(200)} style={styles.header}>
+                    <View style={styles.ratingBadge}>
+                        <Ionicons name="star" size={16} color="#b45309" />
+                        <Text style={styles.ratingText}>4.9/5 Average Rating</Text>
                     </View>
-
-                    <OnboardingTitle style={styles.title}>How is your experience so far?</OnboardingTitle>
+                    
+                    <OnboardingTitle style={styles.title}>
+                        Join 50,000+ Happy Parents
+                    </OnboardingTitle>
+                    
                     <OnboardingBody style={styles.subtitle}>
-                        We're helping thousands of families build better habits.
+                        You're in good company. Families everywhere are finding peace and connection with StoryTime.
                     </OnboardingBody>
 
-                    {/* Stars */}
-                    <View style={styles.starsContainer}>
-                        {[1, 2, 3, 4, 5].map((star) => (
-                            <TouchableOpacity
-                                key={star}
-                                onPress={() => handleRating(star)}
-                                activeOpacity={0.7}
+                    {/* Big Stars Visual */}
+                    <View style={styles.bigStarsContainer}>
+                        {[1, 2, 3, 4, 5].map((star, index) => (
+                            <Animated.View 
+                                key={star} 
+                                entering={FadeInUp.delay(400 + (index * 100))}
                             >
-                                <Animated.View entering={ZoomIn.delay(300 + (star * 100))}>
-                                    <Ionicons
-                                        name={star <= rating ? "star" : "star-outline"}
-                                        size={48}
-                                        color="#fbbf24" // amber-400
-                                        style={styles.starIcon}
-                                    />
-                                </Animated.View>
-                            </TouchableOpacity>
+                                <Ionicons name="star" size={32} color="#fbbf24" style={styles.starShadow} />
+                            </Animated.View>
                         ))}
                     </View>
-
-                    {/* Testimonial */}
-                    <Animated.View entering={FadeIn.delay(800)} style={styles.testimonialCard}>
-                        <Text style={styles.testimonialText}>
-                            "This app completely changed our bedtime routine. No more tantrums!"
-                        </Text>
-                        <View style={styles.testimonialAuthor}>
-                            <Ionicons name="star" size={14} color="#fbbf24" />
-                            <Ionicons name="star" size={14} color="#fbbf24" />
-                            <Ionicons name="star" size={14} color="#fbbf24" />
-                            <Ionicons name="star" size={14} color="#fbbf24" />
-                            <Ionicons name="star" size={14} color="#fbbf24" />
-                            <Text style={styles.authorName}>— Emily R.</Text>
-                        </View>
-                    </Animated.View>
-
                 </Animated.View>
 
-                <TouchableOpacity
-                    onPress={() => router.push('/(onboarding)/paywall')}
-                    style={styles.skipButton}
-                >
-                    <Text style={styles.skipText}>Not now</Text>
-                </TouchableOpacity>
+                {/* Testimonials List */}
+                <View style={styles.testimonialsContainer}>
+                    {TESTIMONIALS.map((item, index) => (
+                        <Animated.View 
+                            key={item.id}
+                            entering={FadeInDown.delay(800 + (index * 200))}
+                            style={styles.card}
+                        >
+                            <View style={[styles.quoteIcon, { backgroundColor: item.color }]}>
+                                <Ionicons name="chatbox-ellipses" size={16} color={item.iconColor} />
+                            </View>
+                            <View style={styles.cardContent}>
+                                <View style={styles.cardHeader}>
+                                    <Text style={styles.authorName}>{item.name}</Text>
+                                    <View style={styles.cardStars}>
+                                        {[...Array(item.stars)].map((_, i) => (
+                                            <Ionicons key={i} name="star" size={12} color="#fbbf24" />
+                                        ))}
+                                    </View>
+                                </View>
+                                <Text style={styles.authorRole}>{item.role}</Text>
+                                <Text style={styles.cardText}>"{item.text}"</Text>
+                            </View>
+                        </Animated.View>
+                    ))}
+                </View>
+
+                {/* Bottom Trust Badge */}
+                <Animated.View entering={FadeInDown.delay(1400)} style={styles.trustBadge}>
+                    <Ionicons name="shield-checkmark" size={16} color={OnboardingTheme.Colors.TextSecondary} />
+                    <Text style={styles.trustText}>Verified Reviews from App Store</Text>
+                </Animated.View>
 
             </View>
         </OnboardingLayout>
@@ -126,47 +121,27 @@ export default function ReviewScreen() {
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
         width: '100%',
-        paddingTop: OnboardingTheme.Spacing.xl,
-    },
-    content: {
+        paddingTop: OnboardingTheme.Spacing.md,
         alignItems: 'center',
+    },
+    header: {
+        alignItems: 'center',
+        marginBottom: OnboardingTheme.Spacing.xl,
         width: '100%',
     },
-    socialProofBadge: {
+    ratingBadge: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#f3e8ff', // primary-50
-        paddingVertical: 8,
-        paddingHorizontal: 16,
+        backgroundColor: '#fef3c7', // amber-100
+        paddingVertical: 6,
+        paddingHorizontal: 12,
         borderRadius: 9999,
-        marginBottom: OnboardingTheme.Spacing.lg,
+        marginBottom: OnboardingTheme.Spacing.md,
+        gap: 6,
     },
-    avatarsRow: {
-        flexDirection: 'row',
-        marginRight: 12,
-    },
-    avatarPlaceholder: {
-        width: 24,
-        height: 24,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 2,
-        borderColor: 'white',
-        marginLeft: -8,
-        // First one shouldn't have negative margin ideally, but this stacks them
-    },
-    avatarText: {
-        fontSize: 10,
-        fontWeight: 'bold',
-        color: 'white',
-    },
-    socialProofText: {
-        color: OnboardingTheme.Colors.Primary,
+    ratingText: {
+        color: '#b45309', // amber-700
         fontWeight: 'bold',
         fontSize: 12,
     },
@@ -177,50 +152,83 @@ const styles = StyleSheet.create({
     subtitle: {
         textAlign: 'center',
         color: OnboardingTheme.Colors.TextSecondary,
-        marginBottom: OnboardingTheme.Spacing.xl * 1.5,
+        maxWidth: '90%',
     },
-    starsContainer: {
+    bigStarsContainer: {
         flexDirection: 'row',
-        gap: 12,
-        marginBottom: OnboardingTheme.Spacing.xl * 2,
+        gap: 8,
+        marginTop: OnboardingTheme.Spacing.lg,
     },
-    starIcon: {
+    starShadow: {
         shadowColor: '#fbbf24',
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.5,
-        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
     },
-    testimonialCard: {
-        backgroundColor: '#f9fafb', // gray-50
-        padding: OnboardingTheme.Spacing.lg,
-        borderRadius: OnboardingTheme.Radius.lg,
+    testimonialsContainer: {
         width: '100%',
-        alignItems: 'center',
+        gap: 16,
     },
-    testimonialText: {
-        textAlign: 'center',
-        fontStyle: 'italic',
-        color: '#4b5563', // gray-600
-        marginBottom: OnboardingTheme.Spacing.md,
-        fontSize: 14,
-        lineHeight: 20,
-    },
-    testimonialAuthor: {
+    card: {
+        backgroundColor: 'white',
+        borderRadius: OnboardingTheme.Radius.lg,
+        padding: 16,
         flexDirection: 'row',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 2,
+        borderWidth: 1,
+        borderColor: OnboardingTheme.Colors.Border,
+    },
+    quoteIcon: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
         alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+    },
+    cardContent: {
+        flex: 1,
+    },
+    cardHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 2,
     },
     authorName: {
-        marginLeft: 8,
         fontWeight: 'bold',
-        color: '#374151', // gray-700
+        fontSize: 14,
+        color: OnboardingTheme.Colors.Text,
+    },
+    authorRole: {
         fontSize: 12,
-    },
-    skipButton: {
-        marginTop: 'auto',
-        padding: 16,
-    },
-    skipText: {
         color: OnboardingTheme.Colors.TextSecondary,
-        fontWeight: '500',
+        marginBottom: 8,
+    },
+    cardStars: {
+        flexDirection: 'row',
+        gap: 2,
+    },
+    cardText: {
+        fontSize: 14,
+        color: '#4b5563', // gray-600
+        lineHeight: 20,
+        fontStyle: 'italic',
+    },
+    trustBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 24,
+        marginBottom: 12,
+        gap: 6,
+        opacity: 0.7,
+    },
+    trustText: {
+        fontSize: 12,
+        color: OnboardingTheme.Colors.TextSecondary,
     },
 });

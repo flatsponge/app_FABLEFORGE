@@ -14,13 +14,13 @@ import {
 import { OnboardingTheme } from "../../../constants/OnboardingTheme";
 import { useAuth } from "../../../contexts/AuthContext";
 
-export default function EmailScreen() {
+export default function LoginEmailScreen() {
   const router = useRouter();
   const { signIn } = useAuthActions();
   const { setEmail: setAuthEmail } = useAuth();
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [emailExistsError, setEmailExistsError] = useState(false);
+  const [noAccountError, setNoAccountError] = useState(false);
 
   const isValidEmail = email.includes("@") && email.includes(".");
   const normalizedEmail = email.toLowerCase().trim();
@@ -33,17 +33,17 @@ export default function EmailScreen() {
   const handleNext = async () => {
     if (!isValidEmail || isLoading) return;
 
-    if (emailExists === true) {
-      setEmailExistsError(true);
+    if (emailExists === false) {
+      setNoAccountError(true);
       return;
     }
 
     setIsLoading(true);
-    setEmailExistsError(false);
+    setNoAccountError(false);
     try {
       setAuthEmail(normalizedEmail);
       await signIn("resend-otp", { email: normalizedEmail });
-      router.push("/(onboarding)/auth/code");
+      router.push("/(onboarding)/auth/login-code");
     } catch (error) {
       console.error("Failed to send OTP:", error);
       Alert.alert(
@@ -55,22 +55,23 @@ export default function EmailScreen() {
     }
   };
 
-  const handleSwitchToLogin = () => {
-    router.push("/(onboarding)/auth/login-email");
+  const handleSwitchToSignup = () => {
+    router.push("/(onboarding)/intro/slide-0");
   };
 
   const handleTryDifferentEmail = () => {
     setEmail("");
-    setEmailExistsError(false);
+    setNoAccountError(false);
   };
 
   return (
     <OnboardingLayout
       showProgressBar={false}
-      progress={0.98}
+      progress={0}
       onNext={handleNext}
       nextLabel={isLoading ? "Sending..." : "Continue"}
-      showNextButton={isValidEmail && !emailExistsError}
+      showNextButton={isValidEmail && !noAccountError}
+      onBack={() => router.back()}
     >
       <View style={styles.contentContainer}>
         <Animated.View
@@ -79,7 +80,7 @@ export default function EmailScreen() {
         >
           <View style={styles.iconCircle}>
             <Ionicons
-              name="mail"
+              name="log-in"
               size={40}
               color={OnboardingTheme.Colors.Primary}
             />
@@ -88,13 +89,13 @@ export default function EmailScreen() {
 
         <Animated.View entering={FadeInDown.delay(200).duration(500)}>
           <OnboardingTitle style={styles.title}>
-            What's your email?
+            Welcome back!
           </OnboardingTitle>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(300).duration(500)}>
           <OnboardingBody style={styles.subtitle}>
-            We'll save your progress and send you a verification code.
+            Enter your email to log in to your account.
           </OnboardingBody>
         </Animated.View>
 
@@ -105,15 +106,15 @@ export default function EmailScreen() {
           <View
             style={[
               styles.inputWrapper,
-              isValidEmail && !emailExistsError && styles.inputWrapperValid,
-              emailExistsError && styles.inputWrapperError,
+              isValidEmail && !noAccountError && styles.inputWrapperValid,
+              noAccountError && styles.inputWrapperError,
             ]}
           >
             <Ionicons
               name="mail-outline"
               size={22}
               color={
-                emailExistsError
+                noAccountError
                   ? "#ef4444"
                   : isValidEmail
                     ? OnboardingTheme.Colors.Primary
@@ -125,7 +126,7 @@ export default function EmailScreen() {
               value={email}
               onChangeText={(text) => {
                 setEmail(text);
-                setEmailExistsError(false);
+                setNoAccountError(false);
               }}
               placeholder="parent@example.com"
               placeholderTextColor={OnboardingTheme.Colors.TextSecondary}
@@ -136,16 +137,16 @@ export default function EmailScreen() {
               autoFocus
               editable={!isLoading}
             />
-            {isValidEmail && !emailExistsError && (
+            {isValidEmail && !noAccountError && emailExists === true && (
               <Ionicons name="checkmark-circle" size={24} color="#22c55e" />
             )}
-            {emailExistsError && (
+            {noAccountError && (
               <Ionicons name="alert-circle" size={24} color="#ef4444" />
             )}
           </View>
         </Animated.View>
 
-        {emailExistsError && (
+        {noAccountError && (
           <Animated.View
             entering={FadeIn.duration(300)}
             style={styles.errorContainer}
@@ -153,17 +154,17 @@ export default function EmailScreen() {
             <View style={styles.errorBox}>
               <Ionicons name="information-circle" size={20} color="#dc2626" />
               <Text style={styles.errorText}>
-                This email is already registered. Please try logging in instead or use a different email.
+                No account found with this email. Would you like to create one?
               </Text>
             </View>
             
             <View style={styles.errorActions}>
               <TouchableOpacity
                 style={styles.errorActionButton}
-                onPress={handleSwitchToLogin}
+                onPress={handleSwitchToSignup}
               >
-                <Ionicons name="log-in-outline" size={18} color={OnboardingTheme.Colors.Primary} />
-                <Text style={styles.errorActionText}>Log in instead</Text>
+                <Ionicons name="person-add-outline" size={18} color={OnboardingTheme.Colors.Primary} />
+                <Text style={styles.errorActionText}>Create account</Text>
               </TouchableOpacity>
               
               <TouchableOpacity
@@ -185,7 +186,7 @@ export default function EmailScreen() {
         >
           <Ionicons name="shield-checkmark" size={16} color="#4ade80" />
           <Text style={styles.trustText}>
-            Your email is secure and never shared
+            We'll send a secure verification code
           </Text>
         </Animated.View>
       </View>

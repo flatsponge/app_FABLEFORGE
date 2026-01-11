@@ -115,7 +115,7 @@ export default function OnboardingLayout({
   return (
     <View style={[styles.container, { paddingTop: containerPaddingTop, paddingBottom: insets.bottom, backgroundColor }]}>
       {/* Header */}
-      {showProgressBar && (
+      {showProgressBar ? (
         <View style={styles.header}>
           {showBack ? (
             <TouchableOpacity onPress={handleBack} style={styles.backButton} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
@@ -133,7 +133,13 @@ export default function OnboardingLayout({
           {/* Spacer to balance the layout visually if needed, though flex handles it */}
           <View style={{ width: 24 + OnboardingTheme.Spacing.md }} />
         </View>
-      )}
+      ) : showBack && onBack ? (
+        <View style={styles.headerBackOnly}>
+          <TouchableOpacity onPress={handleBack} style={styles.backButton} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+            <Ionicons name="arrow-back" size={24} color={backButtonColor} />
+          </TouchableOpacity>
+        </View>
+      ) : null}
 
       {/* Content */}
       {isScrollable ? (
@@ -168,6 +174,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: OnboardingTheme.Spacing.lg,
+    paddingTop: OnboardingTheme.Spacing.xs,
+    paddingBottom: OnboardingTheme.Spacing.md,
+    height: 48,
+  },
+  headerBackOnly: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: OnboardingTheme.Spacing.lg,

@@ -9,6 +9,8 @@ import { QuizBackHandlerProvider, useQuizBackHandler } from '../../../contexts/Q
 
 const PROGRESS_MAP: Record<string, number> = {
     'goals': 0.02,
+    'traffic-source': 0.03,
+    'referral-code': 0.04,
     'child-name': 0.05,
     'child-age': 0.10,
     'child-gender': 0.12,

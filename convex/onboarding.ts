@@ -3,6 +3,73 @@ import { v } from "convex/values";
 import { Id } from "./_generated/dataModel";
 import { getAuthUser, requireAuthUser } from "./authHelpers";
 
+/**
+ * Check if an email is already registered in the system.
+ * Used during signup to prevent duplicate accounts.
+ */
+export const checkEmailExists = query({
+  args: { email: v.string() },
+  returns: v.boolean(),
+  handler: async (ctx, args) => {
+    const email = args.email.toLowerCase().trim();
+    const existingUser = await ctx.db
+      .query("users")
+      .withIndex("email", (q) => q.eq("email", email))
+      .first();
+    return existingUser !== null;
+  },
+});
+
+/**
+ * Get onboarding completion status for the authenticated user.
+ * Used after login to determine if user needs to complete onboarding steps.
+ */
+export const getOnboardingStatus = query({
+  args: {},
+  returns: v.union(
+    v.object({
+      hasOnboardingData: v.boolean(),
+      hasMascotName: v.boolean(),
+      hasMascotImage: v.boolean(),
+      isComplete: v.boolean(),
+      childName: v.union(v.string(), v.null()),
+    }),
+    v.null()
+  ),
+  handler: async (ctx) => {
+    const user = await getAuthUser(ctx);
+    if (!user) {
+      return null;
+    }
+
+    const onboarding = await ctx.db
+      .query("onboardingResponses")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .unique();
+
+    if (!onboarding) {
+      return {
+        hasOnboardingData: false,
+        hasMascotName: false,
+        hasMascotImage: false,
+        isComplete: false,
+        childName: null,
+      };
+    }
+
+    const hasMascotName = !!onboarding.mascotName && onboarding.mascotName.trim() !== "";
+    const hasMascotImage = !!onboarding.generatedMascotId;
+
+    return {
+      hasOnboardingData: true,
+      hasMascotName,
+      hasMascotImage,
+      isComplete: hasMascotName && hasMascotImage,
+      childName: onboarding.childName || null,
+    };
+  },
+});
+
 const subSkillValidator = v.object({
   name: v.string(),
   value: v.number(),
@@ -40,6 +107,8 @@ export const saveOnboardingResponses = mutation({
     moralScore: v.number(),
     mascotName: v.optional(v.string()),
     generatedMascotId: v.optional(v.id("_storage")),
+    trafficSource: v.optional(v.string()),
+    referralCode: v.optional(v.string()),
   },
   returns: v.id("onboardingResponses"),
   handler: async (ctx, args) => {

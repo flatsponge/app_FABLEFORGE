@@ -42,8 +42,7 @@ export default function SplashScreen() {
     };
 
     const handleLogin = () => {
-        // Placeholder for login navigation
-        console.log("Navigate to login");
+        router.push('/(onboarding)/auth/login-email');
     };
 
     const handleSkip = () => {

@@ -34,7 +34,7 @@ export default function OnboardingStart() {
 
     const handleNext = () => {
         if (selected.length > 0) {
-            router.push('/(onboarding)/quiz/child-name');
+            router.push('/(onboarding)/quiz/traffic-source');
         }
     };
 
