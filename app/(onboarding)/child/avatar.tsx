@@ -12,9 +12,11 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, {
+  FadeIn, // Add FadeIn
   FadeInDown,
   FadeInUp,
   ZoomIn,
+  FadeOut,
   useAnimatedStyle,
   useSharedValue,
   withSequence,
@@ -136,16 +138,18 @@ const AnimatedAvatarItem = ({
   const scale = useSharedValue(1);
   const translateY = useSharedValue(0);
 
+  // React to selection state changes for smooth, stable animation
+  useEffect(() => {
+    if (isSelected) {
+      scale.value = withSpring(1.05, { damping: 30, stiffness: 300 }); // Stable lift
+      translateY.value = withSpring(-2, { damping: 30, stiffness: 300 });
+    } else {
+      scale.value = withSpring(1, { damping: 30, stiffness: 300 }); // Return to start
+      translateY.value = withSpring(0, { damping: 30, stiffness: 300 });
+    }
+  }, [isSelected]);
+
   const handlePress = () => {
-    // Bubble-up animation
-    scale.value = withSequence(
-      withSpring(1.2, { damping: 8, stiffness: 400 }),
-      withSpring(1, { damping: 10, stiffness: 300 })
-    );
-    translateY.value = withSequence(
-      withSpring(-15, { damping: 8, stiffness: 400 }),
-      withSpring(0, { damping: 10, stiffness: 300 })
-    );
     onSelect();
   };
 
@@ -195,7 +199,7 @@ const AnimatedAvatarItem = ({
 
 export default function AvatarSelectionScreen() {
   const router = useRouter();
-  const { updateData } = useOnboarding();
+  const { updateData, data } = useOnboarding();
   const { isAuthenticated } = useConvexAuth();
   const scrollViewRef = useRef<ScrollView>(null);
 
@@ -268,7 +272,7 @@ export default function AvatarSelectionScreen() {
   const handleGenerationSuccess = (imageUrl: string, storageId: string) => {
     const result = {
       id: 'generated_custom',
-      name: uploadedImage ? 'Your Toy!' : 'Magic Friend!',
+      name: data.mascotName || (uploadedImage ? 'Your Toy!' : 'Magic Friend!'),
       image: { uri: imageUrl },
       storageId,
     };
@@ -489,8 +493,12 @@ export default function AvatarSelectionScreen() {
             <Ionicons name="grid" size={32} color="#92400E" />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 20, fontWeight: '800', color: '#92400E' }}>Choose a Buddy! 🎉</Text>
-            <Text style={{ fontSize: 14, color: '#B45309', marginTop: 2 }}>Choose your adventure buddy</Text>
+            <Text style={{ fontSize: 20, fontWeight: '800', color: '#92400E' }}>
+              Choose {data.mascotName || 'your buddy'}! 🎉
+            </Text>
+            <Text style={{ fontSize: 14, color: '#B45309', marginTop: 2 }}>
+              Pick what {data.mascotName || 'they'} look like
+            </Text>
           </View>
           <Ionicons name="arrow-forward" size={24} color="#92400E" />
         </View>
@@ -528,7 +536,9 @@ export default function AvatarSelectionScreen() {
           </View>
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: 20, fontWeight: '800', color: '#1E40AF' }}>Dream It Up! ✨</Text>
-            <Text style={{ fontSize: 14, color: '#2563EB', marginTop: 2 }}>Describe your magical friend</Text>
+            <Text style={{ fontSize: 14, color: '#2563EB', marginTop: 2 }}>
+              Describe {data.mascotName || 'your friend'}
+            </Text>
           </View>
           <Ionicons name="arrow-forward" size={24} color="#1E40AF" />
         </View>
@@ -552,7 +562,7 @@ export default function AvatarSelectionScreen() {
             marginBottom: 8,
           }}
         >
-          Pick Your Story Buddy! 🌟
+          Pick who {data.mascotName || 'your buddy'} is!
         </Text>
         <Text
           style={{
@@ -561,13 +571,17 @@ export default function AvatarSelectionScreen() {
             color: '#6B7280',
           }}
         >
-          Tap to choose your friend!
+          Tap to choose {data.mascotName || 'your friend'}!
         </Text>
       </Animated.View>
 
-      {/* Selected Avatar Display */}
       <Animated.View
-        entering={ZoomIn.springify()}
+        // Key changes trigger the animation!
+
+        key={selectedAvatar}
+        // Smooth fade for a polished feel
+        entering={FadeIn.duration(300)}
+        exiting={FadeOut.duration(200)}
         style={{
           alignItems: 'center',
           marginBottom: 20,
@@ -576,6 +590,7 @@ export default function AvatarSelectionScreen() {
           borderRadius: 40,
           borderWidth: 4,
           borderColor: 'rgba(255,255,255,0.8)',
+          // Ensure it stays centered during transition
         }}
       >
         <Image
@@ -583,18 +598,6 @@ export default function AvatarSelectionScreen() {
           style={{ width: 200, height: 200 }}
           resizeMode="contain"
         />
-        <Text style={{
-          fontSize: 32,
-          fontWeight: '900',
-          color: '#4B5563',
-          textAlign: 'center',
-          marginTop: 12,
-          textShadowColor: 'rgba(0,0,0,0.1)',
-          textShadowOffset: { width: 0, height: 2 },
-          textShadowRadius: 4,
-        }}>
-          {selectedAvatarData.name}
-        </Text>
       </Animated.View>
 
       {/* Avatar Grid Selector */}
@@ -608,7 +611,11 @@ export default function AvatarSelectionScreen() {
         width: '100%',
         maxWidth: 400,
       }}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingVertical: 10, paddingHorizontal: 4, alignItems: 'center' }}
+        >
           <View style={{ flexDirection: 'row', gap: 12 }}>
             {BASE_AVATARS.map((avatar, index) => (
               <AnimatedAvatarItem
@@ -662,7 +669,7 @@ export default function AvatarSelectionScreen() {
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 18, gap: 12 }}>
             <Text style={{ fontSize: 24, fontWeight: '800', color: 'white' }}>
-              Pick {selectedAvatarData.name}!
+              Pick {data.mascotName || 'your buddy'}!
             </Text>
             <Ionicons name="arrow-forward" size={28} color="white" />
           </View>
@@ -739,8 +746,12 @@ export default function AvatarSelectionScreen() {
           />
         </View>
 
-        <Text style={{ fontSize: 18, fontWeight: '600', color: '#6B7280', marginBottom: 32, textAlign: 'center' }}>
+        <Text style={{ fontSize: 18, fontWeight: '600', color: '#6B7280', marginBottom: 16, textAlign: 'center' }}>
           {generatedAvatar?.name} is ready for adventure!
+        </Text>
+
+        <Text style={{ fontSize: 13, color: '#9CA3AF', marginBottom: 32, textAlign: 'center', paddingHorizontal: 20 }}>
+          Don&apos;t worry - you can create more mascots later in your profile settings!
         </Text>
 
         <ChunkyButton onPress={handleNext} bgColor="#22C55E" borderColor="#15803D" size="large" style={{ width: '100%' }}>
@@ -817,14 +828,20 @@ export default function AvatarSelectionScreen() {
       colors={['#FEF7ED', '#FFF7ED', '#FFFBEB']}
       style={{ flex: 1 }}
     >
-      {/* Header */}
-      <View style={{ paddingTop: insets.top + 20, paddingHorizontal: 20, paddingBottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 10 }}>
-        <ChunkyButton onPress={handleBack} bgColor="#FFFFFF" borderColor="#E5E7EB" size="small">
-          <View style={{ padding: 10 }}>
-            <Ionicons name="arrow-back" size={24} color="#4B5563" />
-          </View>
-        </ChunkyButton>
-      </View>
+      {/* Header - hide back button on reveal screen to prevent regeneration */}
+      {generationStep !== 'reveal' && (
+        <View style={{ paddingTop: insets.top + 20, paddingHorizontal: 20, paddingBottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 10 }}>
+          <ChunkyButton onPress={handleBack} bgColor="#FFFFFF" borderColor="#E5E7EB" size="small">
+            <View style={{ padding: 10 }}>
+              <Ionicons name="arrow-back" size={24} color="#4B5563" />
+            </View>
+          </ChunkyButton>
+        </View>
+      )}
+      {/* Spacer when back button is hidden (reveal screen) */}
+      {generationStep === 'reveal' && (
+        <View style={{ paddingTop: insets.top + 20, paddingBottom: 16 }} />
+      )}
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -842,10 +859,10 @@ export default function AvatarSelectionScreen() {
             {!mode && (
               <Animated.View entering={FadeInDown} style={{ marginBottom: 32, alignItems: 'center', paddingHorizontal: 20 }}>
                 <Text style={{ fontSize: 32, fontWeight: '800', color: '#1F2937', textAlign: 'center' }}>
-                  Your Adventure Pal! 🦸
+                  {data.mascotName || 'Your Adventure Pal'}! 🦸
                 </Text>
                 <Text style={{ fontSize: 18, color: '#6B7280', marginTop: 8, textAlign: 'center' }}>
-                  How do you want to start?
+                  How do you want to create {data.mascotName || 'them'}?
                 </Text>
               </Animated.View>
             )}

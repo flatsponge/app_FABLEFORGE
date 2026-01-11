@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, Pressable, KeyboardAvoidingView, Platform, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, {
     FadeInDown,
@@ -7,7 +7,11 @@ import Animated, {
     useAnimatedStyle,
     useSharedValue,
     withSpring,
+    withSequence,
+    withTiming,
     interpolate,
+    useAnimatedReaction,
+    runOnJS,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -15,6 +19,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useConvexAuth } from 'convex/react';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import { api } from '../../../convex/_generated/api';
+
+const HeroMascotIcon = require('../../../assets/hero_mascot_icon.png');
 
 // Chunky 3D button matching child flow
 const ChunkyButton = ({
@@ -102,13 +108,27 @@ export default function MascotNameScreen() {
     const [name, setName] = useState(data.mascotName || '');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // Animation value for shaking the input
+    const inputShake = useSharedValue(0);
+
     const handleContinue = async () => {
-        if (name.trim().length === 0 || isSubmitting) return;
-        
+        if (isSubmitting) return;
+
+        if (name.trim().length === 0) {
+            // Shake animation
+            inputShake.value = withSequence(
+                withTiming(10, { duration: 50 }),
+                withTiming(-10, { duration: 50 }),
+                withTiming(10, { duration: 50 }),
+                withTiming(0, { duration: 50 })
+            );
+            return;
+        }
+
         setIsSubmitting(true);
         const cleanName = name.trim();
         updateData({ mascotName: cleanName });
-        
+
         // Sync with backend if authenticated
         if (isAuthenticated) {
             try {
@@ -123,6 +143,12 @@ export default function MascotNameScreen() {
         router.push('/(onboarding)/child/avatar');
     };
 
+    const inputAnimatedStyle = useAnimatedStyle(() => {
+        return {
+            transform: [{ translateX: inputShake.value }]
+        };
+    });
+
     return (
         <LinearGradient
             colors={['#FEF7ED', '#FFF7ED', '#FFFBEB']}
@@ -134,13 +160,21 @@ export default function MascotNameScreen() {
                     style={{ flex: 1 }}
                 >
                     <View style={{ flex: 1, paddingHorizontal: 24, justifyContent: 'center' }}>
-                        
+
                         {/* Header Section */}
                         <Animated.View
                             entering={FadeInDown.delay(200).springify()}
                             style={{ alignItems: 'center', marginBottom: 40 }}
                         >
-                            <Text style={{ fontSize: 60, marginBottom: 10 }}>🦸</Text>
+                            <Image
+                                source={HeroMascotIcon}
+                                style={{
+                                    width: 150,
+                                    height: 150,
+                                    resizeMode: 'contain',
+                                    marginBottom: 20
+                                }}
+                            />
                             <Text style={{
                                 fontSize: 32,
                                 fontWeight: '900',
@@ -164,10 +198,10 @@ export default function MascotNameScreen() {
                         {/* Input Section */}
                         <Animated.View
                             entering={FadeInUp.delay(400).springify()}
-                            style={{
+                            style={[{
                                 width: '100%',
                                 marginBottom: 40,
-                            }}
+                            }, inputAnimatedStyle]}
                         >
                             <View style={{
                                 backgroundColor: 'white',
@@ -208,10 +242,10 @@ export default function MascotNameScreen() {
                         <Animated.View entering={FadeInUp.delay(600).springify()}>
                             <ChunkyButton
                                 onPress={handleContinue}
-                                bgColor="#3B82F6"
-                                borderColor="#2563EB"
+                                bgColor={name.trim().length > 0 ? "#3B82F6" : "#94A3B8"}
+                                borderColor={name.trim().length > 0 ? "#2563EB" : "#64748B"}
                                 size="large"
-                                disabled={name.trim().length === 0 || isSubmitting}
+                                disabled={isSubmitting}
                             >
                                 <View style={{
                                     flexDirection: 'row',
