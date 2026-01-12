@@ -3,6 +3,7 @@ import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useConvexAuth } from 'convex/react';
 import { useOnboarding } from '../../contexts/OnboardingContext';
+import { getResumeStep, hasOnboardingProgress, SPLASH_PATH } from '../../lib/onboardingFlow';
 
 export default function OnboardingIndex() {
     const router = useRouter();
@@ -17,12 +18,12 @@ export default function OnboardingIndex() {
             return;
         }
         
-        if (hasPersistedData && data.resumePath && data.resumePath !== '/(onboarding)' && data.resumePath !== '/(onboarding)/index') {
-            router.replace(data.resumePath as any);
+        if (hasPersistedData && hasOnboardingProgress(data)) {
+            router.replace(getResumeStep(data) as typeof SPLASH_PATH);
         } else {
             router.replace('/(onboarding)/splash');
         }
-    }, [isAuthenticated, isLoading, isLoaded, hasPersistedData, data.resumePath, router]);
+    }, [isAuthenticated, isLoading, isLoaded, hasPersistedData, data, router]);
 
     return (
         <View style={styles.container}>

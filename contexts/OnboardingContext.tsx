@@ -4,67 +4,51 @@ import {
     ONBOARDING_STORAGE_KEY,
     clearPersistedOnboardingData,
     loadPersistedOnboardingData,
-    loadResumePath,
-    saveResumePath,
 } from '../lib/onboardingStorage';
 
 type OnboardingData = {
-    // Child info
     childName: string;
     childAge: string;
     childBirthMonth?: number;
     childBirthYear?: number;
     gender: 'boy' | 'girl' | '';
     childPersonality: string[];
-    // Goals & timeline
     primaryGoal: string[];
     goalsTimeline: string;
-    // Parenting
     parentingStyle: string;
     parentChallenges: string[];
     parentReaction: string;
     previousAttempts: string;
-    // Daily routine & reading
     dailyRoutine: string;
     readingTime: string;
     storyLength: string;
     storyThemes: string[];
-    // Behavior & struggles
     struggleBehavior: string;
     aggressionTarget?: string;
     aggressionFrequency?: string;
     triggerSituations: string[];
     struggleAreas: string[];
     struggleFrequency: string;
-    // Moral baseline ratings (1-5 scale)
     moralSharing: string;
     moralHonesty: string;
     moralPatience: string;
     moralKindness: string;
-    moralScore: number; // Calculated average * 20
-    // Avatar (existing)
+    moralScore: number;
     avatarId: string;
     lockedCosmeticClicked: boolean;
     audioEnabled: boolean;
-    // Mascot Name
     mascotName?: string;
-    // Generated mascot (AI-generated character)
     generatedMascotId?: string;
     generatedMascotUrl?: string;
     mascotJobId?: string;
     email?: string;
-    // User acquisition tracking
     trafficSource?: string;
     referralCode?: string;
-    // Resume path for persistence across app restarts
-    resumePath?: string;
 };
 
 type OnboardingContextType = {
     data: OnboardingData;
     updateData: (updates: Partial<OnboardingData>) => void;
-    setResumePath: (path: string) => void;
-    nextStep: () => void;
     clearOnboardingData: () => Promise<void>;
     isLoaded: boolean;
     hasPersistedData: boolean;
@@ -102,7 +86,6 @@ const defaultData: OnboardingData = {
     generatedMascotUrl: undefined,
     mascotJobId: undefined,
     email: undefined,
-    resumePath: undefined,
 };
 
 const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);
@@ -113,26 +96,13 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     const [hasPersistedData, setHasPersistedData] = useState(false);
     const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    // Load persisted data on mount
     useEffect(() => {
         const loadPersistedData = async () => {
             try {
                 const stored = await loadPersistedOnboardingData();
-                const storedResumePath = await loadResumePath();
                 if (stored) {
                     const parsed = JSON.parse(stored) as Partial<OnboardingData>;
-                    // Merge with defaults to handle any new fields
-                    setData({
-                        ...defaultData,
-                        ...parsed,
-                        resumePath: storedResumePath ?? parsed.resumePath,
-                    });
-                    setHasPersistedData(true);
-                } else if (storedResumePath) {
-                    setData({
-                        ...defaultData,
-                        resumePath: storedResumePath,
-                    });
+                    setData({ ...defaultData, ...parsed });
                     setHasPersistedData(true);
                 }
             } catch (error) {
@@ -144,7 +114,6 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         loadPersistedData();
     }, []);
 
-    // Debounced save to AsyncStorage
     const saveToStorage = useCallback((dataToSave: OnboardingData) => {
         if (saveTimeoutRef.current) {
             clearTimeout(saveTimeoutRef.current);
@@ -180,16 +149,8 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         }
     }, []);
 
-    const setResumePath = useCallback((path: string) => {
-        setData((prev) => ({ ...prev, resumePath: path }));
-        saveResumePath(path);
-        setHasPersistedData(true);
-    }, []);
-
-    const nextStep = () => { };
-
     return (
-        <OnboardingContext.Provider value={{ data, updateData, setResumePath, nextStep, clearOnboardingData, isLoaded, hasPersistedData }}>
+        <OnboardingContext.Provider value={{ data, updateData, clearOnboardingData, isLoaded, hasPersistedData }}>
             {children}
         </OnboardingContext.Provider>
     );

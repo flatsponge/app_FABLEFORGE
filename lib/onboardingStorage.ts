@@ -2,7 +2,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 
 export const ONBOARDING_STORAGE_KEY = "onboarding_progress";
-export const ONBOARDING_RESUME_KEY = "onboarding_resume_path";
 export const ONBOARDING_STATUS_KEY = "onboarding_status_cache";
 export const AUTH_SEEN_KEY = "auth_has_seen";
 
@@ -21,7 +20,7 @@ export async function loadPersistedOnboardingData(): Promise<string | null> {
       return stored;
     }
   } catch {
-    // Ignore storage read errors and fall back to legacy store.
+    // Fall back to legacy store.
   }
 
   try {
@@ -40,22 +39,6 @@ export async function loadPersistedOnboardingData(): Promise<string | null> {
   }
 
   return null;
-}
-
-export async function loadResumePath(): Promise<string | null> {
-  try {
-    return await AsyncStorage.getItem(ONBOARDING_RESUME_KEY);
-  } catch {
-    return null;
-  }
-}
-
-export async function saveResumePath(path: string): Promise<void> {
-  try {
-    await AsyncStorage.setItem(ONBOARDING_RESUME_KEY, path);
-  } catch {
-    // Ignore storage write errors.
-  }
 }
 
 export async function loadCachedOnboardingStatus(): Promise<CachedOnboardingStatus | null> {
@@ -99,7 +82,7 @@ export async function markAuthSeen(): Promise<void> {
 
 export async function clearPersistedOnboardingData(): Promise<void> {
   try {
-    await AsyncStorage.multiRemove([ONBOARDING_STORAGE_KEY, ONBOARDING_RESUME_KEY]);
+    await AsyncStorage.removeItem(ONBOARDING_STORAGE_KEY);
   } catch {
     // Ignore storage cleanup errors.
   }

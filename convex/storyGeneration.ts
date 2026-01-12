@@ -1312,6 +1312,54 @@ export const getOnboardingTeaser = query({
 });
 
 /**
+ * Get existing onboarding teaser by email (for restoring state on resume)
+ * Public query that clients can use to check if a teaser already exists
+ */
+export const getOnboardingTeaserForCurrentUser = query({
+  args: {},
+  returns: v.union(
+    v.object({
+      _id: v.id("onboardingTeasers"),
+      title: v.string(),
+      teaserText: v.string(),
+      prompt: v.string(),
+      teaserImageStatus: v.union(teaserImageStatusValidator, v.null()),
+      teaserImageUrl: v.union(v.string(), v.null()),
+      teaserImageError: v.union(v.string(), v.null()),
+    }),
+    v.null()
+  ),
+  handler: async (ctx) => {
+    const user = await getAuthUser(ctx);
+    const email = user?.email;
+    if (!email) {
+      return null;
+    }
+
+    const teaser = await ctx.db
+      .query("onboardingTeasers")
+      .withIndex("by_email", (q) => q.eq("email", email))
+      .first();
+
+    if (!teaser) return null;
+
+    const teaserImageUrl = teaser.teaserImageStorageId
+      ? await ctx.storage.getUrl(teaser.teaserImageStorageId)
+      : null;
+
+    return {
+      _id: teaser._id,
+      title: teaser.title,
+      teaserText: teaser.teaserText,
+      prompt: teaser.prompt,
+      teaserImageStatus: teaser.teaserImageStatus ?? null,
+      teaserImageUrl,
+      teaserImageError: teaser.teaserImageError ?? null,
+    };
+  },
+});
+
+/**
  * Queue onboarding teaser image generation
  */
 export const queueOnboardingTeaserImage = mutation({

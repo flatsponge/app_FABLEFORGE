@@ -9,7 +9,6 @@ import {
   clearPersistedOnboardingData,
   loadAuthSeen,
   loadCachedOnboardingStatus,
-  loadResumePath,
   markAuthSeen,
   saveCachedOnboardingStatus,
 } from '../lib/onboardingStorage';
@@ -24,7 +23,6 @@ export function AuthGate({ children }: AuthGateProps) {
   const segments = useSegments();
   const navigationState = useRootNavigationState();
   const { isAuthenticated, isLoading: authLoading } = useConvexAuth();
-  const [resumePath, setResumePath] = useState<string | null>(null);
   const [cachedStatus, setCachedStatus] = useState<CachedOnboardingStatus | null>(null);
   const [authSeen, setAuthSeen] = useState(false);
   const [bootstrapLoaded, setBootstrapLoaded] = useState(false);
@@ -46,12 +44,11 @@ export function AuthGate({ children }: AuthGateProps) {
   useEffect(() => {
     let isMounted = true;
 
-    Promise.all([loadResumePath(), loadCachedOnboardingStatus(), loadAuthSeen()])
-      .then(([path, cached, seen]) => {
+    Promise.all([loadCachedOnboardingStatus(), loadAuthSeen()])
+      .then(([cached, seen]) => {
         if (!isMounted) {
           return;
         }
-        setResumePath(path);
         setCachedStatus(cached);
         setAuthSeen(seen);
       })
@@ -70,9 +67,7 @@ export function AuthGate({ children }: AuthGateProps) {
     if (!isAuthenticated) {
       return;
     }
-    markAuthSeen().catch(() => {
-      // Ignore storage write errors.
-    });
+    markAuthSeen().catch(() => {});
   }, [isAuthenticated]);
 
   useEffect(() => {
@@ -81,12 +76,8 @@ export function AuthGate({ children }: AuthGateProps) {
     }
 
     if (previousAuthenticated.current === true && !isAuthenticated) {
-      clearAllDataCaches().catch(() => {
-        // Ignore cache cleanup errors.
-      });
-      clearAuthOptimisticCache().catch(() => {
-        // Ignore auth cache cleanup errors.
-      });
+      clearAllDataCaches().catch(() => {});
+      clearAuthOptimisticCache().catch(() => {});
     }
 
     previousAuthenticated.current = isAuthenticated;
@@ -114,9 +105,7 @@ export function AuthGate({ children }: AuthGateProps) {
         };
 
     setCachedStatus(statusToCache);
-    saveCachedOnboardingStatus(statusToCache).catch(() => {
-      // Ignore cache write errors.
-    });
+    saveCachedOnboardingStatus(statusToCache).catch(() => {});
   }, [isAuthenticated, onboardingStatus]);
 
   useEffect(() => {
@@ -132,9 +121,7 @@ export function AuthGate({ children }: AuthGateProps) {
     }
 
     didHideSplash.current = true;
-    SplashScreen.hideAsync().catch(() => {
-      // Ignore if splash is already hidden.
-    });
+    SplashScreen.hideAsync().catch(() => {});
   }, [isReady]);
 
   useEffect(() => {
@@ -147,13 +134,7 @@ export function AuthGate({ children }: AuthGateProps) {
     if (!isAuthenticated) {
       if (isAtRoot && !didInitialRedirect.current) {
         didInitialRedirect.current = true;
-        // Resume from saved path if available and valid, otherwise start at splash
-        const validResumePath = resumePath && 
-          resumePath.startsWith('/(onboarding)') && 
-          resumePath !== '/(onboarding)' && 
-          resumePath !== '/(onboarding)/index';
-        const target = validResumePath ? resumePath : '/(onboarding)/splash';
-        router.replace(target as '/(onboarding)/splash');
+        router.replace('/(onboarding)');
       }
       return;
     }
@@ -233,12 +214,9 @@ export function AuthGate({ children }: AuthGateProps) {
 
     if (onboardingStatus?.isComplete && !didClearOnboarding.current) {
       didClearOnboarding.current = true;
-      clearPersistedOnboardingData().catch(() => {
-        // Ignore cleanup failures.
-      });
+      clearPersistedOnboardingData().catch(() => {});
     }
 
-    // Convert teaser to book when onboarding completes (once)
     if (onboardingStatus?.isComplete && !didConvertTeaser.current && !isConvertingTeaser.current) {
       isConvertingTeaser.current = true;
       convertTeaserToBook()
@@ -261,7 +239,6 @@ export function AuthGate({ children }: AuthGateProps) {
     onboardingStatus,
     cachedStatus,
     authSeen,
-    resumePath,
     segments,
     router,
     convertTeaserToBook,

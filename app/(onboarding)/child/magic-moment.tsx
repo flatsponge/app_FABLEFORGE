@@ -419,6 +419,7 @@ export default function MagicMomentScreen() {
   const [generatedTeaser, setGeneratedTeaser] = useState<{ title: string; teaserText: string } | null>(null);
   const [teaserId, setTeaserId] = useState<Id<"onboardingTeasers"> | null>(null);
   const [generationError, setGenerationError] = useState<string | null>(null);
+  const [hasRestoredTeaser, setHasRestoredTeaser] = useState(false);
 
   const generateTeaser = useAction(api.storyGenerationActions.generateOnboardingTeaser);
   const retryMascotJob = useMutation(api.mascotGeneration.retryMascotJob);
@@ -433,6 +434,33 @@ export default function MagicMomentScreen() {
     api.storyGeneration.getOnboardingTeaser,
     teaserId ? { teaserId } : "skip"
   );
+
+  const existingTeaser = useQuery(
+    api.storyGeneration.getOnboardingTeaserForCurrentUser,
+    !hasRestoredTeaser && !teaserId ? {} : "skip"
+  );
+
+  useEffect(() => {
+    if (hasRestoredTeaser || teaserId) return;
+    if (!existingTeaser) return;
+
+    setTeaserId(existingTeaser._id);
+    setGeneratedTeaser({
+      title: existingTeaser.title,
+      teaserText: existingTeaser.teaserText,
+    });
+    setPromptText(existingTeaser.prompt);
+    setHasRestoredTeaser(true);
+
+    const hasImage = existingTeaser.teaserImageStatus === "complete" && existingTeaser.teaserImageUrl;
+    const mascotReady = !!data.generatedMascotId;
+    
+    if (hasImage && mascotReady) {
+      setPhase('preview');
+    } else {
+      setPhase('generating');
+    }
+  }, [existingTeaser, hasRestoredTeaser, teaserId, data.generatedMascotId]);
 
   const [mascotJobError, setMascotJobError] = useState<string | null>(null);
   const [isRetrying, setIsRetrying] = useState(false);
