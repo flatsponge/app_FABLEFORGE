@@ -1102,6 +1102,7 @@ export const getDetailedSkills = query({
 export const saveOnboardingTeaser = internalMutation({
   args: {
     email: v.string(),
+    userId: v.optional(v.id("users")),
     prompt: v.string(),
     childName: v.string(),
     childAge: v.string(),
@@ -1131,6 +1132,7 @@ export const saveOnboardingTeaser = internalMutation({
         teaserText: args.teaserText,
         createdAt: Date.now(),
         ...(args.mascotStorageId ? { mascotStorageId: args.mascotStorageId } : {}),
+        ...(args.userId && !existing.userId ? { userId: args.userId } : {}),
       });
       return existing._id;
     }
@@ -1138,6 +1140,7 @@ export const saveOnboardingTeaser = internalMutation({
     // Create new teaser
     return await ctx.db.insert("onboardingTeasers", {
       email: args.email,
+      ...(args.userId ? { userId: args.userId } : {}),
       prompt: args.prompt,
       childName: args.childName,
       childAge: args.childAge,
@@ -1408,12 +1411,42 @@ export const convertTeaserToBook = mutation({
           .withIndex("by_email", (q) => q.eq("email", user.email!))
           .first();
         if (!teaserByEmail) {
-          return { success: false, error: "No teaser found" };
+          // Continue to fallback below
+        } else {
+          // Link teaser to user
+          await ctx.db.patch(teaserByEmail._id, { userId: user._id });
+          return await createBookFromTeaser(ctx, teaserByEmail, user._id);
         }
-        // Link teaser to user
-        await ctx.db.patch(teaserByEmail._id, { userId: user._id });
-        return await createBookFromTeaser(ctx, teaserByEmail, user._id);
       }
+
+      const onboarding = await ctx.db
+        .query("onboardingResponses")
+        .withIndex("by_user", (q) => q.eq("userId", user._id))
+        .unique();
+      if (onboarding) {
+        const candidates = await ctx.db.query("onboardingTeasers").collect();
+        const tempCandidates = candidates.filter((candidate) =>
+          !candidate.userId
+          && !candidate.linkedBookId
+          && candidate.email.endsWith("@temp.local")
+        );
+        const matchedCandidates = tempCandidates.filter((candidate) =>
+          candidate.childName === onboarding.childName
+          && candidate.childAge === onboarding.childAge
+          && candidate.gender === onboarding.gender
+        );
+        const fallbackPool = matchedCandidates.length > 0
+          ? matchedCandidates
+          : tempCandidates.length === 1
+            ? tempCandidates
+            : [];
+        const fallbackTeaser = fallbackPool.sort((a, b) => b.createdAt - a.createdAt)[0];
+        if (fallbackTeaser) {
+          await ctx.db.patch(fallbackTeaser._id, { userId: user._id });
+          return await createBookFromTeaser(ctx, fallbackTeaser, user._id);
+        }
+      }
+
       return { success: false, error: "No teaser found" };
     }
 

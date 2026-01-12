@@ -20,8 +20,13 @@ import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
 const GRAPH_HEIGHT = 100;
 
-// Avatar URLs using DiceBear API
-const AVATAR_SEEDS = [11, 12, 13, 14];
+// Local Avatar Assets
+const AVATAR_IMAGES = [
+    require('../../../assets/images/intro-avatars/avatar_1.png'),
+    require('../../../assets/images/intro-avatars/avatar_2.png'),
+    require('../../../assets/images/intro-avatars/avatar_3.png'),
+    require('../../../assets/images/intro-avatars/avatar_4.png'),
+];
 
 const MetricsCard = ({ value, label, index }: { value: string, label: string, index: number }) => (
     <Animated.View
@@ -36,7 +41,7 @@ const MetricsCard = ({ value, label, index }: { value: string, label: string, in
 // Individual avatar with staggered spring animation
 // Note: We use a plain View as the outer container to avoid conflicts between
 // layout animations (entering/exiting) and useAnimatedStyle transforms.
-const AnimatedAvatar = ({ seed, index }: { seed: number, index: number }) => {
+const AnimatedAvatar = ({ imageSource, index }: { imageSource: any, index: number }) => {
     const scale = useSharedValue(0);
     const translateX = useSharedValue(-10);
     const rotate = useSharedValue(-20);
@@ -60,10 +65,10 @@ const AnimatedAvatar = ({ seed, index }: { seed: number, index: number }) => {
 
     // Outer View handles positioning/zIndex, inner Animated.View handles transform
     return (
-        <View style={[styles.avatarWrapper, { zIndex: AVATAR_SEEDS.length - index }]}>
+        <View style={[styles.avatarWrapper, { zIndex: AVATAR_IMAGES.length - index }]}>
             <Animated.View style={[styles.avatarContainer, animatedStyle]}>
                 <Image
-                    source={{ uri: `https://api.dicebear.com/7.x/avataaars/png?seed=${seed}` }}
+                    source={imageSource}
                     style={styles.avatarImage}
                 />
             </Animated.View>
@@ -217,8 +222,8 @@ export default function IntroSlide4() {
                     style={styles.socialProof}
                 >
                     <View style={styles.avatarsStack}>
-                        {AVATAR_SEEDS.map((seed, index) => (
-                            <AnimatedAvatar key={seed} seed={seed} index={index} />
+                        {AVATAR_IMAGES.map((imgSource, index) => (
+                            <AnimatedAvatar key={index} imageSource={imgSource} index={index} />
                         ))}
                     </View>
                     <Text style={styles.socialProofText}>Trusted by 50k+ parents</Text>

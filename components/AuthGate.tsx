@@ -31,6 +31,7 @@ export function AuthGate({ children }: AuthGateProps) {
   const didInitialRedirect = useRef(false);
   const didAuthRedirect = useRef(false);
   const didConvertTeaser = useRef(false);
+  const isConvertingTeaser = useRef(false);
   const didClearOnboarding = useRef(false);
   const didHideSplash = useRef(false);
   const previousAuthenticated = useRef<boolean | null>(null);
@@ -236,11 +237,20 @@ export function AuthGate({ children }: AuthGateProps) {
     }
 
     // Convert teaser to book when onboarding completes (once)
-    if (onboardingStatus?.isComplete && !didConvertTeaser.current) {
-      didConvertTeaser.current = true;
-      convertTeaserToBook().catch((err) => {
-        console.warn('Failed to convert teaser to book:', err);
-      });
+    if (onboardingStatus?.isComplete && !didConvertTeaser.current && !isConvertingTeaser.current) {
+      isConvertingTeaser.current = true;
+      convertTeaserToBook()
+        .then((result) => {
+          if (result?.success) {
+            didConvertTeaser.current = true;
+          }
+        })
+        .catch((err) => {
+          console.warn('Failed to convert teaser to book:', err);
+        })
+        .finally(() => {
+          isConvertingTeaser.current = false;
+        });
     }
 
   }, [

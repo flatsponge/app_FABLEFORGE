@@ -848,6 +848,9 @@ export const generateOnboardingTeaser = action({
     teaser?: { title: string; teaserText: string };
     error?: string;
   }> => {
+    const authUserId = await getAuthUserIdForAction(ctx);
+    const resolvedUserId = authUserId ? (authUserId as Id<"users">) : undefined;
+
     // Check if teaser already exists for this email - return existing instead of regenerating
     const existingTeaser: {
       _id: Id<"onboardingTeasers">;
@@ -868,6 +871,12 @@ export const generateOnboardingTeaser = action({
     );
 
     if (existingTeaser) {
+      if (resolvedUserId) {
+        await ctx.runMutation(internal.storyGeneration.linkTeaserToUser, {
+          email: args.email,
+          userId: resolvedUserId,
+        });
+      }
       const shouldQueueImage =
         !!args.mascotStorageId &&
         (existingTeaser.teaserImageStatus === null || existingTeaser.teaserImageStatus === "failed");
@@ -959,6 +968,7 @@ RESPOND IN THIS EXACT JSON FORMAT:
       // Save teaser to database
       const teaserId = await ctx.runMutation(internal.storyGeneration.saveOnboardingTeaser, {
         email: args.email,
+        userId: resolvedUserId,
         prompt: args.prompt,
         childName: args.childName,
         childAge: args.childAge,

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, Pressable, Image, ScrollView, TextInput, KeyboardAvoidingView, Platform, BackHandler } from 'react-native';
+import { View, Text, Pressable, Image, ScrollView, TextInput, BackHandler } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
@@ -10,7 +10,6 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
-  interpolate,
   withRepeat,
   withSequence,
   withTiming,
@@ -18,17 +17,19 @@ import Animated, {
   Easing,
   interpolateColor,
   SharedValue,
-  ZoomIn,
+  interpolate,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAction, useQuery, useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
+import { useAuth } from '../../../contexts/AuthContext';
 import { BASE_AVATARS } from '../../../constants/data';
 import { StoryGenerationGrid } from '@/components/StoryGenerationGrid';
 import { Id } from '@/convex/_generated/dataModel';
 import { useFocusEffect } from '@react-navigation/native';
+import { ChunkyButton } from '@/components/ChunkyButton';
 
 // Feature flag for voice input - set to true to enable voice recording
 const ENABLE_VOICE_INPUT = false;
@@ -282,87 +283,6 @@ const RecordingBubble = ({
   );
 };
 
-// Chunky 3D button matching the child flow style
-const ChunkyButton = ({
-  onPress,
-  children,
-  bgColor = '#ffffff',
-  borderColor = '#e2e8f0',
-  size = 'large',
-  disabled = false,
-  style,
-}: {
-  onPress?: () => void;
-  children: React.ReactNode;
-  bgColor?: string;
-  borderColor?: string;
-  size?: 'small' | 'medium' | 'large';
-  disabled?: boolean;
-  style?: any;
-}) => {
-  const pressed = useSharedValue(0);
-
-  const sizeStyles = {
-    small: { borderBottom: 4, borderSide: 2, borderTop: 2 },
-    medium: { borderBottom: 6, borderSide: 3, borderTop: 3 },
-    large: { borderBottom: 10, borderSide: 4, borderTop: 4 },
-  };
-
-  const s = sizeStyles[size];
-
-  const animatedStyle = useAnimatedStyle(() => {
-    const translateY = interpolate(pressed.value, [0, 1], [0, s.borderBottom - 3]);
-    return {
-      transform: [{ translateY }],
-    };
-  });
-
-  const animatedBorderStyle = useAnimatedStyle(() => {
-    const borderBottomWidth = interpolate(pressed.value, [0, 1], [s.borderBottom, 3]);
-    return {
-      borderBottomWidth,
-    };
-  });
-
-  return (
-    <Pressable
-      onPress={disabled ? undefined : onPress}
-      onPressIn={() => {
-        if (!disabled) {
-          pressed.value = withSpring(1, { damping: 25, stiffness: 600 });
-        }
-      }}
-      onPressOut={() => {
-        if (!disabled) {
-          pressed.value = withSpring(0, { damping: 25, stiffness: 600 });
-        }
-      }}
-      style={style}
-    >
-      <View style={{ paddingBottom: s.borderBottom }}>
-        <Animated.View
-          style={[
-            animatedStyle,
-            animatedBorderStyle,
-            {
-              borderTopWidth: s.borderTop,
-              borderLeftWidth: s.borderSide,
-              borderRightWidth: s.borderSide,
-              borderColor: borderColor,
-              backgroundColor: bgColor,
-              borderRadius: 20,
-              opacity: disabled ? 0.5 : 1,
-              marginBottom: -s.borderBottom,
-            },
-          ]}
-        >
-          {children}
-        </Animated.View>
-      </View>
-    </Pressable>
-  );
-};
-
 const MascotRevealOverlay = ({
   mascotImage,
   mascotName,
@@ -489,6 +409,7 @@ export default function MagicMomentScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { data, updateData } = useOnboarding();
+  const { email: authEmail } = useAuth();
   const [phase, setPhase] = useState<'input' | 'recording' | 'generating' | 'preview'>('input');
   const [showMascotReveal, setShowMascotReveal] = useState(false);
   const [mascotRevealed, setMascotRevealed] = useState(false);
@@ -668,7 +589,11 @@ export default function MagicMomentScreen() {
     setTeaserId(null);
 
     try {
+      const resolvedEmail = data.email?.trim() || authEmail.trim();
       const tempTeaserEmail = `teaser-${data.childName || 'child'}-${Date.now()}@temp.local`;
+      const teaserEmail = resolvedEmail && resolvedEmail.includes("@")
+        ? resolvedEmail
+        : tempTeaserEmail;
       const mascotStorageId = data.generatedMascotId ?? mascotJob?.resultStorageId;
 
       const result = await generateTeaser({
@@ -676,7 +601,7 @@ export default function MagicMomentScreen() {
         childName: data.childName,
         childAge: data.childAge,
         gender: data.gender,
-        email: tempTeaserEmail,
+        email: teaserEmail,
         mascotName: data.mascotName?.trim() || undefined,
         mascotStorageId: mascotStorageId ? (mascotStorageId as Id<"_storage">) : undefined,
       });

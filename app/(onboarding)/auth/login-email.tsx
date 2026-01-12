@@ -13,11 +13,13 @@ import {
 } from "../../../components/OnboardingTypography";
 import { OnboardingTheme } from "../../../constants/OnboardingTheme";
 import { useAuth } from "../../../contexts/AuthContext";
+import { useOnboarding } from "../../../contexts/OnboardingContext";
 
 export default function LoginEmailScreen() {
   const router = useRouter();
   const { signIn } = useAuthActions();
   const { setEmail: setAuthEmail } = useAuth();
+  const { updateData } = useOnboarding();
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [noAccountError, setNoAccountError] = useState(false);
@@ -42,6 +44,7 @@ export default function LoginEmailScreen() {
     setNoAccountError(false);
     try {
       setAuthEmail(normalizedEmail);
+      updateData({ email: normalizedEmail });
       await signIn("resend-otp", { email: normalizedEmail });
       router.push("/(onboarding)/auth/login-code");
     } catch (error) {

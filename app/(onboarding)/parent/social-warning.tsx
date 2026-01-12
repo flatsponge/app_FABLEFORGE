@@ -54,7 +54,7 @@ export default function SocialWarningScreen() {
                 </Animated.View>
 
                 {showStat && (
-                    <Animated.View entering={FadeInDown.delay(100).duration(500).springify().damping(14).stiffness(100)} style={styles.contextCard}>
+                    <Animated.View entering={FadeInDown.delay(100).duration(400).easing(Easing.out(Easing.cubic))} style={styles.contextCard}>
                         <View style={styles.contextHeader}>
                             <Ionicons name="alert-circle" size={24} color="#dc2626" style={styles.contextIcon} />
                             <Text style={styles.contextText}>

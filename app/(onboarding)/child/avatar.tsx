@@ -13,10 +13,9 @@ import {
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import Animated, {
-  FadeIn, // Add FadeIn
+  FadeIn,
   FadeInDown,
   FadeInUp,
-  ZoomIn,
   FadeOut,
   useAnimatedStyle,
   useSharedValue,
@@ -24,7 +23,6 @@ import Animated, {
   withTiming,
   withRepeat,
   withSpring,
-  interpolate,
 } from 'react-native-reanimated';
 import * as ImagePicker from 'expo-image-picker';
 import { Asset } from 'expo-asset';
@@ -37,93 +35,11 @@ import { useAction, useMutation, useConvexAuth } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { Id } from '../../../convex/_generated/dataModel';
 import { useFocusEffect } from '@react-navigation/native';
+import { ChunkyButton } from '@/components/ChunkyButton';
 
 // Types
 type SelectionMode = 'select' | 'upload' | 'describe' | null;
 type GenerationStep = 'input' | 'processing' | 'reveal';
-
-// Chunky 3D button component matching child-hub style
-const ChunkyButton = ({
-  onPress,
-  children,
-  bgColor = '#ffffff',
-  borderColor = '#e2e8f0',
-  size = 'medium',
-  disabled = false,
-  style,
-}: {
-  onPress?: () => void;
-  children: React.ReactNode;
-  bgColor?: string;
-  borderColor?: string;
-  size?: 'small' | 'medium' | 'large';
-  disabled?: boolean;
-  style?: any;
-}) => {
-  const pressed = useSharedValue(0);
-
-  const sizeStyles = {
-    small: { borderBottom: 4, borderSide: 2, borderTop: 2 },
-    medium: { borderBottom: 6, borderSide: 3, borderTop: 3 },
-    large: { borderBottom: 10, borderSide: 4, borderTop: 4 },
-  };
-
-  const s = sizeStyles[size];
-
-  const animatedStyle = useAnimatedStyle(() => {
-    const translateY = interpolate(pressed.value, [0, 1], [0, s.borderBottom - 3]);
-    return {
-      transform: [{ translateY }],
-    };
-  });
-
-  const animatedBorderStyle = useAnimatedStyle(() => {
-    const borderBottomWidth = interpolate(pressed.value, [0, 1], [s.borderBottom, 3]);
-    return {
-      borderBottomWidth,
-    };
-  });
-
-  return (
-    <Pressable
-      onPress={disabled ? undefined : onPress}
-      onPressIn={() => {
-        if (!disabled) {
-          pressed.value = withSpring(1, { damping: 25, stiffness: 600 });
-        }
-      }}
-      onPressOut={() => {
-        if (!disabled) {
-          pressed.value = withSpring(0, { damping: 25, stiffness: 600 });
-        }
-      }}
-      style={style}
-    >
-      {/* Fixed-height wrapper to prevent layout shifts during animation */}
-      <View style={{ paddingBottom: s.borderBottom }}>
-        <Animated.View
-          style={[
-            animatedStyle,
-            animatedBorderStyle,
-            {
-              borderTopWidth: s.borderTop,
-              borderLeftWidth: s.borderSide,
-              borderRightWidth: s.borderSide,
-              borderColor: borderColor,
-              backgroundColor: bgColor,
-              borderRadius: 20,
-              opacity: disabled ? 0.5 : 1,
-              // Negative margin to offset the paddingBottom of the wrapper
-              marginBottom: -s.borderBottom,
-            },
-          ]}
-        >
-          {children}
-        </Animated.View>
-      </View>
-    </Pressable>
-  );
-};
 
 // Animated Avatar Grid Item with bubble-up effect
 const AnimatedAvatarItem = ({

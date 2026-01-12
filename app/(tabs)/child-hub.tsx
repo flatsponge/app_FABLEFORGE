@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { View, Text, ScrollView, Pressable, TextInput, Image, StyleSheet, ImageBackground, ActivityIndicator, Platform } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,8 +8,6 @@ import { useChildLock } from '@/contexts/ChildLockContext';
 import { useOrientation } from '@/components/useOrientation';
 import { useQuery, useAction } from 'convex/react';
 import { api } from '@/convex/_generated/api';
-import { Id } from '@/convex/_generated/dataModel';
-import { Asset } from 'expo-asset';
 import ChildBackground from '@/childbackground/childbackground1.png';
 import ChildBackground2 from '@/childbackground/childbackground2.png';
 import ChildBackground3 from '@/childbackground/childbackground3.png';
@@ -53,6 +51,7 @@ import { OUTFITS, HATS, TOYS, PRESET_LOCATIONS, BASE_AVATARS } from '@/constants
 import { useOnboardingLocalData } from '@/hooks/useOnboardingLocalData';
 import { useCachedValue } from '@/hooks/useCachedValue';
 import { CACHE_KEYS, seedBookCaches } from '@/lib/queryCache';
+import { PendingWardrobe, clearPendingWardrobe, loadPendingWardrobe, savePendingWardrobe } from '@/lib/wardrobePending';
 type RoomType = 'wardrobe' | 'well' | 'read';
 // Merged hats + toys into single "accessories" tab due to FLUX Kontext 2-image limit
 type WardrobeTab = 'clothes' | 'accessories' | 'background';
@@ -63,6 +62,8 @@ const ACCESSORIES = [
   ...HATS.map(h => ({ ...h, accessoryType: 'hat' as const })),
   ...TOYS.map(t => ({ ...t, accessoryType: 'toy' as const })),
 ];
+
+const PROCESSING_STALE_MS = 10 * 60 * 1000;
 
 const AnimatedBottle = ({ onComplete, onLanded }: { onComplete: () => void; onLanded: () => void }) => {
   const translateY = useSharedValue(0);
@@ -739,6 +740,8 @@ export default function ChildHubScreen() {
   const [recordingTime, setRecordingTime] = useState(0);
   const [wishText, setWishText] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [pendingWardrobe, setPendingWardrobe] = useState<PendingWardrobe | null>(null);
+  const [pendingLoaded, setPendingLoaded] = useState(false);
   
   const liveUserProgress = useQuery(api.onboarding.getUserProgress);
   const liveMascotOutfit = useQuery(api.onboarding.getMascotOutfit);
@@ -749,13 +752,8 @@ export default function ChildHubScreen() {
     CACHE_KEYS.userBooks,
     liveUserBooks
   );
-  const addClothesToMascot = useAction(api.imageGeneration.addClothesToMascot);
-  const addAccessoryToMascot = useAction(api.imageGeneration.addAccessoryToMascot);
   const resetMascotOutfitAction = useAction(api.imageGeneration.resetMascotOutfit);
-  const generateUploadUrl = useAction(api.imageGeneration.generateUploadUrl);
   
-  const hasUnlockedWardrobe = userProgress?.hasUnlockedWardrobe ?? false;
-
   const [showUnlockHint, setShowUnlockHint] = useState(false);
   const [showBottleAnimation, setShowBottleAnimation] = useState(false);
   const [showGlitter, setShowGlitter] = useState(false);
@@ -770,6 +768,55 @@ export default function ChildHubScreen() {
       seedBookCaches(userBooks);
     }
   }, [userBooks]);
+
+  useEffect(() => {
+    let isMounted = true;
+    loadPendingWardrobe()
+      .then((pending) => {
+        if (isMounted) {
+          setPendingWardrobe((current) => current ?? pending);
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setPendingLoaded(true);
+        }
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!pendingLoaded) {
+      return;
+    }
+    if (pendingWardrobe) {
+      savePendingWardrobe(pendingWardrobe).catch(() => {
+        // Ignore storage errors.
+      });
+    } else {
+      clearPendingWardrobe().catch(() => {
+        // Ignore storage errors.
+      });
+    }
+  }, [pendingLoaded, pendingWardrobe]);
+
+  const isWardrobePending = Boolean(pendingWardrobe);
+  const pendingItem = useMemo(() => {
+    if (!pendingWardrobe) {
+      return null;
+    }
+    if (pendingWardrobe.type === 'clothes') {
+      return OUTFITS.find((item) => item.id === pendingWardrobe.itemId) ?? null;
+    }
+    return ACCESSORIES.find((item) => item.id === pendingWardrobe.itemId) ?? null;
+  }, [pendingWardrobe]);
+  const pendingLabel = pendingItem?.label ?? pendingItem?.type ?? 'New look';
+  const pendingStatusMessage =
+    pendingWardrobe?.status === 'processing'
+      ? 'Making your new look...'
+      : 'Read a story to reveal! 📚';
 
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const unlockHintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -793,6 +840,71 @@ export default function ChildHubScreen() {
       return () => setIsOnChildHub(false);
     }, [setIsOnChildHub])
   );
+
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
+      loadPendingWardrobe()
+        .then((pending) => {
+          if (isActive) {
+            setPendingWardrobe(pending);
+          }
+        })
+        .catch(() => {
+          // Ignore storage errors.
+        });
+      return () => {
+        isActive = false;
+      };
+    }, [])
+  );
+
+  const reconcilePendingWardrobe = useCallback((pending: PendingWardrobe | null) => {
+    if (!pending) {
+      return null;
+    }
+
+    const matchesOutfit =
+      pending.type === 'clothes'
+        ? mascotOutfit?.equippedClothes === pending.itemId
+        : mascotOutfit?.equippedAccessory === pending.itemId;
+
+    if (matchesOutfit) {
+      return null;
+    }
+
+    if (pending.status === 'processing') {
+      const statusAt = pending.statusAt ?? pending.createdAt;
+      if (Date.now() - statusAt > PROCESSING_STALE_MS) {
+        return {
+          ...pending,
+          status: 'queued',
+          statusAt: Date.now(),
+        };
+      }
+    }
+
+    return pending;
+  }, [mascotOutfit]);
+
+  useEffect(() => {
+    if (!pendingWardrobe) {
+      return;
+    }
+
+    const reconciled = reconcilePendingWardrobe(pendingWardrobe);
+    if (!reconciled) {
+      setPendingWardrobe(null);
+      return;
+    }
+
+    if (
+      reconciled.status !== pendingWardrobe.status ||
+      reconciled.statusAt !== pendingWardrobe.statusAt
+    ) {
+      setPendingWardrobe(reconciled);
+    }
+  }, [pendingWardrobe, reconcilePendingWardrobe]);
 
   // Inverted lock behavior: tap to lock, long-press to unlock
   const handleLockPressStart = () => {
@@ -871,119 +983,37 @@ export default function ChildHubScreen() {
     setWishText('');
   };
 
-  // Helper: Upload a local image asset to Convex storage
-  const uploadLocalImageToConvex = async (imageSource: number): Promise<Id<"_storage">> => {
-    // Load the asset
-    const asset = Asset.fromModule(imageSource);
-    await asset.downloadAsync();
-    
-    if (!asset.localUri) {
-      throw new Error('Failed to get local URI for asset');
-    }
-    
-    // Get upload URL from Convex
-    const uploadUrl = await generateUploadUrl();
-    
-    // Fetch the local image and upload
-    const response = await fetch(asset.localUri);
-    const blob = await response.blob();
-    
-    const uploadResponse = await fetch(uploadUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': blob.type || 'image/png',
-      },
-      body: blob,
+  const queuePendingWardrobe = useCallback((pending: PendingWardrobe) => {
+    setPendingWardrobe({
+      ...pending,
+      status: "queued",
+      statusAt: Date.now(),
     });
-    
-    if (!uploadResponse.ok) {
-      throw new Error('Failed to upload image to Convex');
-    }
-    
-    const { storageId } = await uploadResponse.json();
-    return storageId as Id<"_storage">;
-  };
+  }, []);
+
+  const cancelPendingWardrobe = useCallback(() => {
+    setPendingWardrobe(null);
+  }, []);
 
   // Handle CLOTHES click - uses original bare mascot as base
   const handleClothesClick = async (clothesId: string) => {
     if (isGenerating) return;
-    
-    setIsGenerating(true);
-    try {
-      const item = OUTFITS.find(o => o.id === clothesId);
-      if (!item?.image) {
-        console.error('Clothes image not found:', clothesId);
-        return;
-      }
-      
-      // Upload the clothes image to Convex storage
-      const clothesImageStorageId = await uploadLocalImageToConvex(item.image);
-      
-      // Check if user has a custom mascot or needs to use base avatar
-      let mascotStorageId: Id<"_storage"> | undefined;
-      if (!mascotOutfit?.originalMascotId) {
-        const baseAvatar = BASE_AVATARS.find(a => a.id === avatarId) || BASE_AVATARS[0];
-        mascotStorageId = await uploadLocalImageToConvex(baseAvatar.image);
-      }
-      
-      // Clothes always use original bare mascot as reference
-      const result = await addClothesToMascot({ 
-        clothesId,
-        clothesDescription: item.aiDescription ?? `a ${clothesId}`,
-        clothesImageStorageId,
-        mascotStorageId,
-      });
-      
-      if (!result.success) {
-        console.error('Failed to add clothes:', result.error);
-      }
-    } catch (error) {
-      console.error('Error adding clothes to mascot:', error);
-    } finally {
-      setIsGenerating(false);
-    }
+    queuePendingWardrobe({
+      type: 'clothes',
+      itemId: clothesId,
+      createdAt: Date.now(),
+    });
   };
 
   // Handle ACCESSORY click (hat OR toy) - uses clothed mascot as base
   const handleAccessoryClick = async (accessoryId: string, accessoryType: 'hat' | 'toy') => {
     if (isGenerating) return;
-    
-    setIsGenerating(true);
-    try {
-      // Find item in combined accessories list
-      const item = ACCESSORIES.find(a => a.id === accessoryId);
-      if (!item?.image) {
-        console.error('Accessory image not found:', accessoryId);
-        return;
-      }
-      
-      // Upload the accessory image to Convex storage
-      const accessoryImageStorageId = await uploadLocalImageToConvex(item.image);
-      
-      // Check if user has a custom mascot or needs to use base avatar
-      let mascotStorageId: Id<"_storage"> | undefined;
-      if (!mascotOutfit?.originalMascotId) {
-        const baseAvatar = BASE_AVATARS.find(a => a.id === avatarId) || BASE_AVATARS[0];
-        mascotStorageId = await uploadLocalImageToConvex(baseAvatar.image);
-      }
-      
-      // Accessories use clothed mascot (or bare if no clothes) as reference
-      const result = await addAccessoryToMascot({ 
-        accessoryId,
-        accessoryType,
-        accessoryDescription: item.aiDescription ?? `a ${accessoryId}`,
-        accessoryImageStorageId,
-        mascotStorageId,
-      });
-      
-      if (!result.success) {
-        console.error('Failed to add accessory:', result.error);
-      }
-    } catch (error) {
-      console.error('Error adding accessory to mascot:', error);
-    } finally {
-      setIsGenerating(false);
-    }
+    queuePendingWardrobe({
+      type: 'accessory',
+      itemId: accessoryId,
+      accessoryType,
+      createdAt: Date.now(),
+    });
   };
 
   // Handle reset outfit
@@ -1002,6 +1032,7 @@ export default function ChildHubScreen() {
       setIsGenerating(false);
     }
   };
+
 
   useEffect(() => {
     return () => {
@@ -1071,7 +1102,43 @@ export default function ChildHubScreen() {
 
         {activeRoom === 'wardrobe' && (
           <View className="flex-1 relative z-10 pb-24">
-            {hasUnlockedWardrobe ? (
+            {isWardrobePending ? (
+              <Animated.View entering={FadeIn} exiting={FadeOut} style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, paddingBottom: 128 }}>
+                <Image
+                  source={require('@/assets/childview/childdoor.png')}
+                  className="w-72 h-80 mb-8"
+                  resizeMode="contain"
+                />
+                <View className="bg-white px-8 py-6 rounded-3xl border-b-8 border-slate-200 items-center w-full max-w-sm" style={{ transform: [{ rotate: '-1deg' }], shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.15, shadowRadius: 20, elevation: 8 }}>
+                  <Text className="text-2xl font-black text-slate-700 text-center leading-tight mb-2">
+                    Getting Ready!
+                  </Text>
+                  {pendingItem?.image && (
+                    <View className="items-center mb-4">
+                      <View className="w-20 h-20 rounded-2xl bg-slate-100 items-center justify-center mb-2">
+                        <Image source={pendingItem.image} className="w-16 h-16" resizeMode="contain" />
+                      </View>
+                      <Text className="text-sm font-bold text-slate-600 uppercase tracking-wide">
+                        {pendingLabel}
+                      </Text>
+                    </View>
+                  )}
+                  <Text className="text-base font-bold text-slate-400 text-center uppercase tracking-wide">
+                    {pendingStatusMessage}
+                  </Text>
+                  {pendingWardrobe?.status !== 'processing' && (
+                    <View className="mt-4">
+                      <TextActionButton
+                        onPress={cancelPendingWardrobe}
+                        label="Cancel"
+                        variant="secondary"
+                        flex={0}
+                      />
+                    </View>
+                  )}
+                </View>
+              </Animated.View>
+            ) : (
               <Animated.View entering={FadeIn} exiting={FadeOut} style={{ flex: 1 }}>
                 <View className="flex-1 items-center justify-center pt-8">
                   <Avatar 
@@ -1251,22 +1318,6 @@ export default function ChildHubScreen() {
                       </View>
                     )}
                   </View>
-                </View>
-              </Animated.View>
-            ) : (
-              <Animated.View entering={FadeIn} exiting={FadeOut} style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, paddingBottom: 128 }}>
-                <Image
-                  source={require('@/assets/childview/childdoor.png')}
-                  className="w-72 h-80 mb-8"
-                  resizeMode="contain"
-                />
-                <View className="bg-white px-8 py-6 rounded-3xl border-b-8 border-slate-200 items-center w-full max-w-sm" style={{ transform: [{ rotate: '-1deg' }], shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.15, shadowRadius: 20, elevation: 8 }}>
-                  <Text className="text-2xl font-black text-slate-700 text-center leading-tight mb-2">
-                    ✨ Getting Ready!
-                  </Text>
-                  <Text className="text-base font-bold text-slate-400 text-center uppercase tracking-wide">
-                    Read a story to reveal! 📚
-                  </Text>
                 </View>
               </Animated.View>
             )}

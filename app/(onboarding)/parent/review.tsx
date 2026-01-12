@@ -7,6 +7,12 @@ import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
+const AVATAR_IMAGES = {
+    sarah: require('../../../assets/images/reviews/sarah.png'),
+    michael: require('../../../assets/images/reviews/michael.png'),
+    jessica: require('../../../assets/images/reviews/jessica.png'),
+};
+
 const TESTIMONIALS = [
     {
         id: 1,
@@ -14,8 +20,7 @@ const TESTIMONIALS = [
         role: "Mom of 2",
         text: "It used to take 45 mins to put him to bed. Now he asks for StoryTime and is asleep in 10 minutes!",
         stars: 5,
-        color: "#dcfce7", // green-100
-        iconColor: "#16a34a" // green-600
+        image: AVATAR_IMAGES.sarah
     },
     {
         id: 2,
@@ -23,8 +28,7 @@ const TESTIMONIALS = [
         role: "Dad of 5-year-old",
         text: "The personalized stories are magic. He actually listens to the lessons about sharing because the hero is HIM.",
         stars: 5,
-        color: "#dbeafe", // blue-100
-        iconColor: "#2563eb" // blue-600
+        image: AVATAR_IMAGES.michael
     },
     {
         id: 3,
@@ -32,8 +36,7 @@ const TESTIMONIALS = [
         role: "Mom of 3",
         text: "Finally, screen time I don't feel guilty about. It's calming, educational, and brings us closer together.",
         stars: 5,
-        color: "#f3e8ff", // purple-100
-        iconColor: "#9333ea" // purple-600
+        image: AVATAR_IMAGES.jessica
     }
 ];
 
@@ -59,11 +62,11 @@ export default function ReviewScreen() {
                         <Ionicons name="star" size={16} color="#b45309" />
                         <Text style={styles.ratingText}>4.9/5 Average Rating</Text>
                     </View>
-                    
+
                     <OnboardingTitle style={styles.title}>
                         Join 50,000+ Happy Parents
                     </OnboardingTitle>
-                    
+
                     <OnboardingBody style={styles.subtitle}>
                         You're in good company. Families everywhere are finding peace and connection with StoryTime.
                     </OnboardingBody>
@@ -71,8 +74,8 @@ export default function ReviewScreen() {
                     {/* Big Stars Visual */}
                     <View style={styles.bigStarsContainer}>
                         {[1, 2, 3, 4, 5].map((star, index) => (
-                            <Animated.View 
-                                key={star} 
+                            <Animated.View
+                                key={star}
                                 entering={FadeInUp.delay(400 + (index * 100))}
                             >
                                 <Ionicons name="star" size={32} color="#fbbf24" style={styles.starShadow} />
@@ -84,14 +87,12 @@ export default function ReviewScreen() {
                 {/* Testimonials List */}
                 <View style={styles.testimonialsContainer}>
                     {TESTIMONIALS.map((item, index) => (
-                        <Animated.View 
+                        <Animated.View
                             key={item.id}
                             entering={FadeInDown.delay(800 + (index * 200))}
                             style={styles.card}
                         >
-                            <View style={[styles.quoteIcon, { backgroundColor: item.color }]}>
-                                <Ionicons name="chatbox-ellipses" size={16} color={item.iconColor} />
-                            </View>
+                            <Image source={item.image} style={styles.avatarImage} />
                             <View style={styles.cardContent}>
                                 <View style={styles.cardHeader}>
                                     <Text style={styles.authorName}>{item.name}</Text>
@@ -182,12 +183,10 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: OnboardingTheme.Colors.Border,
     },
-    quoteIcon: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        alignItems: 'center',
-        justifyContent: 'center',
+    avatarImage: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         marginRight: 12,
     },
     cardContent: {

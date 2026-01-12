@@ -1,89 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Pressable, Switch, Image } from 'react-native';
 import { useRouter } from 'expo-router';
-import Animated, {
-    FadeInDown,
-    FadeInUp,
-    useAnimatedStyle,
-    useSharedValue,
-    withSpring,
-    interpolate,
-} from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
-
-// Chunky 3D button matching child flow
-const ChunkyButton = ({
-    onPress,
-    children,
-    bgColor = '#ffffff',
-    borderColor = '#e2e8f0',
-    size = 'large',
-}: {
-    onPress?: () => void;
-    children: React.ReactNode;
-    bgColor?: string;
-    borderColor?: string;
-    size?: 'small' | 'medium' | 'large';
-}) => {
-    const pressed = useSharedValue(0);
-
-    const sizeStyles = {
-        small: { borderBottom: 4, borderSide: 2, borderTop: 2 },
-        medium: { borderBottom: 6, borderSide: 3, borderTop: 3 },
-        large: { borderBottom: 8, borderSide: 3, borderTop: 3 },
-    };
-
-    const s = sizeStyles[size];
-
-    const animatedStyle = useAnimatedStyle(() => {
-        const translateY = interpolate(pressed.value, [0, 1], [0, s.borderBottom - 2]);
-        return {
-            transform: [{ translateY }],
-        };
-    });
-
-    const animatedBorderStyle = useAnimatedStyle(() => {
-        const borderBottomWidth = interpolate(pressed.value, [0, 1], [s.borderBottom, 2]);
-        // Compensate layout shift with margin so total height remains constant
-        const marginBottom = interpolate(pressed.value, [0, 1], [0, s.borderBottom - 2]);
-        return {
-            borderBottomWidth,
-            marginBottom,
-        };
-    });
-
-    return (
-        <Pressable
-            onPress={onPress}
-            onPressIn={() => {
-                pressed.value = withSpring(1, { damping: 25, stiffness: 600 });
-            }}
-            onPressOut={() => {
-                pressed.value = withSpring(0, { damping: 25, stiffness: 600 });
-            }}
-        >
-            <Animated.View
-                style={[
-                    animatedStyle,
-                    animatedBorderStyle,
-                    {
-                        borderTopWidth: s.borderTop,
-                        borderLeftWidth: s.borderSide,
-                        borderRightWidth: s.borderSide,
-                        borderColor: borderColor,
-                        backgroundColor: bgColor,
-                        borderRadius: 20,
-                    },
-                ]}
-            >
-                {children}
-            </Animated.View>
-        </Pressable>
-    );
-};
+import { ChunkyButton } from '@/components/ChunkyButton';
 
 export default function ChildSetupScreen() {
     const router = useRouter();

@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Text, Dimensions } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, StyleSheet, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
@@ -9,11 +9,9 @@ import Animated, {
     useSharedValue,
     Easing,
     useAnimatedProps,
-    withDelay
 } from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
 import OnboardingLayout from '../../../components/OnboardingLayout';
-import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
 const TEXT_COLOR = '#111827'; // gray-900 (High contrast)
@@ -21,15 +19,14 @@ const MUTED_COLOR = '#6B7280'; // gray-500
 const PRIMARY_COLOR = OnboardingTheme.Colors.Primary;
 
 const STEPS = [
-    { text: "Analyzing behavioral patterns" },
-    { text: "Mapping developmental milestones" },
-    { text: "Identifying key growth opportunities" },
-    { text: "Structuring personalized curriculum" },
-    { text: "Finalizing custom plan" },
+    { text: "Analyzing behavioral patterns", duration: 2000 },
+    { text: "Mapping developmental milestones", duration: 800 },
+    { text: "Identifying key growth opportunities", duration: 1500 },
+    { text: "Structuring personalized curriculum", duration: 1800 },
+    { text: "Finalizing custom plan", duration: 1000 },
 ];
 
-const STEP_DURATION = 1200;
-const TOTAL_DURATION = STEPS.length * STEP_DURATION + 1000;
+const TOTAL_POSSIBLE_DURATION = STEPS.reduce((acc, step) => acc + step.duration, 0) + 1000;
 const CIRCLE_SIZE = 180;
 const STROKE_WIDTH = 8;
 const RADIUS = (CIRCLE_SIZE - STROKE_WIDTH) / 2;
@@ -79,46 +76,98 @@ export default function ProcessingScreen() {
     const [activeIndex, setActiveIndex] = useState(0);
     const [percentage, setPercentage] = useState(0);
     const progress = useSharedValue(0);
+    const progressTarget = useRef(0);
 
     useEffect(() => {
-        // Step timer
-        const interval = setInterval(() => {
-            setActiveIndex(current => {
-                if (current < STEPS.length) return current + 1;
-                return current;
-            });
-        }, STEP_DURATION);
+        let isMounted = true;
+        let timeouts: ReturnType<typeof setTimeout>[] = [];
 
-        // Circular progress animation
-        progress.value = withTiming(1, {
-            duration: TOTAL_DURATION,
-            easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+        // Calculate cumulative durations
+        let currentDelay = 0;
+
+        STEPS.forEach((step, index) => {
+            // Helper to add timeout
+            const addTimeout = (fn: () => void, delay: number) => {
+                const t = setTimeout(fn, delay);
+                timeouts.push(t);
+            };
+
+            // Start of step
+            addTimeout(() => {
+                if (!isMounted) return;
+                setActiveIndex(index);
+
+                // Target progress for this step (not fully 100% until the very end)
+                const stepProgress = (index + 1) / STEPS.length;
+                progressTarget.current = stepProgress;
+
+                // Animate progress to this step's target
+                progress.value = withTiming(stepProgress, {
+                    duration: step.duration,
+                    easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+                });
+            }, currentDelay);
+
+            currentDelay += step.duration;
         });
 
-        // Percentage text animation (JS driven for stability)
+        // Navigation after all steps
+        const finalDelay = currentDelay + 500;
+        const navTimer = setTimeout(() => {
+            if (isMounted) router.push('/(onboarding)/parent/review');
+        }, finalDelay);
+        timeouts.push(navTimer);
+
+        // Percentage ticker logic
+        // We want the percentage to feel like it's counting up to the current progress target
         const startTime = Date.now();
         const textInterval = setInterval(() => {
+            if (!isMounted) return;
+
+            // Current progress value from reanimated (we can't read it directly easily on JS thread without listeners,
+            // but we can approximate or use a secondary interpolation source).
+            // Simpler: Just map percentage to time elapsed relative to total expected duration, 
+            // but warped by the current step speed.
+
             const now = Date.now();
             const elapsed = now - startTime;
-            const p = Math.min(1, elapsed / TOTAL_DURATION);
-            
-            // Cubic ease out approximation
-            const eased = 1 - Math.pow(1 - p, 3);
-            
-            setPercentage(Math.round(eased * 100));
+            // Approximate progress based on time
+            let timeProgress = 0;
+            let timeAccum = 0;
+            for (let i = 0; i < STEPS.length; i++) {
+                if (elapsed < timeAccum + STEPS[i].duration) {
+                    // We are in this step
+                    const stepElapsed = elapsed - timeAccum;
+                    const stepFraction = stepElapsed / STEPS[i].duration;
+                    const baseProgress = i / STEPS.length;
+                    const stepSize = 1 / STEPS.length;
+                    timeProgress = baseProgress + (stepFraction * stepSize);
+                    break;
+                }
+                timeAccum += STEPS[i].duration;
+            }
 
-            if (p >= 1) clearInterval(textInterval);
-        }, 32);
+            if (elapsed >= timeAccum) {
+                timeProgress = 1;
+            }
 
-        // Navigation
-        const navigationTimer = setTimeout(() => {
-            router.push('/(onboarding)/parent/review');
-        }, TOTAL_DURATION + 500);
+            // clamp
+            timeProgress = Math.min(1, Math.max(0, timeProgress));
+            const targetP = Math.round(timeProgress * 100);
+
+            setPercentage(prev => {
+                if (targetP > prev) return targetP;
+                return prev;
+            });
+
+            if (timeProgress >= 1) clearInterval(textInterval);
+
+        }, 50);
 
         return () => {
-            clearInterval(interval);
+            isMounted = false;
+            timeouts.forEach(clearTimeout);
             clearInterval(textInterval);
-            clearTimeout(navigationTimer);
         };
     }, []);
 
@@ -130,10 +179,13 @@ export default function ProcessingScreen() {
     });
 
     return (
+        // @ts-ignore - explicitly passing extra prop
         <OnboardingLayout
-            showProgressBar={false} skipTopSafeArea
+            showProgressBar={false}
+            skipTopSafeArea
             showNextButton={false}
             showBack={false}
+            hideFooter={true}
         >
             <View style={styles.container}>
                 <View style={styles.progressSection}>

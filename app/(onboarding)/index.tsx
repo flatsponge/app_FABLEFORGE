@@ -1,10 +1,19 @@
-import React from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useConvexAuth } from 'convex/react';
 
 export default function OnboardingIndex() {
+    const router = useRouter();
+    const { isAuthenticated, isLoading } = useConvexAuth();
+
+    useEffect(() => {
+        if (isLoading) return;
+        router.replace(isAuthenticated ? '/(tabs)' : '/(onboarding)/splash');
+    }, [isAuthenticated, isLoading, router]);
+
     return (
         <View style={styles.container}>
-            <ActivityIndicator size="large" color="#7c3aed" />
         </View>
     );
 }

@@ -43,7 +43,8 @@ export default function OnboardingLayout({
   skipTopSafeArea = false,
   fadeInButton = false,
   scrollResetKey,
-}: OnboardingLayoutProps) {
+  hideFooter = false,
+}: OnboardingLayoutProps & { hideFooter?: boolean }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const scrollViewRef = useRef<ScrollView>(null);
@@ -195,20 +196,22 @@ export default function OnboardingLayout({
         </TouchableWithoutFeedback>
       )}
 
-      {/* Footer - always rendered to preserve layout, visibility controlled by animated opacity */}
-      <Animated.View
-        style={[
-          styles.footer,
-          buttonStyle,
-          { paddingBottom: isKeyboardVisible ? OnboardingTheme.Spacing.md : (insets.bottom + OnboardingTheme.Spacing.md) }
-        ]}
-      >
-        <OnboardingButton
-          onPress={showNextButton ? onNext : undefined}
-          title={nextLabel}
-          disabled={!showNextButton}
-        />
-      </Animated.View>
+      {/* Footer - render unless hideFooter is true */}
+      {!hideFooter && (
+        <Animated.View
+          style={[
+            styles.footer,
+            buttonStyle,
+            { paddingBottom: isKeyboardVisible ? OnboardingTheme.Spacing.md : (insets.bottom + OnboardingTheme.Spacing.md) }
+          ]}
+        >
+          <OnboardingButton
+            onPress={showNextButton ? onNext : undefined}
+            title={nextLabel}
+            disabled={!showNextButton}
+          />
+        </Animated.View>
+      )}
     </View>
   );
 }

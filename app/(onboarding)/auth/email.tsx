@@ -13,11 +13,13 @@ import {
 } from "../../../components/OnboardingTypography";
 import { OnboardingTheme } from "../../../constants/OnboardingTheme";
 import { useAuth } from "../../../contexts/AuthContext";
+import { useOnboarding } from "../../../contexts/OnboardingContext";
 
 export default function EmailScreen() {
   const router = useRouter();
   const { signIn } = useAuthActions();
   const { email: authEmail, setEmail: setAuthEmail } = useAuth();
+  const { updateData } = useOnboarding();
   const [email, setEmail] = useState(authEmail);
   const [isLoading, setIsLoading] = useState(false);
   const [emailExistsError, setEmailExistsError] = useState(false);
@@ -42,6 +44,7 @@ export default function EmailScreen() {
     setEmailExistsError(false);
     try {
       setAuthEmail(normalizedEmail);
+      updateData({ email: normalizedEmail });
       await signIn("resend-otp", { email: normalizedEmail });
       router.push("/(onboarding)/auth/code");
     } catch (error) {

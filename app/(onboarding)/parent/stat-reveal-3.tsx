@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import Animated, { FadeIn, ZoomIn, FadeInDown, Easing } from 'react-native-reanimated';
+import Animated, { FadeIn, ZoomIn, FadeInDown, Easing, FadeInUp } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
@@ -71,7 +71,7 @@ export default function StatReveal3Screen() {
                 </Animated.View>
 
                 {showCitation && (
-                    <Animated.View entering={FadeInDown.delay(100).duration(500).springify().damping(14).stiffness(100)} style={styles.citationCard}>
+                    <Animated.View entering={FadeInDown.delay(100).duration(400).easing(Easing.out(Easing.cubic))} style={styles.citationCard}>
                         <Text style={styles.citationText}>
                             "{content.citation}"
                         </Text>

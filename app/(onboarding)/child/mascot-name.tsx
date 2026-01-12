@@ -1,17 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Pressable, KeyboardAvoidingView, Platform, Image } from 'react-native';
+import { View, Text, TextInput, KeyboardAvoidingView, Platform, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, {
     FadeInDown,
     FadeInUp,
     useAnimatedStyle,
     useSharedValue,
-    withSpring,
     withSequence,
     withTiming,
-    interpolate,
-    useAnimatedReaction,
-    runOnJS,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -19,85 +15,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useConvexAuth } from 'convex/react';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import { api } from '../../../convex/_generated/api';
+import { ChunkyButton } from '@/components/ChunkyButton';
 
 const HeroMascotIcon = require('../../../assets/hero_mascot_icon.png');
-
-// Chunky 3D button matching child flow
-const ChunkyButton = ({
-    onPress,
-    children,
-    bgColor = '#ffffff',
-    borderColor = '#e2e8f0',
-    size = 'large',
-    disabled = false,
-}: {
-    onPress?: () => void;
-    children: React.ReactNode;
-    bgColor?: string;
-    borderColor?: string;
-    size?: 'small' | 'medium' | 'large';
-    disabled?: boolean;
-}) => {
-    const pressed = useSharedValue(0);
-
-    const sizeStyles = {
-        small: { borderBottom: 4, borderSide: 2, borderTop: 2 },
-        medium: { borderBottom: 6, borderSide: 3, borderTop: 3 },
-        large: { borderBottom: 8, borderSide: 3, borderTop: 3 },
-    };
-
-    const s = sizeStyles[size];
-
-    const animatedStyle = useAnimatedStyle(() => {
-        const translateY = interpolate(pressed.value, [0, 1], [0, s.borderBottom - 2]);
-        return {
-            transform: [{ translateY }],
-        };
-    });
-
-    const animatedBorderStyle = useAnimatedStyle(() => {
-        const borderBottomWidth = interpolate(pressed.value, [0, 1], [s.borderBottom, 2]);
-        const marginBottom = interpolate(pressed.value, [0, 1], [0, s.borderBottom - 2]);
-        return {
-            borderBottomWidth,
-            marginBottom,
-        };
-    });
-
-    return (
-        <Pressable
-            onPress={disabled ? undefined : onPress}
-            onPressIn={() => {
-                if (!disabled) {
-                    pressed.value = withSpring(1, { damping: 25, stiffness: 600 });
-                }
-            }}
-            onPressOut={() => {
-                if (!disabled) {
-                    pressed.value = withSpring(0, { damping: 25, stiffness: 600 });
-                }
-            }}
-        >
-            <Animated.View
-                style={[
-                    animatedStyle,
-                    animatedBorderStyle,
-                    {
-                        borderTopWidth: s.borderTop,
-                        borderLeftWidth: s.borderSide,
-                        borderRightWidth: s.borderSide,
-                        borderColor: borderColor,
-                        backgroundColor: disabled ? '#F3F4F6' : bgColor,
-                        borderRadius: 20,
-                        opacity: disabled ? 0.7 : 1,
-                    },
-                ]}
-            >
-                {children}
-            </Animated.View>
-        </Pressable>
-    );
-};
 
 export default function MascotNameScreen() {
     const router = useRouter();

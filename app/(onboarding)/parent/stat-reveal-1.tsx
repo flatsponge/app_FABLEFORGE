@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, Text, Dimensions, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import Animated, { FadeIn, FadeInDown, ZoomIn, useSharedValue, useAnimatedProps, withTiming, Easing, withDelay } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, ZoomIn, useSharedValue, useAnimatedProps, withTiming, Easing, withDelay, FadeInUp } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Circle } from 'react-native-svg';
 import OnboardingLayout from '../../../components/OnboardingLayout';
@@ -94,7 +94,7 @@ export default function StatReveal1Screen() {
                 </View>
 
                 {showContext && (
-                    <Animated.View entering={FadeInDown.delay(100).duration(500).springify().damping(14).stiffness(100)} style={styles.contextContainer}>
+                    <Animated.View entering={FadeInDown.delay(100).duration(400).easing(Easing.out(Easing.cubic))} style={styles.contextContainer}>
                         <View style={styles.comparisonHeader}>
                             <Text style={styles.comparisonLabel}>Ideally by this age</Text>
                             <Text style={styles.comparisonValue}>70%</Text>

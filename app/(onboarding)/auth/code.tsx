@@ -31,7 +31,7 @@ export default function CodeScreen() {
   const { signIn } = useAuthActions();
   const { isAuthenticated, isLoading: authLoading } = useConvexAuth();
   const { email } = useAuth();
-  const { data, clearOnboardingData } = useOnboarding();
+  const { data } = useOnboarding();
   const saveOnboarding = useMutation(api.onboarding.saveOnboardingResponses);
   const saveSkills = useMutation(api.onboarding.saveUserSkills);
   const [code, setCode] = useState<string[]>(Array(CODE_LENGTH).fill(""));
@@ -154,7 +154,6 @@ export default function CodeScreen() {
           },
         });
 
-        await clearOnboardingData();
         setDataSaved(true);
         setIsLoading(false);
         router.push("/(onboarding)/child/setup");
@@ -307,7 +306,6 @@ export default function CodeScreen() {
                 onKeyPress={(e) => handleKeyPress(e, index)}
                 style={styles.codeInput}
                 keyboardType="number-pad"
-                maxLength={1}
                 autoFocus={index === 0}
                 selectTextOnFocus
                 editable={!isLoading}

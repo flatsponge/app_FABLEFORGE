@@ -210,7 +210,6 @@ export default function LoginCodeScreen() {
                 onKeyPress={(e) => handleKeyPress(e, index)}
                 style={styles.codeInput}
                 keyboardType="number-pad"
-                maxLength={1}
                 autoFocus={index === 0}
                 selectTextOnFocus
                 editable={!isLoading}
