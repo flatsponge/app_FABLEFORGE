@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, Pressable, Image, ScrollView, TextInput, BackHandler } from 'react-native';
+import { View, Text, Pressable, Image, ScrollView, TextInput, BackHandler, KeyboardAvoidingView, Platform } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
@@ -467,6 +467,10 @@ export default function MagicMomentScreen() {
   const [isRetryingTeaserImage, setIsRetryingTeaserImage] = useState(false);
   const [isQueuingTeaserImage, setIsQueuingTeaserImage] = useState(false);
 
+  // Auto-scroll state
+  const [viewportHeight, setViewportHeight] = useState(0);
+  const [contentHeight, setContentHeight] = useState(0);
+
   useFocusEffect(
     useCallback(() => {
       const subscription = BackHandler.addEventListener('hardwareBackPress', () => true);
@@ -667,7 +671,19 @@ export default function MagicMomentScreen() {
 
         {/* PHASE 1 & 2: INPUT & RECORDING */}
         {(phase === 'input' || phase === 'recording') && (
-          <Animated.View entering={FadeIn} exiting={FadeOut} style={{ alignItems: 'center', width: '100%' }}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={{ flex: 1, width: '100%' }}
+          >
+            <ScrollView
+              contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
+              scrollEnabled={contentHeight > viewportHeight}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              onLayout={(e) => setViewportHeight(e.nativeEvent.layout.height)}
+              onContentSizeChange={(_, h) => setContentHeight(h)}
+            >
+              <Animated.View entering={FadeIn} exiting={FadeOut} style={{ alignItems: 'center', width: '100%' }}>
 
             {/* Star Display */}
             <View style={{ marginBottom: 24 }}>
@@ -800,6 +816,8 @@ export default function MagicMomentScreen() {
               ))}
             </Animated.View>
           </Animated.View>
+            </ScrollView>
+          </KeyboardAvoidingView>
         )}
 
         {phase === 'generating' && (

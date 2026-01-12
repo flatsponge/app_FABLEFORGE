@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, KeyboardAvoidingView, Platform, Image } from 'react-native';
+import { View, Text, TextInput, KeyboardAvoidingView, Platform, Image, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, {
     FadeInDown,
@@ -27,6 +27,10 @@ export default function MascotNameScreen() {
     const updateMascotName = useMutation(api.onboarding.updateMascotName);
     const [name, setName] = useState(data.mascotName || '');
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Auto-scroll state
+    const [viewportHeight, setViewportHeight] = useState(0);
+    const [contentHeight, setContentHeight] = useState(0);
 
     // Animation value for shaking the input
     const inputShake = useSharedValue(0);
@@ -79,7 +83,15 @@ export default function MascotNameScreen() {
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                     style={{ flex: 1 }}
                 >
-                    <View style={{ flex: 1, paddingHorizontal: 24, justifyContent: 'center' }}>
+                    <ScrollView
+                        style={{ flex: 1 }}
+                        contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 24 }}
+                        scrollEnabled={contentHeight > viewportHeight}
+                        showsVerticalScrollIndicator={false}
+                        keyboardShouldPersistTaps="handled"
+                        onLayout={(e) => setViewportHeight(e.nativeEvent.layout.height)}
+                        onContentSizeChange={(_, h) => setContentHeight(h)}
+                    >
 
                         {/* Header Section */}
                         <Animated.View
@@ -155,7 +167,7 @@ export default function MascotNameScreen() {
                             </View>
                         </Animated.View>
 
-                    </View>
+                    </ScrollView>
 
                     {/* Bottom CTA */}
                     <View style={{ paddingHorizontal: 24, paddingBottom: insets.bottom + 20 }}>

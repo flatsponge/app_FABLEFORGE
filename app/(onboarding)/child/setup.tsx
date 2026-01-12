@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Pressable, Switch, Image } from 'react-native';
+import { View, Text, Pressable, Switch, Image, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,6 +13,10 @@ export default function ChildSetupScreen() {
     const insets = useSafeAreaInsets();
     const { data, updateData } = useOnboarding();
     
+    // Auto-scroll state
+    const [viewportHeight, setViewportHeight] = useState(0);
+    const [contentHeight, setContentHeight] = useState(0);
+    
     // Always allow continue in this new design, it's just instructions
     const canContinue = true; 
 
@@ -22,7 +26,14 @@ export default function ChildSetupScreen() {
             style={{ flex: 1 }}
         >
             <View style={{ flex: 1, paddingTop: insets.top }}>
-                <View style={{ flex: 1, paddingHorizontal: 24 }}>
+                <ScrollView
+                    style={{ flex: 1 }}
+                    contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24 }}
+                    scrollEnabled={contentHeight > viewportHeight}
+                    showsVerticalScrollIndicator={false}
+                    onLayout={(e) => setViewportHeight(e.nativeEvent.layout.height)}
+                    onContentSizeChange={(_, h) => setContentHeight(h)}
+                >
                     
                     {/* Header Section */}
                     <Animated.View
@@ -192,7 +203,7 @@ export default function ChildSetupScreen() {
                         )}
                     </Animated.View>
 
-                </View>
+                </ScrollView>
 
                 {/* Bottom CTA */}
                 <View style={{ paddingHorizontal: 24, paddingBottom: insets.bottom + 20 }}>

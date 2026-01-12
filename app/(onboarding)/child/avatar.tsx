@@ -138,6 +138,8 @@ export default function AvatarSelectionScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [viewportHeight, setViewportHeight] = useState(0);
+  const [contentHeight, setContentHeight] = useState(0);
 
   // Animations
   const shake = useSharedValue(0);
@@ -817,8 +819,10 @@ export default function AvatarSelectionScreen() {
         <ScrollView
           ref={scrollViewRef}
           contentContainerStyle={{ flexGrow: 1 }}
-          scrollEnabled={mode !== 'describe' && generationStep !== 'processing'}
+          scrollEnabled={(contentHeight > viewportHeight) && generationStep !== 'processing'}
           keyboardShouldPersistTaps="handled"
+          onLayout={(e) => setViewportHeight(e.nativeEvent.layout.height)}
+          onContentSizeChange={(_, h) => setContentHeight(h)}
         >
           <View style={{ flex: 1, alignItems: 'center', paddingBottom: 24 }}>
             {/* Title Area */}

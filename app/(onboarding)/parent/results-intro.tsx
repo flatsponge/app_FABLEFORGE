@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, Dimensions } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity, Dimensions, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
@@ -22,6 +22,10 @@ export default function ResultsIntroScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const [showContent, setShowContent] = useState(false);
+    
+    // Auto-scroll state
+    const [viewportHeight, setViewportHeight] = useState(0);
+    const [contentHeight, setContentHeight] = useState(0);
 
     // Pulse animation for the analyzing icon
     const scale = useSharedValue(1);
@@ -59,7 +63,14 @@ export default function ResultsIntroScreen() {
     return (
         <View style={[styles.screen, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
             {/* Main content area - centered */}
-            <View style={styles.contentArea}>
+            <ScrollView
+                style={{ flex: 1 }}
+                contentContainerStyle={styles.contentArea}
+                scrollEnabled={contentHeight > viewportHeight}
+                showsVerticalScrollIndicator={false}
+                onLayout={(e) => setViewportHeight(e.nativeEvent.layout.height)}
+                onContentSizeChange={(_, h) => setContentHeight(h)}
+            >
                 <Animated.View entering={FadeIn.delay(300)} style={styles.animationContainer}>
                     <View style={styles.iconWrapper}>
                         <Animated.View
@@ -92,7 +103,7 @@ export default function ResultsIntroScreen() {
                         </View>
                     </Animated.View>
                 )}
-            </View>
+            </ScrollView>
 
             {/* Fixed footer - always takes up space, but opacity animates */}
             <Animated.View style={[styles.footer, animatedButtonStyle]}>
@@ -115,7 +126,7 @@ const styles = StyleSheet.create({
         backgroundColor: OnboardingTheme.Colors.Background,
     },
     contentArea: {
-        flex: 1,
+        flexGrow: 1,
         alignItems: 'center',
         justifyContent: 'center',
         paddingHorizontal: OnboardingTheme.Spacing.lg,
