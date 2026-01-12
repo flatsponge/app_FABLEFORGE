@@ -820,6 +820,7 @@ export default function AvatarSelectionScreen() {
           ref={scrollViewRef}
           contentContainerStyle={{ flexGrow: 1 }}
           scrollEnabled={(contentHeight > viewportHeight) && generationStep !== 'processing'}
+          showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           onLayout={(e) => setViewportHeight(e.nativeEvent.layout.height)}
           onContentSizeChange={(_, h) => setContentHeight(h)}
