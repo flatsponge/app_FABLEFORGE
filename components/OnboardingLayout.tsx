@@ -1,5 +1,5 @@
-import React, { useRef, useEffect } from 'react';
-import { View, TouchableOpacity, StyleSheet, Platform, ScrollView, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import React, { useRef, useEffect, useState } from 'react';
+import { View, TouchableOpacity, StyleSheet, Platform, ScrollView, Keyboard } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { useAnimatedStyle, withTiming, useSharedValue } from 'react-native-reanimated';
@@ -20,7 +20,7 @@ interface OnboardingLayoutProps {
   progressBarColor?: string;
   progressBarTrackColor?: string;
   backButtonColor?: string;
-  isScrollable?: boolean;
+  isScrollable?: boolean; // Deprecated: Auto-scroll is now enabled
   skipTopSafeArea?: boolean; // When true, skip top safe area padding (for screens inside parent layouts that handle it)
   fadeInButton?: boolean;
   scrollResetKey?: string | number; // When this changes, scroll resets to top
@@ -39,7 +39,6 @@ export default function OnboardingLayout({
   progressBarColor = OnboardingTheme.Colors.Primary,
   progressBarTrackColor = '#E5E7EB',
   backButtonColor = OnboardingTheme.Colors.Text,
-  isScrollable = false,
   skipTopSafeArea = false,
   fadeInButton = false,
   scrollResetKey,
@@ -48,6 +47,12 @@ export default function OnboardingLayout({
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const scrollViewRef = useRef<ScrollView>(null);
+  
+  const [viewportHeight, setViewportHeight] = useState(0);
+  const [contentHeight, setContentHeight] = useState(0);
+  
+  // Auto-scroll logic
+  const scrollEnabled = contentHeight > viewportHeight;
 
   const progressWidth = useSharedValue(Math.max(0, progress * 100));
   // If fadeInButton is true, start at 0 if showNextButton is false. Otherwise always 1.
@@ -97,25 +102,6 @@ export default function OnboardingLayout({
 
   const containerPaddingTop = skipTopSafeArea ? 0 : insets.top;
   const contentPaddingTop = OnboardingTheme.Spacing.lg;
-
-  const contentWrapperProps = isScrollable
-    ? {
-      showsVerticalScrollIndicator: false,
-      contentContainerStyle: [
-        styles.scrollContentContainer,
-        { paddingTop: contentPaddingTop }
-      ],
-    }
-    : {
-      style: [
-        styles.content,
-        { paddingTop: contentPaddingTop }
-      ],
-    };
-
-  const handleDismissKeyboard = () => {
-    Keyboard.dismiss();
-  };
 
   const [keyboardHeight, setKeyboardHeight] = React.useState(0);
   const isKeyboardVisible = keyboardHeight > 0;
@@ -179,22 +165,24 @@ export default function OnboardingLayout({
       ) : null}
 
       {/* Content */}
-      {isScrollable ? (
-        <ScrollView
-          ref={scrollViewRef}
-          {...contentWrapperProps}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="on-drag"
-        >
-          {children}
-        </ScrollView>
-      ) : (
-        <TouchableWithoutFeedback onPress={handleDismissKeyboard}>
-          <View {...contentWrapperProps}>
-            {children}
-          </View>
-        </TouchableWithoutFeedback>
-      )}
+      <ScrollView
+        ref={scrollViewRef}
+        testID="onboarding-layout-scroll-view"
+        style={{ flex: 1 }}
+        contentContainerStyle={[
+          styles.scrollContentContainer,
+          { paddingTop: contentPaddingTop }
+        ]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        scrollEnabled={scrollEnabled}
+        bounces={scrollEnabled}
+        onLayout={(e) => setViewportHeight(e.nativeEvent.layout.height)}
+        onContentSizeChange={(_, h) => setContentHeight(h)}
+      >
+        {children}
+      </ScrollView>
 
       {/* Footer - render unless hideFooter is true */}
       {!hideFooter && (
@@ -256,18 +244,18 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: OnboardingTheme.Spacing.lg,
-    paddingTop: OnboardingTheme.Spacing.md, // Reduced spacing to keep content closer to progress bar
-    // Using flex-start prevents layout shifts when content animates in
+    paddingTop: OnboardingTheme.Spacing.md,
   },
   scrollContentContainer: {
     flexGrow: 1,
     paddingHorizontal: OnboardingTheme.Spacing.lg,
     paddingTop: OnboardingTheme.Spacing.md,
-    paddingBottom: 100, // Extra buffer to ensure content doesn't get hidden behind footer button
+    paddingBottom: 24, // Reduced buffer since footer is external
   },
   footer: {
     paddingHorizontal: OnboardingTheme.Spacing.lg,
     paddingTop: OnboardingTheme.Spacing.md,
     paddingBottom: OnboardingTheme.Spacing.xs,
+    backgroundColor: 'transparent', // Ensure it doesn't block background
   },
 });
