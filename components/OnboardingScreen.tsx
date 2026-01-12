@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Platform, KeyboardAvoidingView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -25,6 +25,10 @@ export function OnboardingScreen({
     showBack = true,
 }: OnboardingScreenProps) {
     const router = useRouter();
+    const [viewportHeight, setViewportHeight] = React.useState(0);
+    const [contentHeight, setContentHeight] = React.useState(0);
+
+    const scrollEnabled = contentHeight > viewportHeight;
 
     const handleBack = () => {
         if (onBack) {
@@ -49,47 +53,57 @@ export function OnboardingScreen({
 
     return (
         <SafeAreaView className="flex-1 bg-[#FDFBF7]">
-            {/* Header */}
-            <View className="px-4 py-2 flex-row items-center justify-between">
-                <View className="w-10">
-                    {showBack && (
-                        <TouchableOpacity onPress={handleBack} className="p-2 -ml-2">
-                            <Ionicons name="chevron-back" size={24} color="#1F2937" />
-                        </TouchableOpacity>
-                    )}
-                </View>
-
-                {/* Progress Bar */}
-                <View className="flex-1 h-1.5 bg-gray-200 rounded-full mx-4 overflow-hidden">
-                    <Animated.View
-                        className="h-full bg-primary-600 rounded-full"
-                        style={animatedStyle}
-                    />
-                </View>
-
-                <View className="w-10" />
-            </View>
-
-            <ScrollView
-                className="flex-1 px-6"
-                contentContainerStyle={{ paddingBottom: 40 }}
-                showsVerticalScrollIndicator={false}
+            <KeyboardAvoidingView 
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                className="flex-1"
             >
-                <Animated.View entering={FadeIn.duration(600).delay(100)} className="mt-6 mb-8">
-                    <Text className="text-3xl font-bold text-gray-900 mb-3 leading-tight font-sans">
-                        {title}
-                    </Text>
-                    {subtitle && (
-                        <Text className="text-lg text-gray-500 leading-relaxed">
-                            {subtitle}
-                        </Text>
-                    )}
-                </Animated.View>
+                {/* Header */}
+                <View className="px-4 py-2 flex-row items-center justify-between">
+                    <View className="w-10">
+                        {showBack && (
+                            <TouchableOpacity onPress={handleBack} className="p-2 -ml-2">
+                                <Ionicons name="chevron-back" size={24} color="#1F2937" />
+                            </TouchableOpacity>
+                        )}
+                    </View>
 
-                <Animated.View entering={FadeIn.duration(400)}>
-                    {children}
-                </Animated.View>
-            </ScrollView>
+                    {/* Progress Bar */}
+                    <View className="flex-1 h-1.5 bg-gray-200 rounded-full mx-4 overflow-hidden">
+                        <Animated.View
+                            className="h-full bg-primary-600 rounded-full"
+                            style={animatedStyle}
+                        />
+                    </View>
+
+                    <View className="w-10" />
+                </View>
+
+                <ScrollView
+                    testID="onboarding-scroll-view"
+                    className="flex-1 px-6"
+                    contentContainerStyle={{ flexGrow: 1, paddingBottom: 120 }}
+                    showsVerticalScrollIndicator={false}
+                    scrollEnabled={scrollEnabled}
+                    bounces={scrollEnabled}
+                    onLayout={(e) => setViewportHeight(e.nativeEvent.layout.height)}
+                    onContentSizeChange={(_, h) => setContentHeight(h)}
+                >
+                    <Animated.View entering={FadeIn.duration(600).delay(100)} className="mt-6 mb-8">
+                        <Text className="text-3xl font-bold text-gray-900 mb-3 leading-tight font-sans">
+                            {title}
+                        </Text>
+                        {subtitle && (
+                            <Text className="text-lg text-gray-500 leading-relaxed">
+                                {subtitle}
+                            </Text>
+                        )}
+                    </Animated.View>
+
+                    <Animated.View entering={FadeIn.duration(400)}>
+                        {children}
+                    </Animated.View>
+                </ScrollView>
+            </KeyboardAvoidingView>
         </SafeAreaView>
     );
 }
