@@ -432,14 +432,15 @@ const Avatar = ({
   const baseAvatar = BASE_AVATARS.find(a => a.id === resolvedAvatarId);
   const baseImage = baseAvatar?.image ?? BASE_AVATARS[0]?.image;
   
-  // Use mascot URL if provided, otherwise fall back to base avatar
-  const imageSource = mascotImageUrl 
-    ? { uri: mascotImageUrl } 
-    : baseImage;
   const shouldCacheMascot = Boolean(mascotImageUrl);
   const resolvedCacheKey = shouldCacheMascot
     ? mascotCacheKey ?? mascotImageUrl ?? resolvedAvatarId
     : undefined;
+
+  // Use mascot URL if provided, otherwise fall back to base avatar
+  const imageSource = mascotImageUrl 
+    ? { uri: mascotImageUrl, cacheKey: resolvedCacheKey } 
+    : baseImage;
 
   return (
     <View
@@ -486,7 +487,6 @@ const Avatar = ({
         source={imageSource}
         className="absolute w-full h-full"
         cachePolicy={shouldCacheMascot ? "disk" : undefined}
-        cacheKey={resolvedCacheKey}
         contentFit="contain"
       />
       {/* Loading overlay */}
@@ -878,7 +878,7 @@ export default function ChildHubScreen() {
       if (Date.now() - statusAt > PROCESSING_STALE_MS) {
         return {
           ...pending,
-          status: 'queued',
+          status: 'queued' as const,
           statusAt: Date.now(),
         };
       }
@@ -1372,14 +1372,15 @@ export default function ChildHubScreen() {
                     <View className="w-24 h-24 rounded-2xl bg-slate-100 overflow-hidden border-4 border-slate-100">
                       {book.coverImageUrl ? (
                         <ExpoImage
-                          source={{ uri: book.coverImageUrl }}
+                          source={{
+                            uri: book.coverImageUrl,
+                            cacheKey:
+                              book.coverImageStorageId ??
+                              book.coverImageUrl ??
+                              book._id
+                          }}
                           className="w-full h-full"
                           cachePolicy="disk"
-                          cacheKey={
-                            book.coverImageStorageId ??
-                            book.coverImageUrl ??
-                            book._id
-                          }
                           contentFit="cover"
                         />
                       ) : (

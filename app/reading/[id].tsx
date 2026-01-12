@@ -541,10 +541,9 @@ export default function ReadingScreen() {
       <View style={StyleSheet.absoluteFill}>
         {displayImage ? (
           <ExpoImage
-            source={{ uri: displayImage }}
+            source={{ uri: displayImage, cacheKey: displayImageCacheKey }}
             style={StyleSheet.absoluteFill}
             cachePolicy="disk"
-            cacheKey={displayImageCacheKey}
             contentFit="cover"
             blurRadius={20}
           />
@@ -593,10 +592,9 @@ export default function ReadingScreen() {
           >
             {displayImage ? (
               <ExpoImage
-                source={{ uri: displayImage }}
+                source={{ uri: displayImage, cacheKey: displayImageCacheKey }}
                 className="w-full h-full"
                 cachePolicy="disk"
-                cacheKey={displayImageCacheKey}
                 contentFit="cover"
               />
             ) : (
@@ -611,10 +609,9 @@ export default function ReadingScreen() {
           <View className="w-64 h-48 rounded-3xl overflow-hidden shadow-2xl border-4 border-white/20">
             {displayImage ? (
               <ExpoImage
-                source={{ uri: displayImage }}
+                source={{ uri: displayImage, cacheKey: displayImageCacheKey }}
                 className="w-full h-full"
                 cachePolicy="disk"
-                cacheKey={displayImageCacheKey}
                 contentFit="cover"
               />
             ) : (

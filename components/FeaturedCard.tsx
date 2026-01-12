@@ -101,14 +101,15 @@ export const FeaturedCard: React.FC<FeaturedCardProps> = ({ onRead }) => {
         <View className="relative w-28 aspect-[3/4] rounded-2xl overflow-hidden">
           {featuredBook.coverImageUrl ? (
             <ExpoImage
-              source={{ uri: featuredBook.coverImageUrl }}
+              source={{
+                uri: featuredBook.coverImageUrl,
+                cacheKey:
+                  featuredBook.coverImageStorageId ??
+                  featuredBook.coverImageUrl ??
+                  featuredBook._id
+              }}
               className="w-full h-full"
               cachePolicy="disk"
-              cacheKey={
-                featuredBook.coverImageStorageId ??
-                featuredBook.coverImageUrl ??
-                featuredBook._id
-              }
               contentFit="cover"
             />
           ) : (

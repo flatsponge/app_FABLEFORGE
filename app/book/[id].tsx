@@ -110,10 +110,9 @@ export default function BookDetailsScreen() {
         <View className="relative h-[420px]">
           {book.coverImage ? (
             <ExpoImage
-              source={{ uri: book.coverImage }}
+              source={{ uri: book.coverImage, cacheKey: coverCacheKey }}
               style={StyleSheet.absoluteFill}
               cachePolicy="disk"
-              cacheKey={coverCacheKey}
               contentFit="cover"
             />
           ) : (

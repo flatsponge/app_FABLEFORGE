@@ -8,11 +8,15 @@ import OnboardingSingleSelect, { SelectOption } from '../../../components/Onboar
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
 const REACTIONS: SelectOption[] = [
-    { id: 'calm', title: 'I stay calm (mostly)', icon: 'happy-outline' },
-    { id: 'yell', title: 'I yell (and feel guilty later)', icon: 'megaphone-outline' },
-    { id: 'give_in', title: 'I give in to stop the noise', icon: 'flag-outline' },
-    { id: 'time_out', title: 'I use time-outs / punishments', icon: 'timer-outline' },
-    { id: 'distract', title: 'I distract with screens', icon: 'phone-portrait-outline' },
+    { id: 'calm', title: 'I try to stay calm', icon: 'happy-outline' },
+    { id: 'explain', title: 'I explain why it\'s wrong', icon: 'chatbox-ellipses-outline' },
+    { id: 'comfort', title: 'I offer a hug or comfort', icon: 'heart-outline' },
+    { id: 'yell', title: 'I sometimes raise my voice', icon: 'megaphone-outline' },
+    { id: 'give_in', title: 'I give in to keep the peace', icon: 'flag-outline' },
+    { id: 'negotiate', title: 'I negotiate or offer a deal', icon: 'shuffle-outline' },
+    { id: 'time_out', title: 'I use time-outs', icon: 'timer-outline' },
+    { id: 'hide_frustration', title: 'I get frustrated but try to hide it', icon: 'eye-off-outline' },
+    { id: 'distract', title: 'I suggest a different activity', icon: 'phone-portrait-outline' },
 ];
 
 export default function ParentGuiltScreen() {
@@ -50,12 +54,6 @@ export default function ParentGuiltScreen() {
                     onSelect={handleSelect}
                     showCheckbox={false}
                 />
-
-                <View style={styles.reassuranceContainer}>
-                    <Text style={styles.reassuranceText}>
-                        "The goal isn't perfect parenting—it's having better tools."
-                    </Text>
-                </View>
             </View>
         </OnboardingLayout>
     );
@@ -64,17 +62,5 @@ export default function ParentGuiltScreen() {
 const styles = StyleSheet.create({
     contentContainer: {
         width: '100%',
-    },
-    reassuranceContainer: {
-        marginTop: OnboardingTheme.Spacing.xl,
-        backgroundColor: OnboardingTheme.Colors.Surface,
-        padding: OnboardingTheme.Spacing.md,
-        borderRadius: OnboardingTheme.Radius.lg,
-    },
-    reassuranceText: {
-        color: OnboardingTheme.Colors.TextSecondary,
-        fontSize: 14,
-        fontStyle: 'italic',
-        textAlign: 'center',
     },
 });

@@ -61,7 +61,7 @@ function RootLayoutNav() {
   return (
     <ConvexProvider>
       <SafeAreaProvider>
-        <ThemeProvider value={colorScheme === "dark" ? DarkTheme : customLightTheme}>
+        <ThemeProvider value={customLightTheme}>
           <AuthProvider>
             <AuthGate>
               <Stack>

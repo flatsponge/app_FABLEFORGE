@@ -25,6 +25,7 @@ export default function ReferralCodeScreen() {
     return (
         <OnboardingLayout
             showProgressBar={false}
+            skipTopSafeArea
             onNext={handleNext}
             nextLabel="Continue"
             showNextButton={true}

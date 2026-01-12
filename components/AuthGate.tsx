@@ -144,15 +144,17 @@ export function AuthGate({ children }: AuthGateProps) {
     const inTabs = segments[0] === '(tabs)';
     const isAtRoot = segments.length <= 1 || (segments[0] === '(onboarding)' && segments[1] === undefined);
 
-    if (!isAuthenticated && isAtRoot) {
-      if (!didInitialRedirect.current) {
-        didInitialRedirect.current = true;
-        router.replace((resumePath ?? '/(onboarding)/splash') as '/(onboarding)/splash');
-      }
-      return;
-    }
-
     if (!isAuthenticated) {
+      if (isAtRoot && !didInitialRedirect.current) {
+        didInitialRedirect.current = true;
+        // Resume from saved path if available and valid, otherwise start at splash
+        const validResumePath = resumePath && 
+          resumePath.startsWith('/(onboarding)') && 
+          resumePath !== '/(onboarding)' && 
+          resumePath !== '/(onboarding)/index';
+        const target = validResumePath ? resumePath : '/(onboarding)/splash';
+        router.replace(target as '/(onboarding)/splash');
+      }
       return;
     }
 

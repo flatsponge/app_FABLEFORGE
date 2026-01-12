@@ -23,6 +23,7 @@ export default function ChildNameScreen() {
     return (
         <OnboardingLayout
             showProgressBar={false}
+            skipTopSafeArea
             progress={0.1}
             onNext={handleNext}
             nextLabel="Continue"
