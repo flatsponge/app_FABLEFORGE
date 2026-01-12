@@ -13,6 +13,7 @@ export interface Book {
   progress: number;
   color: string;
   coverImage: string;
+  coverImageStorageId?: string | null;
   iconName: string;
   duration: string;
   description: string;

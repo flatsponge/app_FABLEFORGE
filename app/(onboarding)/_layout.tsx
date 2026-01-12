@@ -1,6 +1,7 @@
 import React from 'react';
 import { Stack } from 'expo-router';
 import { useOnboardingResume } from '../../hooks/useOnboardingResume';
+import { OnboardingProvider } from '../../contexts/OnboardingContext';
 
 function OnboardingResumeTracker() {
     useOnboardingResume();
@@ -9,7 +10,7 @@ function OnboardingResumeTracker() {
 
 export default function OnboardingLayout() {
     return (
-        <>
+        <OnboardingProvider>
             <OnboardingResumeTracker />
             <Stack
                 screenOptions={{
@@ -19,6 +20,6 @@ export default function OnboardingLayout() {
                     gestureEnabled: false,
                 }}
             />
-        </>
+        </OnboardingProvider>
     );
 }

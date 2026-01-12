@@ -1,16 +1,24 @@
 import React from 'react';
-import { View, Text, Pressable, Image } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
+import { Image as ExpoImage } from 'expo-image';
 import { Play, Clock, BookOpen } from 'lucide-react-native';
 import { Book } from '../types';
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
+import { useCachedValue } from '@/hooks/useCachedValue';
+import { CACHE_KEYS } from '@/lib/queryCache';
 
 interface FeaturedCardProps {
   onRead?: (book: Book) => void;
 }
 
 export const FeaturedCard: React.FC<FeaturedCardProps> = ({ onRead }) => {
-  const userBooks = useQuery(api.storyGeneration.getUserBooks, {});
+  const liveUserBooks = useQuery(api.storyGeneration.getUserBooks, {});
+  const { data: userBooks, cacheLoaded: booksCacheLoaded } = useCachedValue(
+    CACHE_KEYS.userBooks,
+    liveUserBooks
+  );
+  const isBooksLoading = liveUserBooks === undefined && !booksCacheLoaded;
 
   const featuredBook = React.useMemo(() => {
     if (!userBooks || userBooks.length === 0) return null;
@@ -20,6 +28,26 @@ export const FeaturedCard: React.FC<FeaturedCardProps> = ({ onRead }) => {
 
     return userBooks[0];
   }, [userBooks]);
+
+  if (isBooksLoading) {
+    return (
+      <View className="px-6 mb-8">
+        <View className="mb-4 px-1">
+          <Text className="text-lg font-bold text-slate-700">Continue Reading</Text>
+        </View>
+        <View className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+          <View className="flex-row gap-5">
+            <View className="w-28 aspect-[3/4] rounded-2xl bg-slate-100" />
+            <View className="flex-1 justify-center gap-3">
+              <View className="h-4 bg-slate-100 rounded-full w-3/4" />
+              <View className="h-3 bg-slate-100 rounded-full w-1/2" />
+              <View className="h-2 bg-slate-100 rounded-full w-full" />
+            </View>
+          </View>
+        </View>
+      </View>
+    );
+  }
 
   if (!featuredBook) {
     return (
@@ -45,6 +73,7 @@ export const FeaturedCard: React.FC<FeaturedCardProps> = ({ onRead }) => {
     progress: featuredBook.readingProgress,
     color: 'from-purple-400 to-indigo-500',
     coverImage: featuredBook.coverImageUrl || '',
+    coverImageStorageId: featuredBook.coverImageStorageId ?? null,
     iconName: 'Sparkles',
     userRating: null,
     duration: `${featuredBook.durationMinutes} min`,
@@ -71,10 +100,16 @@ export const FeaturedCard: React.FC<FeaturedCardProps> = ({ onRead }) => {
       >
         <View className="relative w-28 aspect-[3/4] rounded-2xl overflow-hidden">
           {featuredBook.coverImageUrl ? (
-            <Image
+            <ExpoImage
               source={{ uri: featuredBook.coverImageUrl }}
               className="w-full h-full"
-              resizeMode="cover"
+              cachePolicy="disk"
+              cacheKey={
+                featuredBook.coverImageStorageId ??
+                featuredBook.coverImageUrl ??
+                featuredBook._id
+              }
+              contentFit="cover"
             />
           ) : (
             <View className="w-full h-full bg-purple-100 items-center justify-center">

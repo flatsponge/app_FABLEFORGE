@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, ScrollView, Pressable, TextInput, Image, StyleSheet, ImageBackground, ActivityIndicator, Platform } from 'react-native';
+import { Image as ExpoImage } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
@@ -49,7 +50,9 @@ import {
   Image as ImageIcon,
 } from 'lucide-react-native';
 import { OUTFITS, HATS, TOYS, PRESET_LOCATIONS, BASE_AVATARS } from '@/constants/data';
-import { useOnboarding } from '@/contexts/OnboardingContext';
+import { useOnboardingLocalData } from '@/hooks/useOnboardingLocalData';
+import { useCachedValue } from '@/hooks/useCachedValue';
+import { CACHE_KEYS, seedBookCaches } from '@/lib/queryCache';
 type RoomType = 'wardrobe' | 'well' | 'read';
 // Merged hats + toys into single "accessories" tab due to FLUX Kontext 2-image limit
 type WardrobeTab = 'clothes' | 'accessories' | 'background';
@@ -415,20 +418,27 @@ const Avatar = ({
   scale = 1,
   mascotImageUrl,
   isLoading = false,
+  avatarId,
+  mascotCacheKey,
 }: {
   scale?: number;
   mascotImageUrl?: string | null;
   isLoading?: boolean;
+  avatarId?: string;
+  mascotCacheKey?: string | null;
 }) => {
-  const { data } = useOnboarding();
-  const avatarId = data?.avatarId || 'bears';
-  const baseAvatar = BASE_AVATARS.find(a => a.id === avatarId);
+  const resolvedAvatarId = avatarId || 'bears';
+  const baseAvatar = BASE_AVATARS.find(a => a.id === resolvedAvatarId);
   const baseImage = baseAvatar?.image ?? BASE_AVATARS[0]?.image;
   
   // Use mascot URL if provided, otherwise fall back to base avatar
   const imageSource = mascotImageUrl 
     ? { uri: mascotImageUrl } 
     : baseImage;
+  const shouldCacheMascot = Boolean(mascotImageUrl);
+  const resolvedCacheKey = shouldCacheMascot
+    ? mascotCacheKey ?? mascotImageUrl ?? resolvedAvatarId
+    : undefined;
 
   return (
     <View
@@ -471,10 +481,12 @@ const Avatar = ({
         }}
       />
       {/* Avatar/Mascot Image */}
-      <Image
+      <ExpoImage
         source={imageSource}
         className="absolute w-full h-full"
-        resizeMode="contain"
+        cachePolicy={shouldCacheMascot ? "disk" : undefined}
+        cacheKey={resolvedCacheKey}
+        contentFit="contain"
       />
       {/* Loading overlay */}
       {isLoading && (
@@ -728,9 +740,15 @@ export default function ChildHubScreen() {
   const [wishText, setWishText] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   
-  const userProgress = useQuery(api.onboarding.getUserProgress);
-  const mascotOutfit = useQuery(api.onboarding.getMascotOutfit);
-  const userBooks = useQuery(api.storyGeneration.getUserBooks, {});
+  const liveUserProgress = useQuery(api.onboarding.getUserProgress);
+  const liveMascotOutfit = useQuery(api.onboarding.getMascotOutfit);
+  const liveUserBooks = useQuery(api.storyGeneration.getUserBooks, {});
+  const { data: userProgress } = useCachedValue(CACHE_KEYS.userProgress, liveUserProgress);
+  const { data: mascotOutfit } = useCachedValue(CACHE_KEYS.mascotOutfit, liveMascotOutfit);
+  const { data: userBooks, cacheLoaded: booksCacheLoaded } = useCachedValue(
+    CACHE_KEYS.userBooks,
+    liveUserBooks
+  );
   const addClothesToMascot = useAction(api.imageGeneration.addClothesToMascot);
   const addAccessoryToMascot = useAction(api.imageGeneration.addAccessoryToMascot);
   const resetMascotOutfitAction = useAction(api.imageGeneration.resetMascotOutfit);
@@ -742,8 +760,16 @@ export default function ChildHubScreen() {
   const [showBottleAnimation, setShowBottleAnimation] = useState(false);
   const [showGlitter, setShowGlitter] = useState(false);
   const [wishSent, setWishSent] = useState(false);
-  const { data: onboardingData } = useOnboarding();
+  const onboardingData = useOnboardingLocalData();
+  const avatarId = onboardingData?.avatarId || 'bears';
   const gender = onboardingData?.gender || 'boy';
+  const isBooksLoading = liveUserBooks === undefined && !booksCacheLoaded;
+
+  useEffect(() => {
+    if (userBooks && userBooks.length > 0) {
+      seedBookCaches(userBooks);
+    }
+  }, [userBooks]);
 
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const unlockHintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -896,7 +922,6 @@ export default function ChildHubScreen() {
       // Check if user has a custom mascot or needs to use base avatar
       let mascotStorageId: Id<"_storage"> | undefined;
       if (!mascotOutfit?.originalMascotId) {
-        const avatarId = onboardingData?.avatarId || 'bears';
         const baseAvatar = BASE_AVATARS.find(a => a.id === avatarId) || BASE_AVATARS[0];
         mascotStorageId = await uploadLocalImageToConvex(baseAvatar.image);
       }
@@ -938,7 +963,6 @@ export default function ChildHubScreen() {
       // Check if user has a custom mascot or needs to use base avatar
       let mascotStorageId: Id<"_storage"> | undefined;
       if (!mascotOutfit?.originalMascotId) {
-        const avatarId = onboardingData?.avatarId || 'bears';
         const baseAvatar = BASE_AVATARS.find(a => a.id === avatarId) || BASE_AVATARS[0];
         mascotStorageId = await uploadLocalImageToConvex(baseAvatar.image);
       }
@@ -1054,6 +1078,8 @@ export default function ChildHubScreen() {
                     scale={1.2} 
                     mascotImageUrl={mascotOutfit?.currentMascotUrl}
                     isLoading={isGenerating}
+                    avatarId={avatarId}
+                    mascotCacheKey={mascotOutfit?.currentMascotId ?? userProgress?.generatedMascotId}
                   />
                 </View>
 
@@ -1256,7 +1282,22 @@ export default function ChildHubScreen() {
             </View>
 
             <View className="gap-6 pb-32">
-              {(!userBooks || userBooks.length === 0) ? (
+              {isBooksLoading ? (
+                Array.from({ length: 3 }).map((_, index) => (
+                  <View
+                    key={`story-skeleton-${index}`}
+                    className="w-full bg-white p-4 rounded-[40px] border-slate-200 flex-row items-center gap-5"
+                    style={{ borderBottomWidth: 12 }}
+                  >
+                    <View className="w-24 h-24 rounded-2xl bg-slate-100" />
+                    <View className="flex-1 gap-3">
+                      <View className="h-4 bg-slate-100 rounded-full w-3/4" />
+                      <View className="h-3 bg-slate-100 rounded-full w-1/2" />
+                    </View>
+                    <View className="w-16 h-16 rounded-full bg-slate-100" />
+                  </View>
+                ))
+              ) : (!userBooks || userBooks.length === 0) ? (
                 <View className="bg-white p-8 rounded-[40px] border-slate-200 items-center justify-center" style={{ borderBottomWidth: 12 }}>
                   <Text className="text-6xl mb-4">📖</Text>
                   <Text className="text-xl font-black text-slate-700 text-center mb-2">
@@ -1278,11 +1319,23 @@ export default function ChildHubScreen() {
                     })}
                   >
                     <View className="w-24 h-24 rounded-2xl bg-slate-100 overflow-hidden border-4 border-slate-100">
-                      <Image
-                        source={{ uri: book.coverImageUrl || '' }}
-                        className="w-full h-full"
-                        resizeMode="cover"
-                      />
+                      {book.coverImageUrl ? (
+                        <ExpoImage
+                          source={{ uri: book.coverImageUrl }}
+                          className="w-full h-full"
+                          cachePolicy="disk"
+                          cacheKey={
+                            book.coverImageStorageId ??
+                            book.coverImageUrl ??
+                            book._id
+                          }
+                          contentFit="cover"
+                        />
+                      ) : (
+                        <View className="w-full h-full bg-purple-100 items-center justify-center">
+                          <BookOpen size={28} color="#9333ea" />
+                        </View>
+                      )}
                     </View>
                     <View className="flex-1 py-2">
                       <Text

@@ -11,6 +11,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
+import { useCachedValue } from '@/hooks/useCachedValue';
+import { CACHE_KEYS } from '@/lib/queryCache';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
 import { GrowthScoreArc } from '@/components/GrowthScoreArc';
 import {
@@ -806,8 +808,13 @@ const GrowthScoreWidget = ({ score }: { score: number }) => {
 };
 
 export default function StatsScreen() {
-  const dbSkills = useQuery(api.onboarding.getUserSkills);
-  const skillContributions = useQuery(api.storyGeneration.getSkillContributions);
+  const liveSkills = useQuery(api.onboarding.getUserSkills);
+  const liveContributions = useQuery(api.storyGeneration.getSkillContributions);
+  const { data: dbSkills } = useCachedValue(CACHE_KEYS.userSkills, liveSkills);
+  const { data: skillContributions } = useCachedValue(
+    CACHE_KEYS.skillContributions,
+    liveContributions
+  );
   const [selectedSkillId, setSelectedSkillId] = useState<string | null>(null);
   const scrollY = useSharedValue(0);
 

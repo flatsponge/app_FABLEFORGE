@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, ScrollView, Pressable, Image, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
+import { Image as ExpoImage } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ChevronLeft, Play, Baby, Glasses, Clock, Zap, Sparkles, ThumbsUp, ThumbsDown } from 'lucide-react-native';
 import { ReadingMode } from '@/types';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
+import { useCachedValue } from '@/hooks/useCachedValue';
+import { CACHE_KEYS } from '@/lib/queryCache';
 
 const getDifficultyStyle = (level: string) => {
   switch (level) {
@@ -20,9 +23,13 @@ export default function BookDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   
-  const convexBook = useQuery(
+  const liveBook = useQuery(
     api.storyGeneration.getBook,
     id ? { bookId: id as Id<"books"> } : "skip"
+  );
+  const { data: convexBook } = useCachedValue(
+    id ? CACHE_KEYS.book(id) : null,
+    liveBook
   );
   
   const rateBookMutation = useMutation(api.storyGeneration.rateBook);
@@ -45,6 +52,7 @@ export default function BookDetailsScreen() {
     progress: convexBook.readingProgress,
     color: "from-purple-400 to-indigo-500",
     coverImage: convexBook.coverImageUrl || "",
+    coverImageStorageId: convexBook.coverImageStorageId ?? null,
     iconName: "Sparkles" as const,
     userRating: convexBook.userRating || null,
     duration: `${convexBook.durationMinutes} min`,
@@ -92,6 +100,7 @@ export default function BookDetailsScreen() {
     router.push(`/reading/${book.id}?mode=${mode}`);
   };
 
+  const coverCacheKey = book.coverImageStorageId ?? book.coverImage ?? book.id;
   const diffStyle = getDifficultyStyle(book.vocabularyLevel);
 
   return (
@@ -99,11 +108,19 @@ export default function BookDetailsScreen() {
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Hero Section with integrated title and metadata */}
         <View className="relative h-[420px]">
-          <Image
-            source={{ uri: book.coverImage }}
-            style={StyleSheet.absoluteFill}
-            resizeMode="cover"
-          />
+          {book.coverImage ? (
+            <ExpoImage
+              source={{ uri: book.coverImage }}
+              style={StyleSheet.absoluteFill}
+              cachePolicy="disk"
+              cacheKey={coverCacheKey}
+              contentFit="cover"
+            />
+          ) : (
+            <View className="absolute inset-0 bg-gradient-to-br from-purple-400 to-indigo-500 items-center justify-center">
+              <Sparkles size={48} color="white" />
+            </View>
+          )}
           {/* Gradient overlay for text readability */}
           <View className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/30" />
 

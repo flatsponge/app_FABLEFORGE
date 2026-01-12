@@ -1,7 +1,12 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect, useRef, useCallback } from 'react';
-import * as SecureStore from 'expo-secure-store';
-
-const STORAGE_KEY = 'onboarding_progress';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+    ONBOARDING_STORAGE_KEY,
+    clearPersistedOnboardingData,
+    loadPersistedOnboardingData,
+    loadResumePath,
+    saveResumePath,
+} from '../lib/onboardingStorage';
 
 type OnboardingData = {
     // Child info
@@ -112,11 +117,22 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         const loadPersistedData = async () => {
             try {
-                const stored = await SecureStore.getItemAsync(STORAGE_KEY);
+                const stored = await loadPersistedOnboardingData();
+                const storedResumePath = await loadResumePath();
                 if (stored) {
                     const parsed = JSON.parse(stored) as Partial<OnboardingData>;
                     // Merge with defaults to handle any new fields
-                    setData({ ...defaultData, ...parsed });
+                    setData({
+                        ...defaultData,
+                        ...parsed,
+                        resumePath: storedResumePath ?? parsed.resumePath,
+                    });
+                    setHasPersistedData(true);
+                } else if (storedResumePath) {
+                    setData({
+                        ...defaultData,
+                        resumePath: storedResumePath,
+                    });
                     setHasPersistedData(true);
                 }
             } catch (error) {
@@ -128,14 +144,14 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         loadPersistedData();
     }, []);
 
-    // Debounced save to SecureStore
+    // Debounced save to AsyncStorage
     const saveToStorage = useCallback((dataToSave: OnboardingData) => {
         if (saveTimeoutRef.current) {
             clearTimeout(saveTimeoutRef.current);
         }
         saveTimeoutRef.current = setTimeout(async () => {
             try {
-                await SecureStore.setItemAsync(STORAGE_KEY, JSON.stringify(dataToSave));
+                await AsyncStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify(dataToSave));
             } catch (error) {
                 console.warn('Failed to save onboarding progress:', error);
             }
@@ -148,6 +164,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
             saveToStorage(newData);
             return newData;
         });
+        setHasPersistedData(true);
     }, [saveToStorage]);
 
     const clearOnboardingData = useCallback(async () => {
@@ -155,7 +172,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
             if (saveTimeoutRef.current) {
                 clearTimeout(saveTimeoutRef.current);
             }
-            await SecureStore.deleteItemAsync(STORAGE_KEY);
+            await clearPersistedOnboardingData();
             setData(defaultData);
             setHasPersistedData(false);
         } catch (error) {
@@ -164,8 +181,10 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const setResumePath = useCallback((path: string) => {
-        updateData({ resumePath: path });
-    }, [updateData]);
+        setData((prev) => ({ ...prev, resumePath: path }));
+        saveResumePath(path);
+        setHasPersistedData(true);
+    }, []);
 
     const nextStep = () => { };
 
@@ -183,4 +202,3 @@ export function useOnboarding() {
     }
     return context;
 }
-

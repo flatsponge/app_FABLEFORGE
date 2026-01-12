@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, Image, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { Image as ExpoImage } from 'expo-image';
 import { Clock, ThumbsUp, Sparkles } from 'lucide-react-native';
 import { Book } from '../types';
 
@@ -11,6 +12,7 @@ interface BookCardProps {
 
 export const BookCard: React.FC<BookCardProps> = ({ book, onClick, showNewBadge }) => {
   const [userRating, setUserRating] = useState<'up' | 'down' | null>(book.userRating);
+  const coverCacheKey = book.coverImageStorageId ?? book.coverImage ?? book.id;
 
   const handleToggleRating = () => {
     setUserRating(userRating === 'up' ? null : 'up');
@@ -32,12 +34,21 @@ export const BookCard: React.FC<BookCardProps> = ({ book, onClick, showNewBadge 
           </View>
         )}
 
-        <Image
-          source={{ uri: book.coverImage }}
-          className="absolute inset-0 w-full h-full"
-          style={StyleSheet.absoluteFill}
-          resizeMode="cover"
-        />
+        {book.coverImage ? (
+          <ExpoImage
+            source={{ uri: book.coverImage }}
+            style={StyleSheet.absoluteFill}
+            cachePolicy="disk"
+            cacheKey={coverCacheKey}
+            contentFit="cover"
+          />
+        ) : (
+          <View
+            className={`absolute inset-0 bg-gradient-to-br ${book.color || 'from-purple-400 to-indigo-500'} items-center justify-center`}
+          >
+            <Sparkles size={36} color="white" />
+          </View>
+        )}
 
         <View className="absolute inset-0 bg-black/40" />
 

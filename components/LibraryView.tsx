@@ -14,6 +14,8 @@ import { api } from '@/convex/_generated/api';
 import { BookCard } from './BookCard';
 import { Book } from '@/types';
 import { useEffect } from 'react';
+import { useCachedValue } from '@/hooks/useCachedValue';
+import { CACHE_KEYS, seedBookCaches } from '@/lib/queryCache';
 
 interface LibraryViewProps {
   onBookClick: (book: Book) => void;
@@ -118,10 +120,24 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onBookClick, isHome = 
   const [searchQuery, setSearchQuery] = useState('');
 
   // Fetch user's generated books from Convex
-  const userBooks = useQuery(api.storyGeneration.getUserBooks, {});
+  const liveUserBooks = useQuery(api.storyGeneration.getUserBooks, {});
+  const { data: userBooks, cacheLoaded: booksCacheLoaded } = useCachedValue(
+    CACHE_KEYS.userBooks,
+    liveUserBooks
+  );
+
+  useEffect(() => {
+    if (userBooks && userBooks.length > 0) {
+      seedBookCaches(userBooks);
+    }
+  }, [userBooks]);
 
   // Fetch active/generating jobs
-  const activeJobs = useQuery(api.storyGeneration.getUserActiveJobs);
+  const liveActiveJobs = useQuery(api.storyGeneration.getUserActiveJobs);
+  const { data: activeJobs } = useCachedValue(
+    CACHE_KEYS.userActiveJobs,
+    liveActiveJobs
+  );
 
   // Convert active jobs to QueuedBook format
   const queuedBooks = useMemo<QueuedBook[]>(() => {
@@ -196,6 +212,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onBookClick, isHome = 
       progress: book.readingProgress,
       color: getColorFromVibe(book.storyVibe),
       coverImage: book.coverImageUrl || '',
+      coverImageStorageId: book.coverImageStorageId ?? null,
       iconName: 'Sparkles',
       userRating: book.userRating,
       duration: `${book.durationMinutes} min`,
@@ -226,6 +243,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onBookClick, isHome = 
   }
 
   const hasActiveJobs = queuedBooks.length > 0;
+  const isBooksLoading = liveUserBooks === undefined && !booksCacheLoaded;
 
   return (
     <View className={`bg-background ${isHome ? 'pb-24' : 'pb-32'}`}>
@@ -321,7 +339,14 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onBookClick, isHome = 
         )}
 
         <View className="flex-row flex-wrap gap-5">
-          {filteredBooks.length > 0 ? (
+          {isBooksLoading ? (
+            Array.from({ length: 4 }).map((_, index) => (
+              <View
+                key={`book-skeleton-${index}`}
+                className="w-[47%] aspect-[4/5] rounded-3xl bg-slate-100"
+              />
+            ))
+          ) : filteredBooks.length > 0 ? (
             filteredBooks.map((book, index) => (
               <View key={book.id} className="w-[47%]">
                 <BookCard

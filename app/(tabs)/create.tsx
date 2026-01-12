@@ -16,6 +16,8 @@ import { useQuery, useMutation, useAction } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
+import { useCachedValue } from '@/hooks/useCachedValue';
+import { CACHE_KEYS } from '@/lib/queryCache';
 import {
 
   ArrowRight,
@@ -516,7 +518,11 @@ export const CreateScreen: React.FC = () => {
   const [showCrystalModal, setShowCrystalModal] = useState(false);
 
   // Server-side credits
-  const creditsData = useQuery(api.credits.getUserCredits);
+  const liveCreditsData = useQuery(api.credits.getUserCredits);
+  const { data: creditsData } = useCachedValue(
+    CACHE_KEYS.userCredits,
+    liveCreditsData
+  );
   const addCreditsMutation = useMutation(api.credits.addCredits);
 
   // Story generation
@@ -524,9 +530,13 @@ export const CreateScreen: React.FC = () => {
   const queueStoryJobMutation = useMutation(api.storyGeneration.queueStoryJob);
   const cancelStoryJobMutation = useMutation(api.storyGeneration.cancelStoryJob);
   const generateOutlineAction = useAction(api.storyGenerationActions.generateOutline);
-  const storyJob = useQuery(
+  const liveStoryJob = useQuery(
     api.storyGeneration.getStoryJob,
     currentJobId ? { jobId: currentJobId } : "skip"
+  );
+  const { data: storyJob } = useCachedValue(
+    currentJobId ? CACHE_KEYS.storyJob(currentJobId) : null,
+    liveStoryJob
   );
 
   interface StoryOutline {

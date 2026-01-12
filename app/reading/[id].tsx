@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, Pressable, Image, StyleSheet, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import { Image as ExpoImage } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -11,8 +12,16 @@ import { useOrientation } from '@/components/useOrientation';
 import { useMutation, useQuery, useAction } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
+import { useCachedValue } from '@/hooks/useCachedValue';
+import { CACHE_KEYS } from '@/lib/queryCache';
 
-type PageData = { _id: string; pageIndex: number; text: string; imageUrl: string | null };
+type PageData = {
+  _id: string;
+  pageIndex: number;
+  text: string;
+  imageUrl: string | null;
+  imageStorageId?: string | null;
+};
 
 export default function ReadingScreen() {
   const { id, mode: modeParam } = useLocalSearchParams<{ id: string; mode?: string }>();
@@ -21,16 +30,24 @@ export default function ReadingScreen() {
 
   const { isLandscape, width, height } = useOrientation(true);
   
-  const convexBook = useQuery(
+  const liveBook = useQuery(
     api.storyGeneration.getBook,
     id ? { bookId: id as Id<"books"> } : "skip"
+  );
+  const { data: convexBook } = useCachedValue(
+    id ? CACHE_KEYS.book(id) : null,
+    liveBook
   );
   
   // Load current page
   const [page, setPage] = useState(0);
-  const currentPageData = useQuery(
+  const liveCurrentPageData = useQuery(
     api.storyGeneration.getBookPage,
     id ? { bookId: id as Id<"books">, pageIndex: page } : "skip"
+  );
+  const { data: currentPageData } = useCachedValue(
+    id ? CACHE_KEYS.bookPage(id, page) : null,
+    liveCurrentPageData
   );
   
   // Prefetch next page
@@ -134,6 +151,12 @@ export default function ReadingScreen() {
   const currentPage = getPage(page);
   const currentText = currentPage?.text ?? '';
   const currentImage = currentPage?.imageUrl ?? coverImage;
+  const pageImageCacheKey =
+    currentPage?.imageStorageId ??
+    (id && currentPage?.imageUrl ? `${id}-page-${currentPage.pageIndex}` : undefined);
+  const coverImageCacheKey =
+    convexBook?.coverImageStorageId ?? (id && coverImage ? `${id}-cover` : undefined);
+  const displayImageCacheKey = pageImageCacheKey ?? coverImageCacheKey;
 
   const isChildMode = mode === 'child';
   const isParentMode = mode === 'parent';
@@ -281,10 +304,12 @@ export default function ReadingScreen() {
     <View className="flex-1 bg-slate-900" style={isLandscape ? { flexDirection: 'row' } : undefined}>
       <View style={StyleSheet.absoluteFill}>
         {displayImage ? (
-          <Image
+          <ExpoImage
             source={{ uri: displayImage }}
             style={StyleSheet.absoluteFill}
-            resizeMode="cover"
+            cachePolicy="disk"
+            cacheKey={displayImageCacheKey}
+            contentFit="cover"
             blurRadius={20}
           />
         ) : (
@@ -331,10 +356,12 @@ export default function ReadingScreen() {
             style={coverSize}
           >
             {displayImage ? (
-              <Image
+              <ExpoImage
                 source={{ uri: displayImage }}
                 className="w-full h-full"
-                resizeMode="cover"
+                cachePolicy="disk"
+                cacheKey={displayImageCacheKey}
+                contentFit="cover"
               />
             ) : (
               <View className="w-full h-full bg-purple-600 items-center justify-center">
@@ -347,10 +374,12 @@ export default function ReadingScreen() {
         <View className="absolute top-1/4 left-0 right-0 px-6 items-center">
           <View className="w-64 h-48 rounded-3xl overflow-hidden shadow-2xl border-4 border-white/20">
             {displayImage ? (
-              <Image
+              <ExpoImage
                 source={{ uri: displayImage }}
                 className="w-full h-full"
-                resizeMode="cover"
+                cachePolicy="disk"
+                cacheKey={displayImageCacheKey}
+                contentFit="cover"
               />
             ) : (
               <View className="w-full h-full bg-purple-600 items-center justify-center">
@@ -565,4 +594,3 @@ export default function ReadingScreen() {
     </View>
   );
 }
-

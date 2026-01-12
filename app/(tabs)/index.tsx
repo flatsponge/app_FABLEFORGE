@@ -4,6 +4,8 @@ import { useRouter } from 'expo-router';
 import Animated, { useSharedValue, useAnimatedScrollHandler } from 'react-native-reanimated';
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
+import { useCachedValue } from '@/hooks/useCachedValue';
+import { CACHE_KEYS } from '@/lib/queryCache';
 
 import { UnifiedHeader } from '@/components/UnifiedHeader';
 import { FeaturedCard } from '@/components/FeaturedCard';
@@ -14,7 +16,8 @@ import { Book } from '@/types';
 export default function HomeScreen() {
   const router = useRouter();
   const scrollY = useSharedValue(0);
-  const dbSkills = useQuery(api.onboarding.getUserSkills);
+  const liveSkills = useQuery(api.onboarding.getUserSkills);
+  const { data: dbSkills } = useCachedValue(CACHE_KEYS.userSkills, liveSkills);
   // Derive overall score from main scores (which are derived from sub-scores)
   const growthScore = dbSkills 
     ? (() => {
