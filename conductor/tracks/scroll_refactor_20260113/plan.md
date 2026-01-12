@@ -1,6 +1,6 @@
 # Plan: Onboarding Scroll Behavior Refactor
 
-## Phase 1: Foundation & Component Refactor
+## Phase 1: Foundation & Component Refactor [checkpoint: f9a946a]
 - [x] Task: Create reproduction test case (manual or automated) demonstrating the "always scroll/bounce" issue. [41dbba6]
 - [x] Task: Refactor `components/OnboardingScreen.tsx` to implement conditional scrolling. [eea7691]
     - [ ] Sub-task: Measure content height vs. container height (or use `contentContainerStyle={{ flexGrow: 1 }}` strategy with conditional bounce).
