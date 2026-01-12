@@ -14,8 +14,8 @@
     "@convex-dev/auth": "^0.0.90",
     "@expo/vector-icons": "^15.0.3",
     "@react-native-async-storage/async-storage": "2.2.0",
-    "@react-navigation/native": "^7.1.8",
-    "convex": "^1.31.3",
+    "@react-navigation/native": "^7.1.27",
+    "convex": "^1.31.4",
     "expo": "^54.0.31",
     "expo-asset": "~12.0.12",
     "expo-blur": "~15.0.8",
@@ -39,11 +39,11 @@
     "react-dom": "19.1.0",
     "react-native": "0.81.5",
     "react-native-confetti-cannon": "^1.5.2",
-    "react-native-reanimated": "~4.1.1",
-    "react-native-safe-area-context": "~5.6.0",
+    "react-native-reanimated": "~4.1.6",
+    "react-native-safe-area-context": "~5.6.2",
     "react-native-screens": "~4.16.0",
     "react-native-svg": "15.12.1",
-    "react-native-web": "~0.21.0",
+    "react-native-web": "~0.21.2",
     "react-native-worklets": "0.5.1",
     "tailwindcss": "^3.4.19"
   },
@@ -52,14 +52,14 @@
     "resend": "^6.7.0",
     "@testing-library/react-native": "^13.3.3",
     "@types/jest": "29.5.14",
-    "@types/react": "~19.1.0",
+    "@types/react": "~19.1.17",
     "@types/react-test-renderer": "^19.1.0",
-    "eslint": "^9.0.0",
+    "eslint": "^9.39.2",
     "eslint-config-expo": "~10.0.0",
     "jest": "^29.7.0",
     "jest-expo": "^54.0.16",
     "react-test-renderer": "19.1.0",
-    "typescript": "~5.9.2"
+    "typescript": "~5.9.3"
   },
   "private": true
 }

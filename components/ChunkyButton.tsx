@@ -39,9 +39,7 @@ export function ChunkyButton({
     transform: [{ translateY: interpolate(pressed.value, [0, 1], [0, s.depth - 2]) }],
   }));
 
-  const shadowStyle = useAnimatedStyle(() => ({
-    height: interpolate(pressed.value, [0, 1], [s.depth, 2]),
-  }));
+
 
   return (
     <Pressable
@@ -52,7 +50,7 @@ export function ChunkyButton({
       onPressOut={() => {
         if (!disabled) pressed.value = withSpring(0, { damping: 25, stiffness: 600 });
       }}
-      style={style}
+      style={[style, { opacity: disabled ? 0.5 : 1 }]}
     >
       {/* Fixed-height container */}
       <View>
@@ -60,10 +58,10 @@ export function ChunkyButton({
         <View
           style={{
             position: 'absolute',
+            top: s.depth, // Shifted down by the depth amount
             left: 0,
             right: 0,
             bottom: 0,
-            height: s.depth,
             backgroundColor: borderColor,
             borderRadius: 20,
           }}
@@ -77,7 +75,7 @@ export function ChunkyButton({
               borderColor,
               backgroundColor: bgColor,
               borderRadius: 20,
-              opacity: disabled ? 0.5 : 1,
+              // opacity removed from here
               marginBottom: s.depth,
             },
           ]}
