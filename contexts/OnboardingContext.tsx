@@ -51,11 +51,14 @@ type OnboardingData = {
     // User acquisition tracking
     trafficSource?: string;
     referralCode?: string;
+    // Resume path for persistence across app restarts
+    resumePath?: string;
 };
 
 type OnboardingContextType = {
     data: OnboardingData;
     updateData: (updates: Partial<OnboardingData>) => void;
+    setResumePath: (path: string) => void;
     nextStep: () => void;
     clearOnboardingData: () => Promise<void>;
     isLoaded: boolean;
@@ -94,6 +97,7 @@ const defaultData: OnboardingData = {
     generatedMascotUrl: undefined,
     mascotJobId: undefined,
     email: undefined,
+    resumePath: undefined,
 };
 
 const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);
@@ -159,10 +163,14 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         }
     }, []);
 
+    const setResumePath = useCallback((path: string) => {
+        updateData({ resumePath: path });
+    }, [updateData]);
+
     const nextStep = () => { };
 
     return (
-        <OnboardingContext.Provider value={{ data, updateData, nextStep, clearOnboardingData, isLoaded, hasPersistedData }}>
+        <OnboardingContext.Provider value={{ data, updateData, setResumePath, nextStep, clearOnboardingData, isLoaded, hasPersistedData }}>
             {children}
         </OnboardingContext.Provider>
     );

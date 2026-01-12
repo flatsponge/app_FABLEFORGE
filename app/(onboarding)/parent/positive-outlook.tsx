@@ -9,7 +9,7 @@ import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingT
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
 const { width } = Dimensions.get('window');
-const GRAPH_WIDTH = width - 48;
+const GRAPH_WIDTH = width - 160;
 const GRAPH_HEIGHT = 180;
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
@@ -57,7 +57,7 @@ export default function PositiveOutlookScreen() {
                     <View style={styles.chartCard}>
                         <Text style={styles.chartTitle}>Projected Skill Growth</Text>
                         <View style={styles.chartWrapper}>
-                            <Svg width={GRAPH_WIDTH - 48} height={GRAPH_HEIGHT}>
+                            <Svg width={GRAPH_WIDTH} height={GRAPH_HEIGHT}>
                                 <Defs>
                                     <LinearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
                                         <Stop offset="0%" stopColor={OnboardingTheme.Colors.Success} stopOpacity={0.2} />

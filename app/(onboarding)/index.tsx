@@ -1,6 +1,19 @@
-import { Redirect } from 'expo-router';
+import React from 'react';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
 
 export default function OnboardingIndex() {
-    // New users start with the intro sizzle reel
-    return <Redirect href="/(onboarding)/splash" />;
+    return (
+        <View style={styles.container}>
+            <ActivityIndicator size="large" color="#7c3aed" />
+        </View>
+    );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#FDFBF7',
+    },
+});

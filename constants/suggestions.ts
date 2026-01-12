@@ -52,14 +52,14 @@ export const STORY_STARTERS: StoryStarter[] = [
     {
         id: 'bedtime',
         label: 'Bedtime',
-        prompt: 'As the stars begin to twinkle, a sleepy little one embarks on a journey through dreamland...',
+        prompt: 'As the stars begin to twinkle, a sleepy mascot embarks on a journey through dreamland...',
         icon: Bed,
         gradient: ['#e0e7ff', '#a5b4fc'],
     },
     {
         id: 'magic',
         label: 'Magic',
-        prompt: 'A child discovers they have a special magical power that only works when they believe in themselves...',
+        prompt: 'A mascot discovers they have a special magical power that only works when they believe in themselves...',
         icon: Wand2,
         gradient: ['#f3e8ff', '#c4b5fd'],
     },

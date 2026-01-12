@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import Animated, { useSharedValue, useAnimatedScrollHandler } from 'react-native-reanimated';
+import { useRouter } from 'expo-router';
+import { useAuthActions } from '@convex-dev/auth/react';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
 import {
   Bell,
@@ -71,10 +73,21 @@ export default function SettingsScreen() {
   const [sound, setSound] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
   const scrollY = useSharedValue(0);
+  const router = useRouter();
+  const { signOut } = useAuthActions();
 
   const scrollHandler = useAnimatedScrollHandler((event) => {
     scrollY.value = event.contentOffset.y;
   });
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      router.replace('/(onboarding)');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
 
   return (
     <View className="flex-1 bg-background">
@@ -202,7 +215,10 @@ export default function SettingsScreen() {
               </View>
             </View>
 
-            <Pressable className="w-full py-4 rounded-3xl bg-slate-100 flex-row items-center justify-center gap-2 active:bg-slate-200">
+            <Pressable 
+              onPress={handleLogout}
+              className="w-full py-4 rounded-3xl bg-slate-100 flex-row items-center justify-center gap-2 active:bg-slate-200"
+            >
               <LogOut size={16} color="#64748b" />
               <Text className="text-slate-600 font-bold text-sm">Log Out</Text>
             </Pressable>

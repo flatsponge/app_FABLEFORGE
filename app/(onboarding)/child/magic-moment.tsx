@@ -632,7 +632,7 @@ export default function MagicMomentScreen() {
     ? { uri: data.generatedMascotUrl }
     : selectedAvatarData.image ?? require('@/assets/images/friendly-star.png');
 
-  const mascotName = data.mascotName || selectedAvatarData.name || 'Your Friend';
+  const mascotName = data.mascotName?.trim() || selectedAvatarData.name || 'Your Friend';
   const activeGenerationError = mascotJobError ?? teaserImageError;
   const isMascotGenerationError = !!mascotJobError;
   const isRetryingActive = isMascotGenerationError ? isRetrying : isRetryingTeaserImage;
@@ -673,11 +673,11 @@ export default function MagicMomentScreen() {
 
       const result = await generateTeaser({
         prompt: promptText.trim(),
-        childName: data.childName || 'Little One',
-        childAge: data.childAge || '5',
-        gender: data.gender || 'child',
+        childName: data.childName,
+        childAge: data.childAge,
+        gender: data.gender,
         email: tempTeaserEmail,
-        mascotName: data.mascotName || undefined,
+        mascotName: data.mascotName?.trim() || undefined,
         mascotStorageId: mascotStorageId ? (mascotStorageId as Id<"_storage">) : undefined,
       });
 

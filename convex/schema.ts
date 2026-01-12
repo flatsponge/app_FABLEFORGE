@@ -187,7 +187,7 @@ export default defineSchema({
   // Generated books
   books: defineTable({
     userId: v.id("users"),
-    jobId: v.id("storyJobs"),
+    jobId: v.optional(v.id("storyJobs")), // Optional for teaser books
     title: v.string(),
     description: v.string(),
     moral: v.string(),
@@ -214,6 +214,16 @@ export default defineSchema({
     // Timestamps
     createdAt: v.number(),
     lastReadAt: v.optional(v.number()),
+    // Teaser book fields (for onboarding demo story)
+    isTeaserBook: v.optional(v.boolean()), // True if created from onboarding teaser
+    teaserBookStatus: v.optional(
+      v.union(
+        v.literal("pending"), // Only has first page, needs remaining pages generated
+        v.literal("generating"), // Currently generating remaining pages
+        v.literal("complete") // All pages generated
+      )
+    ),
+    teaserId: v.optional(v.id("onboardingTeasers")), // Link back to teaser
   })
     .index("by_user", ["userId"])
     .index("by_job", ["jobId"]),
@@ -221,7 +231,7 @@ export default defineSchema({
   // Individual book pages
   bookPages: defineTable({
     bookId: v.id("books"),
-    jobId: v.id("storyJobs"),
+    jobId: v.optional(v.id("storyJobs")), // Optional for teaser books
     pageIndex: v.number(), // 0-based
     // Content
     text: v.string(),
@@ -253,6 +263,7 @@ export default defineSchema({
     gender: v.string(),
     // Generated content
     title: v.string(),
+    description: v.string(), // Book summary for library card
     teaserText: v.string(), // First page text only (preview)
     mascotStorageId: v.optional(v.id("_storage")),
     teaserImageStorageId: v.optional(v.id("_storage")),

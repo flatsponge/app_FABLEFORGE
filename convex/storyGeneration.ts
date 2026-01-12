@@ -4,9 +4,10 @@ import {
   internalQuery,
   mutation,
   query,
+  MutationCtx,
 } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { Id } from "./_generated/dataModel";
+import { Id, Doc } from "./_generated/dataModel";
 import { getAuthUser, requireAuthUser } from "./authHelpers";
 
 const SKILL_KEYS = [
@@ -672,6 +673,10 @@ export const getBook = query({
       storyVibe: v.string(),
       vocabularyLevel: v.string(),
       userRating: v.optional(v.union(v.literal("up"), v.literal("down"))),
+      isTeaserBook: v.optional(v.boolean()),
+      teaserBookStatus: v.optional(
+        v.union(v.literal("pending"), v.literal("generating"), v.literal("complete"))
+      ),
     }),
     v.null()
   ),
@@ -704,6 +709,36 @@ export const getBook = query({
       storyVibe: book.storyVibe,
       vocabularyLevel: book.vocabularyLevel,
       userRating: book.userRating,
+      isTeaserBook: book.isTeaserBook,
+      teaserBookStatus: book.teaserBookStatus,
+    };
+  },
+});
+
+export const getBookDetails = query({
+  args: { bookId: v.id("books") },
+  returns: v.union(
+    v.object({
+      _id: v.id("books"),
+      title: v.string(),
+      description: v.string(),
+      isTeaserBook: v.optional(v.boolean()),
+      teaserBookStatus: v.optional(
+        v.union(v.literal("pending"), v.literal("generating"), v.literal("complete"))
+      ),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    const book = await ctx.db.get(args.bookId);
+    if (!book) return null;
+
+    return {
+      _id: book._id,
+      title: book.title,
+      description: book.description,
+      isTeaserBook: book.isTeaserBook,
+      teaserBookStatus: book.teaserBookStatus,
     };
   },
 });
@@ -1062,6 +1097,7 @@ export const saveOnboardingTeaser = internalMutation({
     childAge: v.string(),
     gender: v.string(),
     title: v.string(),
+    description: v.string(),
     teaserText: v.string(),
     mascotStorageId: v.optional(v.id("_storage")),
   },
@@ -1081,6 +1117,7 @@ export const saveOnboardingTeaser = internalMutation({
         childAge: args.childAge,
         gender: args.gender,
         title: args.title,
+        description: args.description,
         teaserText: args.teaserText,
         createdAt: Date.now(),
         ...(args.mascotStorageId ? { mascotStorageId: args.mascotStorageId } : {}),
@@ -1096,6 +1133,7 @@ export const saveOnboardingTeaser = internalMutation({
       childAge: args.childAge,
       gender: args.gender,
       title: args.title,
+      description: args.description,
       teaserText: args.teaserText,
       ...(args.mascotStorageId ? { mascotStorageId: args.mascotStorageId } : {}),
       fullStoryGenerated: false,
@@ -1113,6 +1151,7 @@ export const getOnboardingTeaserByEmail = internalQuery({
     v.object({
       _id: v.id("onboardingTeasers"),
       title: v.string(),
+      description: v.string(),
       teaserText: v.string(),
       prompt: v.string(),
       childName: v.string(),
@@ -1138,6 +1177,7 @@ export const getOnboardingTeaserByEmail = internalQuery({
     return {
       _id: teaser._id,
       title: teaser.title,
+      description: teaser.description,
       teaserText: teaser.teaserText,
       prompt: teaser.prompt,
       childName: teaser.childName,
@@ -1323,5 +1363,258 @@ export const linkTeaserToUser = internalMutation({
 
     await ctx.db.patch(teaser._id, { userId: args.userId });
     return true;
+  },
+});
+
+/**
+ * Convert onboarding teaser to a book entry in the library.
+ * Called after onboarding completes to make the demo story appear in the library.
+ * The book is created with status "pending" - remaining pages are generated on first open.
+ */
+export const convertTeaserToBook = mutation({
+  args: {},
+  returns: v.object({
+    success: v.boolean(),
+    bookId: v.optional(v.id("books")),
+    error: v.optional(v.string()),
+  }),
+  handler: async (ctx) => {
+    const user = await getAuthUser(ctx);
+    if (!user) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    // Find the user's teaser
+    const teaser = await ctx.db
+      .query("onboardingTeasers")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .first();
+
+    if (!teaser) {
+      // Try by email as fallback
+      if (user.email) {
+        const teaserByEmail = await ctx.db
+          .query("onboardingTeasers")
+          .withIndex("by_email", (q) => q.eq("email", user.email!))
+          .first();
+        if (!teaserByEmail) {
+          return { success: false, error: "No teaser found" };
+        }
+        // Link teaser to user
+        await ctx.db.patch(teaserByEmail._id, { userId: user._id });
+        return await createBookFromTeaser(ctx, teaserByEmail, user._id);
+      }
+      return { success: false, error: "No teaser found" };
+    }
+
+    // Check if already converted
+    if (teaser.linkedBookId) {
+      return { success: true, bookId: teaser.linkedBookId };
+    }
+
+    return await createBookFromTeaser(ctx, teaser, user._id);
+  },
+});
+
+async function createBookFromTeaser(
+  ctx: MutationCtx,
+  teaser: Doc<"onboardingTeasers">,
+  userId: Id<"users">
+): Promise<{ success: boolean; bookId?: Id<"books">; error?: string }> {
+  // Create the book entry
+  const bookId = await ctx.db.insert("books", {
+    userId,
+    title: teaser.title,
+    description: teaser.description,
+    moral: "friendship",
+    moralDescription: "The joy of friendship and connection",
+    pageCount: 3, // Short demo story
+    storyLength: "short",
+    vocabularyLevel: "beginner",
+    storyVibe: "soothing",
+    coverImageStorageId: teaser.teaserImageStorageId,
+    readingProgress: 0,
+    lastReadPageIndex: 0,
+    durationMinutes: 2,
+    createdAt: Date.now(),
+    isTeaserBook: true,
+    teaserBookStatus: "pending",
+    teaserId: teaser._id,
+  });
+
+  // Create the first page from the teaser
+  await ctx.db.insert("bookPages", {
+    bookId,
+    pageIndex: 0,
+    text: teaser.teaserText,
+    imagePrompt: `A magical illustration for: ${teaser.title}`,
+    imageStorageId: teaser.teaserImageStorageId,
+    hasMascot: true,
+    hasExtraCharacter: false,
+  });
+
+  // Link the book back to the teaser
+  await ctx.db.patch(teaser._id, {
+    linkedBookId: bookId,
+    fullStoryGenerated: false,
+  });
+
+  return { success: true, bookId };
+}
+
+/**
+ * Get teaser book for generating remaining pages
+ */
+export const getTeaserBookForGeneration = internalQuery({
+  args: { bookId: v.id("books") },
+  returns: v.union(
+    v.object({
+      _id: v.id("books"),
+      userId: v.id("users"),
+      title: v.string(),
+      description: v.string(),
+      teaserId: v.id("onboardingTeasers"),
+      teaserPrompt: v.string(),
+      childName: v.string(),
+      childAge: v.string(),
+      gender: v.string(),
+      mascotStorageId: v.union(v.id("_storage"), v.null()),
+      firstPageText: v.string(),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    const book = await ctx.db.get(args.bookId);
+    if (!book || !book.isTeaserBook || !book.teaserId) {
+      return null;
+    }
+
+    const teaser = await ctx.db.get(book.teaserId);
+    if (!teaser) {
+      return null;
+    }
+
+    // Get the first page
+    const firstPage = await ctx.db
+      .query("bookPages")
+      .withIndex("by_book_and_page", (q) => q.eq("bookId", args.bookId).eq("pageIndex", 0))
+      .first();
+
+    return {
+      _id: book._id,
+      userId: book.userId,
+      title: book.title,
+      description: book.description,
+      teaserId: book.teaserId,
+      teaserPrompt: teaser.prompt,
+      childName: teaser.childName,
+      childAge: teaser.childAge,
+      gender: teaser.gender,
+      mascotStorageId: teaser.mascotStorageId ?? null,
+      firstPageText: firstPage?.text ?? teaser.teaserText,
+    };
+  },
+});
+
+/**
+ * Update teaser book status
+ */
+export const updateTeaserBookStatus = internalMutation({
+  args: {
+    bookId: v.id("books"),
+    status: v.union(v.literal("pending"), v.literal("generating"), v.literal("complete")),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.bookId, { teaserBookStatus: args.status });
+    return null;
+  },
+});
+
+/**
+ * Add page to teaser book
+ */
+export const addTeaserBookPage = internalMutation({
+  args: {
+    bookId: v.id("books"),
+    pageIndex: v.number(),
+    text: v.string(),
+    imagePrompt: v.string(),
+    imageStorageId: v.optional(v.id("_storage")),
+  },
+  returns: v.id("bookPages"),
+  handler: async (ctx, args) => {
+    return await ctx.db.insert("bookPages", {
+      bookId: args.bookId,
+      pageIndex: args.pageIndex,
+      text: args.text,
+      imagePrompt: args.imagePrompt,
+      imageStorageId: args.imageStorageId,
+      hasMascot: true,
+      hasExtraCharacter: false,
+    });
+  },
+});
+
+/**
+ * Mark teaser as having full story generated
+ */
+export const markTeaserFullStoryGenerated = internalMutation({
+  args: { teaserId: v.id("onboardingTeasers") },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.teaserId, { fullStoryGenerated: true });
+    return null;
+  },
+});
+
+/**
+ * Get book page by index
+ */
+export const getBookPageByIndex = internalQuery({
+  args: {
+    bookId: v.id("books"),
+    pageIndex: v.number(),
+  },
+  returns: v.union(
+    v.object({
+      _id: v.id("bookPages"),
+      text: v.string(),
+      imagePrompt: v.string(),
+      imageStorageId: v.union(v.id("_storage"), v.null()),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    const page = await ctx.db
+      .query("bookPages")
+      .withIndex("by_book_and_page", (q) =>
+        q.eq("bookId", args.bookId).eq("pageIndex", args.pageIndex)
+      )
+      .first();
+
+    if (!page) return null;
+
+    return {
+      _id: page._id,
+      text: page.text,
+      imagePrompt: page.imagePrompt,
+      imageStorageId: page.imageStorageId ?? null,
+    };
+  },
+});
+
+/**
+ * Update book page image
+ */
+export const updateBookPageImage = internalMutation({
+  args: {
+    pageId: v.id("bookPages"),
+    imageStorageId: v.id("_storage"),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.pageId, { imageStorageId: args.imageStorageId });
+    return null;
   },
 });

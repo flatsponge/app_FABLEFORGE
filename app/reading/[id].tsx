@@ -8,7 +8,7 @@ import {
 } from 'lucide-react-native';
 import { ReadingMode } from '@/types';
 import { useOrientation } from '@/components/useOrientation';
-import { useMutation, useQuery } from 'convex/react';
+import { useMutation, useQuery, useAction } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
 
@@ -75,6 +75,22 @@ export default function ReadingScreen() {
 
   const updateProgress = useMutation(api.storyGeneration.updateBookProgress);
   const rateBookMutation = useMutation(api.storyGeneration.rateBook);
+  const triggerTeaserBookGeneration = useAction(api.storyGenerationActions.triggerTeaserBookGeneration);
+  
+  // Track if we've triggered generation for this book
+  const triggeredGeneration = useRef(false);
+  
+  // Trigger teaser book page generation on first open
+  useEffect(() => {
+    if (!convexBook || triggeredGeneration.current) return;
+    
+    if (convexBook.isTeaserBook && convexBook.teaserBookStatus === 'pending') {
+      triggeredGeneration.current = true;
+      triggerTeaserBookGeneration({ bookId: id as Id<"books"> }).catch((err) => {
+        console.warn('Failed to trigger teaser book generation:', err);
+      });
+    }
+  }, [convexBook, id, triggerTeaserBookGeneration]);
   
   const mode = (modeParam || 'autoplay') as ReadingMode;
 

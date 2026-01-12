@@ -13,6 +13,7 @@ import "../global.css";
 
 import { useColorScheme } from "@/components/useColorScheme";
 import { lockToPortrait } from "@/components/useOrientation";
+import { AuthGate } from "@/components/AuthGate";
 import { OnboardingProvider } from "../contexts/OnboardingContext";
 import { AuthProvider } from "../contexts/AuthContext";
 import { ConvexProvider } from "../lib/convex";
@@ -72,46 +73,48 @@ function RootLayoutNav() {
         <ThemeProvider value={colorScheme === "dark" ? DarkTheme : customLightTheme}>
           <AuthProvider>
             <OnboardingProvider>
-              <Stack>
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                <Stack.Screen
-                  name="(onboarding)"
-                  options={{
-                    headerShown: false,
-                    animation: "slide_from_right",
-                    gestureEnabled: false,
-                  }}
-                />
-                <Stack.Screen
-                  name="book/[id]"
-                  options={{
-                    headerShown: false,
-                    presentation: "modal",
-                  }}
-                />
-                <Stack.Screen
-                  name="reading/[id]"
-                  options={{
-                    headerShown: false,
-                    presentation: "fullScreenModal",
-                  }}
-                />
-                <Stack.Screen
-                  name="manage-assets"
-                  options={{
-                    headerShown: false,
-                    presentation: "modal",
-                  }}
-                />
-                <Stack.Screen
-                  name="asset-studio"
-                  options={{
-                    headerShown: false,
-                    presentation: "transparentModal",
-                    animation: "slide_from_bottom",
-                  }}
-                />
-              </Stack>
+              <AuthGate>
+                <Stack>
+                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                  <Stack.Screen
+                    name="(onboarding)"
+                    options={{
+                      headerShown: false,
+                      animation: "slide_from_right",
+                      gestureEnabled: false,
+                    }}
+                  />
+                  <Stack.Screen
+                    name="book/[id]"
+                    options={{
+                      headerShown: false,
+                      presentation: "modal",
+                    }}
+                  />
+                  <Stack.Screen
+                    name="reading/[id]"
+                    options={{
+                      headerShown: false,
+                      presentation: "fullScreenModal",
+                    }}
+                  />
+                  <Stack.Screen
+                    name="manage-assets"
+                    options={{
+                      headerShown: false,
+                      presentation: "modal",
+                    }}
+                  />
+                  <Stack.Screen
+                    name="asset-studio"
+                    options={{
+                      headerShown: false,
+                      presentation: "transparentModal",
+                      animation: "slide_from_bottom",
+                    }}
+                  />
+                </Stack>
+              </AuthGate>
             </OnboardingProvider>
           </AuthProvider>
         </ThemeProvider>
