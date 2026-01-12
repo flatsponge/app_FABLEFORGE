@@ -1,0 +1,8 @@
+{
+  "track_id": "scroll_refactor_20260113",
+  "type": "refactor",
+  "status": "new",
+  "created_at": "2026-01-13T12:00:00Z",
+  "updated_at": "2026-01-13T12:00:00Z",
+  "description": "Refactor onboarding flow to eliminate unnecessary scrolling on static screens while ensuring accessibility on small devices."
+}
