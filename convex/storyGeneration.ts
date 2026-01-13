@@ -400,6 +400,74 @@ export const updateBookCover = internalMutation({
   },
 });
 
+export const debugBookPageImage = internalQuery({
+  args: {
+    bookId: v.id("books"),
+    pageIndex: v.number(),
+  },
+  returns: v.object({
+    pageExists: v.boolean(),
+    hasStorageId: v.boolean(),
+    storageId: v.union(v.id("_storage"), v.null()),
+    storageMetadata: v.union(
+      v.object({
+        size: v.number(),
+        contentType: v.optional(v.string()),
+      }),
+      v.null()
+    ),
+    imageUrl: v.union(v.string(), v.null()),
+    bookStatus: v.optional(
+      v.union(v.literal("pending"), v.literal("generating"), v.literal("complete"))
+    ),
+  }),
+  handler: async (ctx, args) => {
+    const book = await ctx.db.get(args.bookId);
+    
+    const page = await ctx.db
+      .query("bookPages")
+      .withIndex("by_book_and_page", (q) =>
+        q.eq("bookId", args.bookId).eq("pageIndex", args.pageIndex)
+      )
+      .first();
+
+    if (!page) {
+      return {
+        pageExists: false,
+        hasStorageId: false,
+        storageId: null,
+        storageMetadata: null,
+        imageUrl: null,
+        bookStatus: book?.teaserBookStatus,
+      };
+    }
+
+    const storageId = page.imageStorageId ?? null;
+    let storageMetadata: { size: number; contentType?: string } | null = null;
+    let imageUrl: string | null = null;
+
+    if (storageId) {
+      const metadata = await ctx.db.system.get(storageId);
+      if (metadata) {
+        storageMetadata = {
+          size: metadata.size,
+          contentType: metadata.contentType,
+        };
+      }
+      imageUrl = await ctx.storage.getUrl(storageId);
+    }
+
+    return {
+      pageExists: true,
+      hasStorageId: !!storageId,
+      storageId,
+      storageMetadata,
+      imageUrl,
+      bookStatus: book?.teaserBookStatus,
+    };
+  },
+});
+
 export const getJob = internalQuery({
   args: { jobId: v.id("storyJobs") },
   returns: v.union(

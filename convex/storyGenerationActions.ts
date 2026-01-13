@@ -317,26 +317,36 @@ STRUCTURE:
           IMAGE PROMPTS (CRITICAL)
 ═══════════════════════════════════════
 
+⚠️ CORE RULE: Each imagePrompt MUST illustrate the EXACT scene described in that page's text.
+The illustration should be a visual representation of what is happening in the story at that moment.
+
 IMPORTANT: The mascot character (from the reference image) is the HERO of the illustrations. 
 The mascot can be any creature - animal, dragon, unicorn, robot, magical being, etc.
 NO human children appear in the images - only the mascot character goes on adventures.
 
-For each page, create a detailed illustration prompt following this structure:
-SUBJECT + ACTION + SETTING + LIGHTING/MOOD
+IMAGE PROMPT STRUCTURE (follow precisely):
+1. WHO: Always say "The mascot" or "The mascot character" - NEVER use names or animal types
+2. ACTION: The EXACT action from the page text (if text says mascot is "climbing a tree", prompt must show climbing a tree)
+3. EXPRESSION: Emotional state matching the story moment (curious, worried, joyful, determined)
+4. SETTING: Specific location from the story (not generic - use details from your text)
+5. ATMOSPHERE: Lighting and mood that matches the story beat
 
-Each imagePrompt MUST include:
-1. WHO: "The friendly character from the reference image" with specific pose and expression (smiling proudly, looking curious, eyes wide with wonder)
-2. WHAT: The specific action being performed (running through, reaching toward, hugging, discovering, jumping over)
-3. WHERE: Detailed setting with specific environmental elements (cozy treehouse interior, sunny meadow with wildflowers, moonlit pond with lily pads)
-4. ATMOSPHERE: Lighting quality and color mood (warm golden sunlight, soft pink sunset glow, magical sparkles floating in air)
+MATCHING EXAMPLES:
+- If page text says: "The mascot found a sparkling gem hidden under the old oak tree"
+  imagePrompt: "The mascot with wide amazed eyes, discovering a glowing gem beneath gnarled tree roots, dappled forest light, magical sparkles emanating from the gem"
 
-EXAMPLE imagePrompt: "The friendly character from the reference image with wide excited eyes, reaching toward a glowing butterfly, standing in an enchanted garden with oversized colorful flowers and mushrooms, warm dappled sunlight filtering through giant leaves, magical dust particles floating in the air"
+- If page text says: "Feeling scared, the mascot huddled in the corner of the cave"
+  imagePrompt: "The mascot curled up nervously in a shadowy cave corner, soft scared expression, dim blue cave lighting with a hint of warm light from the entrance"
 
-DO NOT include:
-- Character names (the image model doesn't know names)  
-- Human children (the mascot is the main character)
-- Abstract concepts without visual representation
-- Style instructions (these are added separately)
+- If page text says: "With a big smile, the mascot shared the last cookie with the little bird"
+  imagePrompt: "The mascot with a warm proud smile, offering a cookie to a small colorful bird, cozy kitchen setting, warm golden afternoon light through a window"
+
+❌ DO NOT:
+- Use character names (image model doesn't know "Loli" or "Benny")
+- Use animal types (don't say "the bunny" or "the bear" - just say "the mascot")
+- Create generic prompts that don't match the specific scene
+- Include abstract concepts without visual representation
+- Add style instructions (these are added separately)
 
 RESPOND IN THIS EXACT JSON FORMAT:
 {
@@ -1069,11 +1079,26 @@ REQUIREMENTS:
 - Warm, soothing, magical tone
 - End on a positive, cozy note
 
+IMAGE PROMPT RULES (CRITICAL):
+- Each imagePrompt MUST illustrate the EXACT scene from that page's text
+- NEVER use the mascot's name or animal type - the image model doesn't know them
+- Always say "the mascot" - never "the bunny", "the bear", "Loli", etc.
+- The imagePrompt should visually represent what happens in the story text
+
+STRUCTURE: "The mascot [exact action from text], [expression], [specific setting from story], [lighting/mood]"
+
+EXAMPLES:
+- Text: "The mascot climbed the tall tree to rescue the kite"
+  imagePrompt: "The mascot climbing high in a tall oak tree, determined expression, reaching for a colorful kite caught in branches, bright sunny day"
+
+- Text: "Tired but happy, the mascot curled up in the warm blanket"
+  imagePrompt: "The mascot curled up contentedly in a soft cozy blanket, peaceful sleepy smile, warm bedroom with soft lamp light, dreamy atmosphere"
+
 RESPOND IN THIS EXACT JSON FORMAT:
 {
   "pages": [
-    { "pageIndex": 1, "text": "Page 2 text here...", "imagePrompt": "A brief description for illustration" },
-    { "pageIndex": 2, "text": "Page 3 text here...", "imagePrompt": "A brief description for illustration" }
+    { "pageIndex": 1, "text": "Page 2 text here...", "imagePrompt": "The mascot [matching the exact scene from text]" },
+    { "pageIndex": 2, "text": "Page 3 text here...", "imagePrompt": "The mascot [matching the exact scene from text]" }
   ]
 }`;
 
@@ -1114,15 +1139,15 @@ RESPOND IN THIS EXACT JSON FORMAT:
         });
       }
 
-      // Generate images for pages 2 and 3
       const imageApiKey = getImageApiKey();
       if (imageApiKey && book.mascotStorageId) {
         for (const page of result.pages) {
           try {
             const mascotUrl = await ctx.storage.getUrl(book.mascotStorageId);
             if (mascotUrl) {
+              const fullPrompt = buildImagePrompt(page.imagePrompt, true, mascotUrl, "soothing");
               const imageUrl = await generateImageUrl(imageApiKey, {
-                positivePrompt: `Children's book illustration: ${page.imagePrompt}. Style: Warm, magical, colorful, child-friendly, storybook art.`,
+                positivePrompt: fullPrompt,
                 negativePrompt: CHILD_SAFE_NEGATIVE_PROMPT,
                 width: 1024,
                 height: 1024,
