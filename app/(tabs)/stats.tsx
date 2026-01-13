@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import { View, Text, ScrollView, Pressable, Image } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedScrollHandler,
@@ -22,8 +22,6 @@ import {
   Calendar as CalendarIcon,
   Flame,
   BookOpen,
-  ThumbsUp,
-  ThumbsDown,
   Scale,
   Users,
   Sun,
@@ -48,10 +46,14 @@ interface SubSkill {
 interface StoryImpact {
   id: number;
   title: string;
-  coverGradient: string;
+  coverUrl: string | null;
   date: string;
-  impact: string;
-  liked: boolean;
+  pointsAdded: number;
+}
+
+interface ProgressDataPoint {
+  timestamp: number;
+  cumulativeScore: number;
 }
 
 interface Skill {
@@ -64,9 +66,25 @@ interface Skill {
   icon: LucideIcon;
   description: string;
   subSkills: SubSkill[];
-  weeklyData: number[];
+  progressHistory: ProgressDataPoint[];
   contributingStories: StoryImpact[];
 }
+
+// Generate mock progress history for demo purposes
+const generateMockProgressHistory = (finalScore: number, numPoints: number = 7): ProgressDataPoint[] => {
+  const now = Date.now();
+  const dayMs = 24 * 60 * 60 * 1000;
+  const points: ProgressDataPoint[] = [];
+  
+  for (let i = 0; i < numPoints; i++) {
+    const progress = Math.round((finalScore * (i + 1)) / numPoints);
+    points.push({
+      timestamp: now - (numPoints - 1 - i) * dayMs,
+      cumulativeScore: Math.min(progress, finalScore),
+    });
+  }
+  return points;
+};
 
 const SKILLS_DATA: Skill[] = [
   {
@@ -83,16 +101,14 @@ const SKILLS_DATA: Skill[] = [
       { name: 'Compassion', value: 75 },
       { name: 'Kindness', value: 85 },
     ],
-    weeklyData: [40, 55, 45, 70, 65, 80, 85],
+    progressHistory: generateMockProgressHistory(85),
     contributingStories: [
       {
         id: 101,
         title: 'The Lonely Robot',
-        coverGradient: 'bg-gradient-to-br from-blue-200 to-cyan-300',
+        coverUrl: null,
         date: 'Yesterday',
-        impact:
-          'Leo learned how to identify when someone feels left out and why inviting them to play helps everyone feel included.',
-        liked: true,
+        pointsAdded: 15,
       },
     ],
   },
@@ -110,7 +126,7 @@ const SKILLS_DATA: Skill[] = [
       { name: 'Grit', value: 50 },
       { name: 'Risk Taking', value: 60 },
     ],
-    weeklyData: [30, 35, 50, 45, 60, 55, 60],
+    progressHistory: generateMockProgressHistory(60),
     contributingStories: [],
   },
   {
@@ -127,7 +143,7 @@ const SKILLS_DATA: Skill[] = [
       { name: 'Trust', value: 40 },
       { name: 'Integrity', value: 45 },
     ],
-    weeklyData: [20, 25, 30, 35, 40, 40, 45],
+    progressHistory: generateMockProgressHistory(45),
     contributingStories: [],
   },
   {
@@ -144,7 +160,7 @@ const SKILLS_DATA: Skill[] = [
       { name: 'Listening', value: 65 },
       { name: 'Support', value: 70 },
     ],
-    weeklyData: [60, 65, 60, 70, 75, 70, 72],
+    progressHistory: generateMockProgressHistory(72),
     contributingStories: [],
   },
   {
@@ -161,7 +177,7 @@ const SKILLS_DATA: Skill[] = [
       { name: 'Storytelling', value: 80 },
       { name: 'Wonder', value: 70 },
     ],
-    weeklyData: [70, 75, 80, 60, 85, 90, 80],
+    progressHistory: generateMockProgressHistory(40),
     contributingStories: [],
   },
   {
@@ -178,7 +194,7 @@ const SKILLS_DATA: Skill[] = [
       { name: 'Positivity', value: 30 },
       { name: 'Appreciation', value: 20 },
     ],
-    weeklyData: [10, 15, 20, 25, 25, 30, 30],
+    progressHistory: generateMockProgressHistory(30),
     contributingStories: [],
   },
   {
@@ -195,7 +211,7 @@ const SKILLS_DATA: Skill[] = [
       { name: 'Strategy', value: 50 },
       { name: 'Analysis', value: 55 },
     ],
-    weeklyData: [40, 45, 50, 50, 55, 50, 55],
+    progressHistory: generateMockProgressHistory(55),
     contributingStories: [],
   },
   {
@@ -212,7 +228,7 @@ const SKILLS_DATA: Skill[] = [
       { name: 'Reliability', value: 30 },
       { name: 'Ownership', value: 10 },
     ],
-    weeklyData: [10, 10, 15, 15, 20, 20, 20],
+    progressHistory: generateMockProgressHistory(20),
     contributingStories: [],
   },
   {
@@ -229,7 +245,7 @@ const SKILLS_DATA: Skill[] = [
       { name: 'Calmness', value: 35 },
       { name: 'Self-Control', value: 30 },
     ],
-    weeklyData: [20, 25, 30, 30, 35, 35, 35],
+    progressHistory: generateMockProgressHistory(35),
     contributingStories: [],
   },
   {
@@ -246,7 +262,7 @@ const SKILLS_DATA: Skill[] = [
       { name: 'Exploration', value: 85 },
       { name: 'Discovery', value: 90 },
     ],
-    weeklyData: [70, 75, 80, 85, 85, 90, 88],
+    progressHistory: generateMockProgressHistory(88),
     contributingStories: [],
   },
 ];
@@ -496,19 +512,25 @@ const SkillRow = ({ skill, onPress }: { skill: Skill; onPress: () => void }) => 
   );
 };
 
-const DetailView = ({ skill, onBack }: { skill: Skill; onBack: () => void }) => {
-  const IconComponent = skill.icon;
-  const size = 200;
-  const strokeWidth = 14;
-
-  const maxVal = Math.max(...skill.weeklyData, 100);
-  const chartWidth = 300;
-  const chartHeight = 100;
-  const padding = 5;
-
-  const points = skill.weeklyData.map((val, i) => {
-    const x = (i / (skill.weeklyData.length - 1)) * chartWidth;
-    const y = chartHeight - (val / maxVal) * (chartHeight - padding * 2) - padding;
+// Build cumulative chart path from progress history
+const buildChartPath = (
+  progressHistory: ProgressDataPoint[],
+  chartWidth: number,
+  chartHeight: number,
+  padding: number
+): { pathD: string; dateLabels: string[] } => {
+  // Ensure we have at least 2 points for a valid path
+  const history = progressHistory.length >= 2 
+    ? progressHistory 
+    : [{ timestamp: Date.now() - 86400000, cumulativeScore: 0 }, ...progressHistory];
+  
+  const scores = history.map(p => p.cumulativeScore);
+  const maxVal = Math.max(...scores, 100);
+  const numPoints = history.length;
+  
+  const points = history.map((point, i) => {
+    const x = numPoints > 1 ? (i / (numPoints - 1)) * chartWidth : chartWidth / 2;
+    const y = chartHeight - (point.cumulativeScore / maxVal) * (chartHeight - padding * 2) - padding;
     return { x, y };
   });
 
@@ -522,6 +544,40 @@ const DetailView = ({ skill, onBack }: { skill: Skill; onBack: () => void }) => 
     const cp2y = curr.y;
     pathD += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${curr.x} ${curr.y}`;
   }
+  
+  // Generate date labels based on timestamps
+  const dateLabels = history.map(p => {
+    const d = new Date(p.timestamp);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  });
+  
+  // Show at most 5 evenly spaced labels
+  const maxLabels = 5;
+  const step = Math.max(1, Math.floor(dateLabels.length / maxLabels));
+  const sparseDateLabels = dateLabels.filter((_, i) => i % step === 0 || i === dateLabels.length - 1);
+  
+  return { pathD, dateLabels: sparseDateLabels };
+};
+
+const DetailView = ({ skill, onBack }: { skill: Skill; onBack: () => void }) => {
+  const IconComponent = skill.icon;
+  const size = 200;
+  const strokeWidth = 14;
+
+  const chartWidth = 300;
+  const chartHeight = 100;
+  const padding = 5;
+  
+  const { pathD, dateLabels } = buildChartPath(skill.progressHistory, chartWidth, chartHeight, padding);
+  
+  // Calculate growth percentage from first to last data point
+  const growthPercent = skill.progressHistory.length >= 2
+    ? Math.round(
+        ((skill.progressHistory[skill.progressHistory.length - 1].cumulativeScore - 
+          skill.progressHistory[0].cumulativeScore) / 
+          Math.max(skill.progressHistory[0].cumulativeScore, 1)) * 100
+      )
+    : skill.progress;
 
   return (
     <ScrollView className="flex-1 bg-background" contentContainerStyle={{ paddingBottom: 100 }}>
@@ -590,15 +646,17 @@ const DetailView = ({ skill, onBack }: { skill: Skill; onBack: () => void }) => 
         <View className="bg-white p-6 rounded-3xl shadow-sm">
           <View className="flex-row items-center justify-between mb-6">
             <View>
-              <Text className="font-bold text-slate-800 text-sm">30 Day Trend</Text>
+              <Text className="font-bold text-slate-800 text-sm">Lifetime Progress</Text>
               <Text className="text-[10px] text-slate-400 font-medium">
-                Consistent growth observed
+                Skill evolution over time
               </Text>
             </View>
-            <View className="flex-row items-center gap-1 bg-emerald-50 px-2.5 py-1 rounded-full">
-              <TrendingUp size={12} color="#059669" />
-              <Text className="text-[10px] font-bold text-emerald-600">+12%</Text>
-            </View>
+            {growthPercent > 0 && (
+              <View className="flex-row items-center gap-1 bg-emerald-50 px-2.5 py-1 rounded-full">
+                <TrendingUp size={12} color="#059669" />
+                <Text className="text-[10px] font-bold text-emerald-600">+{growthPercent}%</Text>
+              </View>
+            )}
           </View>
 
           <View className="h-32 w-full">
@@ -627,9 +685,9 @@ const DetailView = ({ skill, onBack }: { skill: Skill; onBack: () => void }) => 
             </Svg>
           </View>
           <View className="flex-row justify-between mt-4 px-1">
-            {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
+            {dateLabels.map((label, i) => (
               <Text key={i} className="text-[10px] text-slate-300 font-bold">
-                {d}
+                {label}
               </Text>
             ))}
           </View>
@@ -639,38 +697,35 @@ const DetailView = ({ skill, onBack }: { skill: Skill; onBack: () => void }) => 
           <Text className="font-bold text-slate-800 text-sm mb-4 px-1 uppercase tracking-wider opacity-60">
             Contributing Stories
           </Text>
-          <View className="gap-4">
+          <View className="gap-3">
             {skill.contributingStories.map(story => (
               <View
                 key={story.id}
-                className="bg-white p-4 rounded-3xl shadow-sm border border-slate-50 flex-row gap-4"
+                className="bg-white p-3 rounded-2xl shadow-sm border border-slate-100 flex-row gap-3 items-center"
               >
-                <View className="w-16 h-20 rounded-2xl bg-gradient-to-br from-blue-200 to-cyan-300 items-center justify-center">
-                  <BookOpen size={24} color="white" />
+                {story.coverUrl ? (
+                  <Image
+                    source={{ uri: story.coverUrl }}
+                    className="w-12 h-16 rounded-xl"
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View className="w-12 h-16 rounded-xl bg-gradient-to-br from-purple-200 to-indigo-300 items-center justify-center">
+                    <BookOpen size={18} color="white" />
+                  </View>
+                )}
+                <View className="flex-1">
+                  <Text className="font-bold text-slate-800 text-sm leading-tight" numberOfLines={1}>
+                    {story.title}
+                  </Text>
+                  <Text className="text-[10px] text-slate-400 font-medium mt-0.5">
+                    {story.date}
+                  </Text>
                 </View>
-                <View className="flex-1 py-1">
-                  <View className="flex-row justify-between items-start mb-2">
-                    <View>
-                      <Text className="font-bold text-slate-800 text-sm leading-tight mb-0.5">
-                        {story.title}
-                      </Text>
-                      <Text className="text-[10px] text-slate-400 font-medium">{story.date}</Text>
-                    </View>
-                    <View
-                      className={`w-8 h-8 rounded-full items-center justify-center ${story.liked ? 'bg-green-50' : 'bg-red-50'}`}
-                    >
-                      {story.liked ? (
-                        <ThumbsUp size={16} color="#22c55e" />
-                      ) : (
-                        <ThumbsDown size={16} color="#f87171" />
-                      )}
-                    </View>
-                  </View>
-                  <View className="bg-slate-50 rounded-xl p-3">
-                    <Text className="text-xs text-slate-600 leading-relaxed font-medium">
-                      {story.impact}
-                    </Text>
-                  </View>
+                <View className="bg-emerald-50 px-2.5 py-1.5 rounded-full">
+                  <Text className="text-xs font-bold text-emerald-600">
+                    +{story.pointsAdded}
+                  </Text>
                 </View>
               </View>
             ))}
@@ -702,7 +757,7 @@ const getMotivationalMessage = (score: number) => {
 };
 
 // Skill metadata (colors, icons, descriptions)
-const SKILL_META: Record<string, Omit<Skill, 'progress' | 'subSkills' | 'weeklyData' | 'contributingStories'>> = {
+const SKILL_META: Record<string, Omit<Skill, 'progress' | 'subSkills' | 'progressHistory' | 'contributingStories'>> = {
   empathy: { id: 'empathy', name: 'Compassion & Empathy', color: '#F43F5E', bgClass: 'bg-rose-50', textColor: '#E11D48', icon: Heart, description: 'Understanding feelings and caring for others.' },
   bravery: { id: 'bravery', name: 'Bravery & Resilience', color: '#F59E0B', bgClass: 'bg-amber-50', textColor: '#D97706', icon: Shield, description: 'Understanding conflict and resolution.' },
   honesty: { id: 'honesty', name: 'Honesty', color: '#3B82F6', bgClass: 'bg-blue-50', textColor: '#2563EB', icon: Scale, description: 'Valuing truth and integrity.' },
@@ -745,6 +800,32 @@ type SkillContribution = {
   }>;
 };
 
+// Build cumulative progress history from contributions
+const buildProgressHistory = (
+  contribs: SkillContribution['contributions'],
+  currentScore: number
+): ProgressDataPoint[] => {
+  if (contribs.length === 0) {
+    // No contributions yet - show just the current score
+    return [{ timestamp: Date.now(), cumulativeScore: currentScore }];
+  }
+  
+  // Sort by createdAt ascending
+  const sorted = [...contribs].sort((a, b) => a.createdAt - b.createdAt);
+  
+  // Build cumulative score over time
+  let cumulative = 0;
+  const history: ProgressDataPoint[] = sorted.map(c => {
+    cumulative += c.pointsAdded;
+    return {
+      timestamp: c.createdAt,
+      cumulativeScore: Math.min(cumulative, 100), // Cap at 100%
+    };
+  });
+  
+  return history;
+};
+
 // Build skills array from database data with contributions
 const buildSkillsFromDb = (
   dbSkills: DbSkills,
@@ -752,16 +833,18 @@ const buildSkillsFromDb = (
 ): Skill[] => {
   const skillKeys = ['empathy', 'bravery', 'honesty', 'teamwork', 'creativity', 'gratitude', 'problemSolving', 'responsibility', 'patience', 'curiosity'] as const;
   
-  // Create a map of contributions by skill key
+  // Create maps by skill key
   const contributionMap: Record<string, StoryImpact[]> = {};
+  const rawContribMap: Record<string, SkillContribution['contributions']> = {};
+  
   for (const contrib of contributions) {
+    rawContribMap[contrib.skillKey] = contrib.contributions;
     contributionMap[contrib.skillKey] = contrib.contributions.map((c, idx) => ({
       id: idx,
       title: c.bookTitle,
-      coverGradient: 'bg-gradient-to-br from-purple-200 to-indigo-300',
+      coverUrl: c.bookCoverUrl,
       date: formatRelativeDate(c.createdAt),
-      impact: `Added +${c.pointsAdded} points to this skill`,
-      liked: true,
+      pointsAdded: c.pointsAdded,
     }));
   }
   
@@ -772,11 +855,14 @@ const buildSkillsFromDb = (
     const derivedProgress = dbSkill.subSkills.length > 0
       ? Math.round(dbSkill.subSkills.reduce((sum, sub) => sum + sub.value, 0) / dbSkill.subSkills.length)
       : dbSkill.progress;
+    
+    const progressHistory = buildProgressHistory(rawContribMap[key] || [], derivedProgress);
+    
     return {
       ...meta,
       progress: derivedProgress,
       subSkills: dbSkill.subSkills,
-      weeklyData: [derivedProgress],
+      progressHistory,
       contributingStories: contributionMap[key] || [],
     };
   });

@@ -1011,7 +1011,26 @@ export const getSkillContributions = query({
       .withIndex("by_user", (q) => q.eq("userId", user._id))
       .collect();
 
-    // Group by skill
+    if (contributions.length === 0) return [];
+
+    // Batch fetch all unique books to avoid N+1 queries
+    const uniqueBookIds = [...new Set(contributions.map(c => c.bookId))];
+    const booksMap: Map<Id<"books">, { title: string; coverUrl: string | null }> = new Map();
+    
+    await Promise.all(
+      uniqueBookIds.map(async (bookId) => {
+        const book = await ctx.db.get(bookId);
+        if (book) {
+          let coverUrl: string | null = null;
+          if (book.coverImageStorageId) {
+            coverUrl = await ctx.storage.getUrl(book.coverImageStorageId);
+          }
+          booksMap.set(bookId, { title: book.title, coverUrl });
+        }
+      })
+    );
+
+    // Group by skill using the cached book data
     const groupedBySkill: Record<string, Array<{
       bookId: Id<"books">;
       bookTitle: string;
@@ -1021,13 +1040,8 @@ export const getSkillContributions = query({
     }>> = {};
 
     for (const contrib of contributions) {
-      const book = await ctx.db.get(contrib.bookId);
-      if (!book) continue;
-
-      let coverUrl: string | null = null;
-      if (book.coverImageStorageId) {
-        coverUrl = await ctx.storage.getUrl(book.coverImageStorageId);
-      }
+      const bookData = booksMap.get(contrib.bookId);
+      if (!bookData) continue;
 
       if (!groupedBySkill[contrib.skillKey]) {
         groupedBySkill[contrib.skillKey] = [];
@@ -1035,8 +1049,8 @@ export const getSkillContributions = query({
 
       groupedBySkill[contrib.skillKey].push({
         bookId: contrib.bookId,
-        bookTitle: book.title,
-        bookCoverUrl: coverUrl,
+        bookTitle: bookData.title,
+        bookCoverUrl: bookData.coverUrl,
         pointsAdded: contrib.pointsAdded,
         createdAt: contrib.createdAt,
       });

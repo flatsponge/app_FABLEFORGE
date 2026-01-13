@@ -42,8 +42,11 @@ export default function HomeScreen() {
     router.push(`/book/${book.id}`);
   };
 
-  const handleRead = (book: Book, mode: ReadingMode) => {
-    router.push(`/reading/${book.id}?mode=${mode}`);
+  const handleRead = (book: Book, mode: ReadingMode, restart?: boolean) => {
+    router.push({
+      pathname: `/reading/[id]`,
+      params: { id: book.id, mode, ...(restart ? { restart: 'true' } : {}) },
+    });
   };
 
   const handleFulfillmentPress = () => {

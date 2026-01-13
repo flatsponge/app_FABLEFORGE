@@ -187,7 +187,16 @@ export const FeaturedCard: React.FC<FeaturedCardProps> = ({ onRead }) => {
             onPress={(e) => e.stopPropagation()}
           >
             <View className="flex-row justify-between items-center mb-6">
-              <Text className="text-xl font-extrabold text-slate-900">How would you like to read?</Text>
+              <View className="flex-1 pr-4">
+                <Text className="text-xl font-extrabold text-slate-900">
+                  {hasProgress ? 'Continue Reading?' : 'How would you like to read?'}
+                </Text>
+                {hasProgress && (
+                  <Text className="text-slate-500 text-sm mt-1">
+                    You're on page {currentPage} of {totalPages}
+                  </Text>
+                )}
+              </View>
               <Pressable
                 onPress={() => setShowModeModal(false)}
                 className="w-10 h-10 rounded-full bg-slate-100 items-center justify-center"
@@ -206,8 +215,12 @@ export const FeaturedCard: React.FC<FeaturedCardProps> = ({ onRead }) => {
                     <Play size={24} color="#1e293b" fill="#1e293b" />
                   </View>
                   <View>
-                    <Text className="font-extrabold text-xl text-white tracking-tight">Auto-Play</Text>
-                    <Text className="text-slate-400 text-sm font-medium">Listen & Watch</Text>
+                    <Text className="font-extrabold text-xl text-white tracking-tight">
+                      {hasProgress ? 'Continue' : 'Auto-Play'}
+                    </Text>
+                    <Text className="text-slate-400 text-sm font-medium">
+                      {hasProgress ? `Resume from page ${currentPage}` : 'Listen & Watch'}
+                    </Text>
                   </View>
                 </View>
               </Pressable>
@@ -233,6 +246,16 @@ export const FeaturedCard: React.FC<FeaturedCardProps> = ({ onRead }) => {
                   <Text className="font-bold text-slate-800 text-sm">Read Together</Text>
                 </Pressable>
               </View>
+
+              {hasProgress && (
+                <Pressable
+                  onPress={() => handleSelectMode('autoplay', true)}
+                  className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex-row items-center justify-center gap-3 active:scale-[0.98]"
+                >
+                  <RotateCcw size={18} color="#64748b" />
+                  <Text className="font-bold text-slate-600 text-sm">Start Over from Beginning</Text>
+                </Pressable>
+              )}
             </View>
           </Pressable>
         </Pressable>

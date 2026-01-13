@@ -1,12 +1,9 @@
 {
   "mcpServers": {
-    "convex": {
-      "command": "npx",
+    "auggie": {
+      "command": "auggie",
       "args": [
-        "-y",
-        "convex@latest",
-        "mcp",
-        "start"
+        "--mcp"
       ],
       "env": {}
     }

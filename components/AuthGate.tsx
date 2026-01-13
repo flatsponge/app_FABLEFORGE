@@ -209,6 +209,8 @@ export function AuthGate({ children }: AuthGateProps) {
           );
           return;
         }
+
+        didAuthRedirect.current = true;
       }
     }
 

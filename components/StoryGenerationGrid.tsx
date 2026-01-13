@@ -35,15 +35,22 @@ const getDotColor = (index: number) => {
   return COLOR_GREEN;
 };
 
+// Optimized for 25-30 second total duration
 const getInterval = (index: number): number => {
-  if (index < 50) {
-    return 100 + Math.random() * 50;
+  if (index < 40) {
+    // First 40 dots: fast (~3-4 seconds total)
+    return 80 + Math.random() * 30;
+  } else if (index < 80) {
+    // Middle 40 dots: moderate pace (~10-12 seconds total)
+    const progress = (index - 40) / 40;
+    return 150 + progress * 200 + Math.random() * 50;
   } else if (index < 95) {
-    const slowIndex = index - 50;
-    const progress = slowIndex / 45;
-    return 200 + progress * 600;
+    // Dots 80-95: slower (~8-10 seconds total)
+    const progress = (index - 80) / 15;
+    return 400 + progress * 300 + Math.random() * 100;
   } else {
-    return 1000 + Math.random() * 500;
+    // Last 5 dots: final stretch (~3-4 seconds total)
+    return 500 + Math.random() * 300;
   }
 };
 

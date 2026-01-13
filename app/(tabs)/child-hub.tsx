@@ -28,6 +28,7 @@ import Animated, {
   SlideInDown,
   SlideInUp,
   runOnJS,
+  LinearTransition,
 } from 'react-native-reanimated';
 import {
   Lock,
@@ -52,6 +53,7 @@ import { useOnboardingLocalData } from '@/hooks/useOnboardingLocalData';
 import { useCachedValue } from '@/hooks/useCachedValue';
 import { CACHE_KEYS, seedBookCaches } from '@/lib/queryCache';
 import { PendingWardrobe, clearPendingWardrobe, loadPendingWardrobe, savePendingWardrobe } from '@/lib/wardrobePending';
+import { ChunkyButton } from '@/components/ChunkyButton';
 type RoomType = 'wardrobe' | 'well' | 'read';
 // Merged hats + toys into single "accessories" tab due to FLUX Kontext 2-image limit
 type WardrobeTab = 'clothes' | 'accessories' | 'background';
@@ -189,88 +191,38 @@ const GlitterBurst = () => {
   );
 };
 
-// Chunky 3D button component with proper depth and tactile feel
-const ChunkyButton = ({
-  onPress,
-  onPressIn,
-  onPressOut,
+const AnimatableWardrobeItem = ({
   children,
-  bgColor = 'bg-white',
-  borderColor = 'border-slate-300',
-  bottomBorderColor,
-  size = 'medium',
-  rounded = 'rounded-2xl',
-  disabled = false,
+  isSelected,
+  onPress,
+  disabled,
   style,
+  className
 }: {
-  onPress?: () => void;
-  onPressIn?: () => void;
-  onPressOut?: () => void;
   children: React.ReactNode;
-  bgColor?: string;
-  borderColor?: string;
-  bottomBorderColor?: string;
-  size?: 'small' | 'medium' | 'large' | 'xl';
-  rounded?: string;
+  isSelected: boolean;
+  onPress: () => void;
   disabled?: boolean;
   style?: any;
+  className?: string;
 }) => {
-  const pressed = useSharedValue(0);
+  const scale = useSharedValue(1);
 
-  const sizeStyles = {
-    small: { borderBottom: 4, borderSide: 2, borderTop: 2 },
-    medium: { borderBottom: 6, borderSide: 3, borderTop: 3 },
-    large: { borderBottom: 10, borderSide: 4, borderTop: 4 },
-    xl: { borderBottom: 14, borderSide: 5, borderTop: 4 },
-  };
+  useEffect(() => {
+    if (isSelected) {
+      scale.value = withSpring(1.04, { damping: 30, stiffness: 350 });
+    } else {
+      scale.value = withSpring(1, { damping: 30, stiffness: 350 });
+    }
+  }, [isSelected]);
 
-  const s = sizeStyles[size];
-  const actualBottomBorder = bottomBorderColor || borderColor;
-
-  const animatedStyle = useAnimatedStyle(() => {
-    const translateY = interpolate(pressed.value, [0, 1], [0, s.borderBottom - 3]);
-    return {
-      transform: [{ translateY }],
-    };
-  });
-
-  const animatedBorderStyle = useAnimatedStyle(() => {
-    const borderBottomWidth = interpolate(pressed.value, [0, 1], [s.borderBottom, 3]);
-    return {
-      borderBottomWidth,
-    };
-  });
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }]
+  }));
 
   return (
-    <Pressable
-      onPress={disabled ? undefined : onPress}
-      onPressIn={() => {
-        if (!disabled) {
-          pressed.value = withSpring(1, { damping: 25, stiffness: 600 });
-          onPressIn?.();
-        }
-      }}
-      onPressOut={() => {
-        if (!disabled) {
-          pressed.value = withSpring(0, { damping: 25, stiffness: 600 });
-          onPressOut?.();
-        }
-      }}
-      style={style}
-    >
-      <Animated.View
-        style={[
-          animatedStyle,
-          animatedBorderStyle,
-          {
-            borderTopWidth: s.borderTop,
-            borderLeftWidth: s.borderSide,
-            borderRightWidth: s.borderSide,
-            opacity: disabled ? 0.5 : 1,
-          },
-        ]}
-        className={`${bgColor} ${rounded} ${borderColor}`}
-      >
+    <Pressable onPress={onPress} disabled={disabled}>
+      <Animated.View style={[style, animatedStyle]} className={className}>
         {children}
       </Animated.View>
     </Pressable>
@@ -760,6 +712,11 @@ export default function ChildHubScreen() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [pendingWardrobe, setPendingWardrobe] = useState<PendingWardrobe | null>(null);
   const [pendingLoaded, setPendingLoaded] = useState(false);
+  const [previewItem, setPreviewItem] = useState<{
+    type: 'clothes' | 'accessory';
+    itemId: string;
+    accessoryType?: 'hat' | 'toy';
+  } | null>(null);
 
   const liveUserProgress = useQuery(api.onboarding.getUserProgress);
   const liveMascotOutfit = useQuery(api.onboarding.getMascotOutfit);
@@ -831,10 +788,7 @@ export default function ChildHubScreen() {
     return ACCESSORIES.find((item) => item.id === pendingWardrobe.itemId) ?? null;
   }, [pendingWardrobe]);
   const pendingLabel = pendingItem?.label ?? pendingItem?.type ?? 'New look';
-  const pendingStatusMessage =
-    pendingWardrobe?.status === 'processing'
-      ? 'Making your new look...'
-      : 'Read a story to reveal! 📚';
+
 
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const unlockHintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1013,25 +967,39 @@ export default function ChildHubScreen() {
     setPendingWardrobe(null);
   }, []);
 
-  // Handle CLOTHES click - uses original bare mascot as base
-  const handleClothesClick = async (clothesId: string) => {
+  // Clear preview when switching tabs
+  useEffect(() => {
+    setPreviewItem(null);
+  }, [wardrobeTab]);
+
+  // Handle CLOTHES click - updates preview state
+  const handleClothesClick = (clothesId: string) => {
     if (isGenerating) return;
-    queuePendingWardrobe({
+    setPreviewItem({
       type: 'clothes',
       itemId: clothesId,
-      createdAt: Date.now(),
     });
   };
 
-  // Handle ACCESSORY click (hat OR toy) - uses clothed mascot as base
-  const handleAccessoryClick = async (accessoryId: string, accessoryType: 'hat' | 'toy') => {
+  // Handle ACCESSORY click - updates preview state
+  const handleAccessoryClick = (accessoryId: string, accessoryType: 'hat' | 'toy') => {
     if (isGenerating) return;
-    queuePendingWardrobe({
+    setPreviewItem({
       type: 'accessory',
       itemId: accessoryId,
       accessoryType,
+    });
+  };
+
+  const handleConfirmSelection = () => {
+    if (!previewItem) return;
+    queuePendingWardrobe({
+      type: previewItem.type,
+      itemId: previewItem.itemId,
+      accessoryType: previewItem.accessoryType,
       createdAt: Date.now(),
     });
+    setPreviewItem(null);
   };
 
   // Handle reset outfit
@@ -1121,7 +1089,7 @@ export default function ChildHubScreen() {
         {activeRoom === 'wardrobe' && (
           <View className="flex-1 relative z-10 pb-24">
             {isWardrobePending ? (
-              <Animated.View entering={FadeIn} exiting={FadeOut} style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, paddingBottom: 128 }}>
+              <Animated.View entering={FadeIn} exiting={FadeOut} style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, paddingBottom: 32 }}>
                 <Image
                   source={require('@/assets/childview/childdoor.png')}
                   className="w-72 h-80 mb-8"
@@ -1129,29 +1097,33 @@ export default function ChildHubScreen() {
                 />
                 <View className="bg-white px-8 py-6 rounded-3xl border-b-8 border-slate-200 items-center w-full max-w-sm" style={{ transform: [{ rotate: '-1deg' }], shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.15, shadowRadius: 20, elevation: 8 }}>
                   <Text className="text-2xl font-black text-slate-700 text-center leading-tight mb-2">
-                    Getting Ready!
+                    {pendingWardrobe?.status === 'processing' ? 'Getting Ready!' : 'Read a Story to Reveal!'}
                   </Text>
                   {pendingItem?.image && (
-                    <View className="items-center mb-4">
-                      <View className="w-20 h-20 rounded-2xl bg-slate-100 items-center justify-center mb-2">
+                    <View className="items-center">
+                      <View className="w-20 h-20 rounded-2xl bg-slate-100 items-center justify-center">
                         <Image source={pendingItem.image} className="w-16 h-16" resizeMode="contain" />
                       </View>
-                      <Text className="text-sm font-bold text-slate-600 uppercase tracking-wide">
-                        {pendingLabel}
-                      </Text>
                     </View>
                   )}
-                  <Text className="text-base font-bold text-slate-400 text-center uppercase tracking-wide">
-                    {pendingStatusMessage}
-                  </Text>
+                  {pendingWardrobe?.status === 'processing' && (
+                    <Text className="text-base font-bold text-slate-400 text-center uppercase tracking-wide mt-2">
+                      Making your new look...
+                    </Text>
+                  )}
                   {pendingWardrobe?.status !== 'processing' && (
-                    <View className="mt-4">
-                      <TextActionButton
+                    <View className="mt-4 w-full">
+                      <ChunkyButton
                         onPress={cancelPendingWardrobe}
-                        label="Cancel"
-                        variant="secondary"
-                        flex={0}
-                      />
+                        bgColor="#ef4444"
+                        borderColor="#b91c1c"
+                        size="large"
+                        style={{ width: '100%' }}
+                      >
+                        <Text className="text-white font-black text-xl uppercase tracking-wider text-center py-3">
+                          CANCEL
+                        </Text>
+                      </ChunkyButton>
                     </View>
                   )}
                 </View>
@@ -1182,27 +1154,34 @@ export default function ChildHubScreen() {
                     ))}
                   </View>
 
-                  <View className="bg-white rounded-3xl p-4 border-4 border-slate-200">
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  <Animated.View
+                    layout={LinearTransition.duration(200)}
+                    className="bg-white rounded-3xl p-4 border-4 border-slate-200"
+                  >
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 12, paddingHorizontal: 4 }}>
                       <View className="flex-row gap-3">
                         {/* CLOTHES TAB - uses original bare mascot as base */}
                         {wardrobeTab === 'clothes' &&
                           OUTFITS.map(item => {
-                            const isEquipped = mascotOutfit?.equippedClothes === item.id;
+                            const isSelected = previewItem?.type === 'clothes'
+                              ? previewItem.itemId === item.id
+                              : mascotOutfit?.equippedClothes === item.id;
+
                             return (
-                              <Pressable
+                              <AnimatableWardrobeItem
                                 key={item.id}
+                                isSelected={isSelected}
                                 onPress={() => handleClothesClick(item.id)}
                                 disabled={isGenerating}
                                 style={[
-                                  isEquipped
+                                  isSelected
                                     ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.4, shadowRadius: 6, elevation: 4 }
                                     : { opacity: isGenerating ? 0.5 : 0.9 }
                                 ]}
-                                className={`w-20 h-20 rounded-2xl items-center justify-center border-4 bg-white ${isEquipped ? 'border-green-500' : 'border-slate-200'}`}
+                                className={`w-20 h-20 rounded-2xl overflow-hidden items-center justify-center border-4 bg-white ${isSelected ? 'border-green-500' : 'border-slate-200'}`}
                               >
                                 <Image source={item.image} style={{ width: 60, height: 60 }} resizeMode="contain" />
-                              </Pressable>
+                              </AnimatableWardrobeItem>
                             );
                           })}
 
@@ -1210,26 +1189,39 @@ export default function ChildHubScreen() {
                         {/* User can only equip ONE accessory (either a hat OR a toy) */}
                         {wardrobeTab === 'accessories' &&
                           ACCESSORIES.map(item => {
-                            const isEquipped = mascotOutfit?.equippedAccessory === item.id;
+                            const isSelected = previewItem?.type === 'accessory'
+                              ? previewItem.itemId === item.id
+                              : mascotOutfit?.equippedAccessory === item.id;
+
                             const borderColor = item.accessoryType === 'hat' ? 'border-yellow-400' : 'border-purple-400';
                             const shadowColor = item.accessoryType === 'hat' ? '#eab308' : '#a855f7';
+
+                            // Use the specific accessory color if selected, otherwise slate/default
+                            const activeBorder = isSelected ? borderColor : 'border-slate-200';
+                            const activeShadow = isSelected ? shadowColor : undefined;
+
                             return (
-                              <Pressable
+                              <AnimatableWardrobeItem
                                 key={item.id}
+                                isSelected={isSelected}
                                 onPress={() => handleAccessoryClick(item.id, item.accessoryType)}
                                 disabled={isGenerating}
-                                style={isEquipped
-                                  ? { shadowColor, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.4, shadowRadius: 6, elevation: 4 }
+                                style={isSelected
+                                  ? { shadowColor: activeShadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.4, shadowRadius: 6, elevation: 4 }
                                   : { opacity: isGenerating ? 0.5 : 0.9 }}
-                                className={`w-20 h-20 rounded-2xl items-center justify-center bg-slate-100 border-4 ${isEquipped
-                                  ? `${borderColor} bg-white`
-                                  : 'border-slate-200'
-                                  }`}
+                                className="w-20 h-20 rounded-2xl items-center justify-center"
                               >
-                                <Image source={item.image} style={{ width: 60, height: 60 }} resizeMode="contain" />
-                                {/* Small badge showing if it's a hat or toy */}
+                                {/* Card Body - Clipped */}
+                                <View className={`w-full h-full rounded-2xl overflow-hidden items-center justify-center border-4 bg-slate-100 ${isSelected
+                                  ? `${activeBorder} bg-white`
+                                  : 'border-slate-200'
+                                  }`}>
+                                  <Image source={item.image} style={{ width: 60, height: 60 }} resizeMode="contain" />
+                                </View>
+
+                                {/* Badge - Floating Outside */}
                                 <View
-                                  className={`absolute -top-1 -right-1 w-5 h-5 rounded-full items-center justify-center ${item.accessoryType === 'hat' ? 'bg-yellow-400' : 'bg-purple-400'
+                                  className={`absolute -top-1 -right-1 w-5 h-5 rounded-full items-center justify-center z-10 ${item.accessoryType === 'hat' ? 'bg-yellow-400' : 'bg-purple-400'
                                     }`}
                                 >
                                   {item.accessoryType === 'hat' ? (
@@ -1238,14 +1230,15 @@ export default function ChildHubScreen() {
                                     <Gift size={12} color="white" />
                                   )}
                                 </View>
-                              </Pressable>
+                              </AnimatableWardrobeItem>
                             );
                           })}
 
                         {wardrobeTab === 'background' && (
                           <>
                             {/* Default Background */}
-                            <Pressable
+                            <AnimatableWardrobeItem
+                              isSelected={backgroundSource === ChildBackground}
                               onPress={() => setBackgroundSource(ChildBackground)}
                               style={backgroundSource === ChildBackground ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
                               className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === ChildBackground
@@ -1254,10 +1247,11 @@ export default function ChildHubScreen() {
                                 }`}
                             >
                               <Image source={ChildBackground} className="w-full h-full" resizeMode="cover" />
-                            </Pressable>
+                            </AnimatableWardrobeItem>
 
                             {/* Dreamy Night Background */}
-                            <Pressable
+                            <AnimatableWardrobeItem
+                              isSelected={backgroundSource === ChildBackground2}
                               onPress={() => setBackgroundSource(ChildBackground2)}
                               style={backgroundSource === ChildBackground2 ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
                               className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === ChildBackground2
@@ -1266,10 +1260,11 @@ export default function ChildHubScreen() {
                                 }`}
                             >
                               <Image source={ChildBackground2} className="w-full h-full" resizeMode="cover" />
-                            </Pressable>
+                            </AnimatableWardrobeItem>
 
                             {/* Sunny Meadow Background */}
-                            <Pressable
+                            <AnimatableWardrobeItem
+                              isSelected={backgroundSource === ChildBackground3}
                               onPress={() => setBackgroundSource(ChildBackground3)}
                               style={backgroundSource === ChildBackground3 ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
                               className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === ChildBackground3
@@ -1278,10 +1273,11 @@ export default function ChildHubScreen() {
                                 }`}
                             >
                               <Image source={ChildBackground3} className="w-full h-full" resizeMode="cover" />
-                            </Pressable>
+                            </AnimatableWardrobeItem>
 
                             {/* Ocean Background */}
-                            <Pressable
+                            <AnimatableWardrobeItem
+                              isSelected={backgroundSource === ChildBackground4}
                               onPress={() => setBackgroundSource(ChildBackground4)}
                               style={backgroundSource === ChildBackground4 ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
                               className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === ChildBackground4
@@ -1290,10 +1286,11 @@ export default function ChildHubScreen() {
                                 }`}
                             >
                               <Image source={ChildBackground4} className="w-full h-full" resizeMode="cover" />
-                            </Pressable>
+                            </AnimatableWardrobeItem>
 
                             {/* Forest Background */}
-                            <Pressable
+                            <AnimatableWardrobeItem
+                              isSelected={backgroundSource === ChildBackground5}
                               onPress={() => setBackgroundSource(ChildBackground5)}
                               style={backgroundSource === ChildBackground5 ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
                               className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === ChildBackground5
@@ -1302,7 +1299,7 @@ export default function ChildHubScreen() {
                                 }`}
                             >
                               <Image source={ChildBackground5} className="w-full h-full" resizeMode="cover" />
-                            </Pressable>
+                            </AnimatableWardrobeItem>
 
                             {/* Preset Locations */}
                             {PRESET_LOCATIONS.map(loc => (
@@ -1323,445 +1320,484 @@ export default function ChildHubScreen() {
                       </View>
                     </ScrollView>
 
-                    {/* Reset button - only show if any items are equipped */}
-                    {(mascotOutfit?.equippedClothes || mascotOutfit?.equippedAccessory) && (
-                      <View className="mt-4">
-                        <TextActionButton
-                          onPress={handleResetOutfit}
-                          label={isGenerating ? "Resetting..." : "Reset Outfit"}
-                          variant="secondary"
-                          flex={0}
-                        />
-                      </View>
+                    {/* Action Buttons Area */}
+                    {(previewItem || (mascotOutfit?.equippedClothes || mascotOutfit?.equippedAccessory)) && (
+                      <Animated.View
+                        layout={LinearTransition.duration(200)}
+                        entering={FadeIn.duration(200)}
+                        exiting={FadeOut.duration(200)}
+                        className="mt-4"
+                        style={{ minHeight: 64, justifyContent: 'center' }}
+                      >
+                        {previewItem ? (
+                          <Animated.View
+                            entering={FadeIn.duration(200)}
+                            exiting={FadeOut.duration(200)}
+                            style={{ width: '100%' }}
+                          >
+                            <ChunkyButton
+                              onPress={handleConfirmSelection}
+                              bgColor="#22c55e"
+                              borderColor="#15803d"
+                              size="large"
+                              style={{ width: '100%' }}
+                            >
+                              <Text className="text-white font-black text-xl uppercase tracking-wider text-center py-3">
+                                Continue
+                              </Text>
+                            </ChunkyButton>
+                          </Animated.View>
+                        ) : (
+                          <Animated.View
+                            entering={FadeIn.duration(200)}
+                            exiting={FadeOut.duration(200)}
+                            style={{ width: '100%' }}
+                          >
+                            <TextActionButton
+                              onPress={handleResetOutfit}
+                              label={isGenerating ? "Resetting..." : "Reset Outfit"}
+                              variant="secondary"
+                              flex={0}
+                            />
+                          </Animated.View>
+                        )}
+                      </Animated.View>
                     )}
-                  </View>
+                  </Animated.View>
                 </View>
               </Animated.View>
             )}
           </View>
-        )}
+        )
+        }
 
-        {activeRoom === 'read' && (
-          <ScrollView className="flex-1 relative z-10 px-4 pt-4" contentContainerStyle={{ paddingBottom: 100 }}>
-            <View className="bg-white px-6 py-4 rounded-3xl border-b-8 border-slate-200 mb-6 items-center" style={{ transform: [{ rotate: '-1deg' }] }}>
-              <Text className="text-2xl font-black text-slate-700 tracking-tight">
-                My Stories 📚
-              </Text>
-            </View>
-
-            <View className="gap-6 pb-32">
-              {isBooksLoading ? (
-                Array.from({ length: 3 }).map((_, index) => (
-                  <View
-                    key={`story-skeleton-${index}`}
-                    className="w-full bg-white p-4 rounded-[40px] border-slate-200 flex-row items-center gap-5"
-                    style={{ borderBottomWidth: 12 }}
-                  >
-                    <View className="w-24 h-24 rounded-2xl bg-slate-100" />
-                    <View className="flex-1 gap-3">
-                      <View className="h-4 bg-slate-100 rounded-full w-3/4" />
-                      <View className="h-3 bg-slate-100 rounded-full w-1/2" />
-                    </View>
-                    <View className="w-16 h-16 rounded-full bg-slate-100" />
-                  </View>
-                ))
-              ) : (!userBooks || userBooks.length === 0) ? (
-                <View className="bg-white p-8 rounded-[40px] border-slate-200 items-center justify-center" style={{ borderBottomWidth: 12 }}>
-                  <Text className="text-6xl mb-4">📖</Text>
-                  <Text className="text-xl font-black text-slate-700 text-center mb-2">
-                    No Stories Yet!
-                  </Text>
-                  <Text className="text-base font-bold text-slate-400 text-center">
-                    Ask a grown-up to create one! ✨
-                  </Text>
-                </View>
-              ) : (
-                userBooks.slice(0, 5).map(book => (
-                  <Pressable
-                    key={book._id}
-                    onPress={() => router.push(`/reading/${book._id}?mode=autoplay`)}
-                    className="w-full bg-white p-4 rounded-[40px] border-slate-200 flex-row items-center gap-5"
-                    style={({ pressed }) => ({
-                      borderBottomWidth: pressed ? 4 : 12,
-                      transform: [{ scale: pressed ? 0.98 : 1 }],
-                    })}
-                  >
-                    <View className="w-24 h-24 rounded-2xl bg-slate-100 overflow-hidden border-4 border-slate-100">
-                      {book.coverImageUrl ? (
-                        <ExpoImage
-                          source={{
-                            uri: book.coverImageUrl,
-                            cacheKey:
-                              book.coverImageStorageId ??
-                              book.coverImageUrl ??
-                              book._id
-                          }}
-                          className="w-full h-full"
-                          cachePolicy="disk"
-                          contentFit="cover"
-                        />
-                      ) : (
-                        <View className="w-full h-full bg-purple-100 items-center justify-center">
-                          <BookOpen size={28} color="#9333ea" />
-                        </View>
-                      )}
-                    </View>
-                    <View className="flex-1 py-2">
-                      <Text
-                        className="text-xl font-black text-slate-800 leading-tight mb-2"
-                        numberOfLines={2}
-                      >
-                        {book.title}
-                      </Text>
-                      <View className="px-3 py-1 bg-green-100 rounded-full border-2 border-green-200 self-start">
-                        <Text className="text-[10px] font-black text-green-600 uppercase tracking-wide">
-                          Read Now
-                        </Text>
-                      </View>
-                    </View>
-                    <View className="w-20 h-20 rounded-full bg-green-500 border-4 border-b-8 border-green-700 items-center justify-center" style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 }}>
-                      <Play size={40} color="white" fill="white" />
-                    </View>
-                  </Pressable>
-                ))
-              )}
-            </View>
-          </ScrollView>
-        )}
-
-        {activeRoom === 'well' && (
-          <View className="flex-1 items-center justify-between relative z-10 pt-8 pb-24 px-4">
-            {wishState !== 'typing' && (
-              <View className="bg-white px-8 py-4 rounded-3xl border-b-8 border-slate-200 mb-4" style={{ transform: [{ rotate: '-1deg' }] }}>
-                <Text className="text-2xl font-black text-slate-700 text-center tracking-tight">
-                  Make a Wish! ✨
+        {
+          activeRoom === 'read' && (
+            <ScrollView className="flex-1 relative z-10 px-4 pt-4" contentContainerStyle={{ paddingBottom: 100 }}>
+              <View className="bg-white px-6 py-4 rounded-3xl border-b-8 border-slate-200 mb-6 items-center" style={{ transform: [{ rotate: '-1deg' }] }}>
+                <Text className="text-2xl font-black text-slate-700 tracking-tight">
+                  My Stories 📚
                 </Text>
               </View>
-            )}
 
-            {wishState !== 'typing' && (
-              <View className="flex-1 w-full items-center justify-center">
-                <View className="relative" style={{ width: 280, height: 280 }}>
-                  <Image
-                    source={require('@/assets/childview/ui/wishingwell.png')}
-                    style={{ width: '100%', height: '100%' }}
-                    resizeMode="contain"
-                  />
-
-                  {showBottleAnimation && (
-                    <AnimatedBottle
-                      onComplete={handleBottleAnimationComplete}
-                      onLanded={handleBottleLanded}
-                    />
-                  )}
-
-                  {showGlitter && (
-                    <View style={{
-                      position: 'absolute',
-                      top: '15%',
-                      left: '50%',
-                      marginLeft: -10,
-                      zIndex: 30
-                    }}>
-                      <GlitterBurst />
+              <View className="gap-6 pb-32">
+                {isBooksLoading ? (
+                  Array.from({ length: 3 }).map((_, index) => (
+                    <View
+                      key={`story-skeleton-${index}`}
+                      className="w-full bg-white p-4 rounded-[40px] border-slate-200 flex-row items-center gap-5"
+                      style={{ borderBottomWidth: 12 }}
+                    >
+                      <View className="w-24 h-24 rounded-2xl bg-slate-100" />
+                      <View className="flex-1 gap-3">
+                        <View className="h-4 bg-slate-100 rounded-full w-3/4" />
+                        <View className="h-3 bg-slate-100 rounded-full w-1/2" />
+                      </View>
+                      <View className="w-16 h-16 rounded-full bg-slate-100" />
                     </View>
-                  )}
-                </View>
+                  ))
+                ) : (!userBooks || userBooks.length === 0) ? (
+                  <View className="bg-white p-8 rounded-[40px] border-slate-200 items-center justify-center" style={{ borderBottomWidth: 12 }}>
+                    <Text className="text-6xl mb-4">📖</Text>
+                    <Text className="text-xl font-black text-slate-700 text-center mb-2">
+                      No Stories Yet!
+                    </Text>
+                    <Text className="text-base font-bold text-slate-400 text-center">
+                      Ask a grown-up to create one! ✨
+                    </Text>
+                  </View>
+                ) : (
+                  userBooks.slice(0, 5).map(book => (
+                    <Pressable
+                      key={book._id}
+                      onPress={() => router.push(`/reading/${book._id}?mode=autoplay`)}
+                      className="w-full bg-white p-4 rounded-[40px] border-slate-200 flex-row items-center gap-5"
+                      style={({ pressed }) => ({
+                        borderBottomWidth: pressed ? 4 : 12,
+                        transform: [{ scale: pressed ? 0.98 : 1 }],
+                      })}
+                    >
+                      <View className="w-24 h-24 rounded-2xl bg-slate-100 overflow-hidden border-4 border-slate-100">
+                        {book.coverImageUrl ? (
+                          <ExpoImage
+                            source={{
+                              uri: book.coverImageUrl,
+                              cacheKey:
+                                book.coverImageStorageId ??
+                                book.coverImageUrl ??
+                                book._id
+                            }}
+                            style={StyleSheet.absoluteFill}
+                            cachePolicy="disk"
+                            contentFit="cover"
+                          />
+                        ) : (
+                          <View className="w-full h-full bg-purple-100 items-center justify-center">
+                            <BookOpen size={28} color="#9333ea" />
+                          </View>
+                        )}
+                      </View>
+                      <View className="flex-1 py-2">
+                        <Text
+                          className="text-xl font-black text-slate-800 leading-tight mb-2"
+                          numberOfLines={2}
+                        >
+                          {book.title}
+                        </Text>
+                        <View className="px-3 py-1 bg-green-100 rounded-full border-2 border-green-200 self-start">
+                          <Text className="text-[10px] font-black text-green-600 uppercase tracking-wide">
+                            Read Now
+                          </Text>
+                        </View>
+                      </View>
+                      <View className="w-20 h-20 rounded-full bg-green-500 border-4 border-b-8 border-green-700 items-center justify-center" style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 }}>
+                        <Play size={40} color="white" fill="white" />
+                      </View>
+                    </Pressable>
+                  ))
+                )}
               </View>
-            )}
+            </ScrollView>
+          )
+        }
 
-            <View className="w-full max-w-sm pb-4">
-              {wishState === 'idle' && (
-                <View
-                  className="flex-row gap-4"
-                  style={{ height: 180 }}
-                >
-                  <BigActionButton
-                    onPress={handleStartRecording}
-                    bgColor="#f43f5e"
-                    borderColor="#be123c"
-                    aspectSquare
-                    disabled={showBottleAnimation}
-                  >
-                    <View style={{
-                      backgroundColor: 'rgba(255,255,255,0.2)',
-                      padding: 16,
-                      borderRadius: 999,
-                      marginBottom: 8,
-                    }}>
-                      <Mic size={40} color="white" strokeWidth={3} />
-                    </View>
-                    <Text style={{
-                      color: 'white',
-                      fontWeight: '900',
-                      fontSize: 20,
-                      textTransform: 'uppercase',
-                      letterSpacing: 0.5,
-                    }}>
-                      Talk
-                    </Text>
-                  </BigActionButton>
-
-                  <BigActionButton
-                    onPress={() => setWishState('typing')}
-                    bgColor="#0ea5e9"
-                    borderColor="#0369a1"
-                    aspectSquare
-                    disabled={showBottleAnimation}
-                  >
-                    <View style={{
-                      backgroundColor: 'rgba(255,255,255,0.2)',
-                      padding: 16,
-                      borderRadius: 999,
-                      marginBottom: 8,
-                    }}>
-                      <Keyboard size={40} color="white" strokeWidth={3} />
-                    </View>
-                    <Text style={{
-                      color: 'white',
-                      fontWeight: '900',
-                      fontSize: 20,
-                      textTransform: 'uppercase',
-                      letterSpacing: 0.5,
-                    }}>
-                      Type
-                    </Text>
-                  </BigActionButton>
+        {
+          activeRoom === 'well' && (
+            <View className="flex-1 items-center justify-between relative z-10 pt-8 pb-24 px-4">
+              {wishState !== 'typing' && (
+                <View className="bg-white px-8 py-4 rounded-3xl border-b-8 border-slate-200 mb-4" style={{ transform: [{ rotate: '-1deg' }] }}>
+                  <Text className="text-2xl font-black text-slate-700 text-center tracking-tight">
+                    Make a Wish! ✨
+                  </Text>
                 </View>
               )}
 
-              {wishState === 'recording' && (
-                <View className="items-center gap-6 w-full">
-                  <View className="bg-white px-8 py-6 rounded-3xl border-4 border-slate-200 flex-row items-center justify-center gap-4 w-full">
-                    <View className="w-6 h-6 rounded-full bg-rose-500" />
-                    <Text className="text-4xl font-black text-slate-700 font-mono tracking-widest">
-                      00:0{recordingTime}
-                    </Text>
-                  </View>
-
-                  <View style={{ width: '100%', height: 128 }}>
-                    <BigActionButton
-                      onPress={handleStopRecording}
-                      bgColor="#f43f5e"
-                      borderColor="#9f1239"
-                    >
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-                        <View style={{ width: 40, height: 40, backgroundColor: 'white', borderRadius: 8 }} />
-                        <Text style={{
-                          color: 'white',
-                          fontWeight: '900',
-                          fontSize: 32,
-                          textTransform: 'uppercase',
-                          letterSpacing: 1,
-                        }}>
-                          Stop
-                        </Text>
-                      </View>
-                    </BigActionButton>
-                  </View>
-                </View>
-              )}
-
-              {wishState === 'typing' && (
-                <View className="gap-4 w-full">
-                  <View className="bg-white p-6 rounded-[40px] border-8 border-sky-200 min-h-[200px]">
-                    <TextInput
-                      value={wishText}
-                      onChangeText={setWishText}
-                      placeholder="I wish for..."
-                      placeholderTextColor="#cbd5e1"
-                      multiline
-                      className="text-2xl font-black text-slate-700 text-center flex-1"
-                      autoFocus
+              {wishState !== 'typing' && (
+                <View className="flex-1 w-full items-center justify-center">
+                  <View className="relative" style={{ width: 280, height: 280 }}>
+                    <Image
+                      source={require('@/assets/childview/ui/wishingwell.png')}
+                      style={{ width: '100%', height: '100%' }}
+                      resizeMode="contain"
                     />
-                    <Text className="text-center text-slate-300 font-bold text-sm uppercase tracking-widest mt-2">
-                      Type your story idea
-                    </Text>
-                  </View>
 
-                  <View className="flex-row gap-4" style={{ height: 128 }}>
-                    <View style={{ width: 128 }}>
-                      <BigActionButton
-                        onPress={() => {
-                          setWishState('idle');
-                          setWishText('');
-                        }}
-                        bgColor="#e2e8f0"
-                        borderColor="#94a3b8"
-                      >
-                        <X size={48} color="#64748b" strokeWidth={4} />
-                      </BigActionButton>
-                    </View>
-                    <BigActionButton
-                      onPress={() => setWishState('review')}
-                      disabled={!wishText.trim()}
-                      bgColor="#0ea5e9"
-                      borderColor="#0369a1"
-                    >
-                      <Text style={{
-                        color: 'white',
-                        fontWeight: '900',
-                        fontSize: 36,
-                        textTransform: 'uppercase',
-                        letterSpacing: 2,
+                    {showBottleAnimation && (
+                      <AnimatedBottle
+                        onComplete={handleBottleAnimationComplete}
+                        onLanded={handleBottleLanded}
+                      />
+                    )}
+
+                    {showGlitter && (
+                      <View style={{
+                        position: 'absolute',
+                        top: '15%',
+                        left: '50%',
+                        marginLeft: -10,
+                        zIndex: 30
                       }}>
-                        Done
-                      </Text>
-                    </BigActionButton>
-                  </View>
-                </View>
-              )}
-
-              {wishState === 'review' && (
-                <View className="gap-6 w-full">
-                  <View className="bg-white p-8 rounded-[40px] border-b-8 border-slate-200 items-center" style={{ transform: [{ rotate: '1deg' }] }}>
-                    {wishSent ? (
-                      <View className="items-center gap-2">
-                        <View className="w-16 h-16 bg-green-100 rounded-full items-center justify-center mb-2">
-                          <Sparkles size={32} color="#10b981" strokeWidth={3} fill="#10b981" />
-                        </View>
-                        <Text className="text-slate-800 font-black text-2xl">
-                          Wish Sent! ✨
-                        </Text>
-                      </View>
-                    ) : wishText ? (
-                      <>
-                        <Text className="text-slate-400 font-black text-xs uppercase tracking-widest mb-3">
-                          Your Wish
-                        </Text>
-                        <Text className="text-slate-800 font-black text-2xl leading-tight text-center">
-                          "{wishText}"
-                        </Text>
-                      </>
-                    ) : (
-                      <View className="items-center gap-2">
-                        <View className="w-16 h-16 bg-rose-100 rounded-full items-center justify-center mb-2">
-                          <Mic size={32} color="#f43f5e" strokeWidth={3} />
-                        </View>
-                        <Text className="text-slate-800 font-black text-2xl">
-                          Voice Wish Ready!
-                        </Text>
+                        <GlitterBurst />
                       </View>
                     )}
                   </View>
-                  {wishSent ? (
-                    // Success state - single "Again" button
-                    <View style={{ height: 128, width: '100%' }}>
+                </View>
+              )}
+
+              <View className="w-full max-w-sm pb-4">
+                {wishState === 'idle' && (
+                  <View
+                    className="flex-row gap-4"
+                    style={{ height: 180 }}
+                  >
+                    <BigActionButton
+                      onPress={handleStartRecording}
+                      bgColor="#f43f5e"
+                      borderColor="#be123c"
+                      aspectSquare
+                      disabled={showBottleAnimation}
+                    >
+                      <View style={{
+                        backgroundColor: 'rgba(255,255,255,0.2)',
+                        padding: 16,
+                        borderRadius: 999,
+                        marginBottom: 8,
+                      }}>
+                        <Mic size={40} color="white" strokeWidth={3} />
+                      </View>
+                      <Text style={{
+                        color: 'white',
+                        fontWeight: '900',
+                        fontSize: 20,
+                        textTransform: 'uppercase',
+                        letterSpacing: 0.5,
+                      }}>
+                        Talk
+                      </Text>
+                    </BigActionButton>
+
+                    <BigActionButton
+                      onPress={() => setWishState('typing')}
+                      bgColor="#0ea5e9"
+                      borderColor="#0369a1"
+                      aspectSquare
+                      disabled={showBottleAnimation}
+                    >
+                      <View style={{
+                        backgroundColor: 'rgba(255,255,255,0.2)',
+                        padding: 16,
+                        borderRadius: 999,
+                        marginBottom: 8,
+                      }}>
+                        <Keyboard size={40} color="white" strokeWidth={3} />
+                      </View>
+                      <Text style={{
+                        color: 'white',
+                        fontWeight: '900',
+                        fontSize: 20,
+                        textTransform: 'uppercase',
+                        letterSpacing: 0.5,
+                      }}>
+                        Type
+                      </Text>
+                    </BigActionButton>
+                  </View>
+                )}
+
+                {wishState === 'recording' && (
+                  <View className="items-center gap-6 w-full">
+                    <View className="bg-white px-8 py-6 rounded-3xl border-4 border-slate-200 flex-row items-center justify-center gap-4 w-full">
+                      <View className="w-6 h-6 rounded-full bg-rose-500" />
+                      <Text className="text-4xl font-black text-slate-700 font-mono tracking-widest">
+                        00:0{recordingTime}
+                      </Text>
+                    </View>
+
+                    <View style={{ width: '100%', height: 128 }}>
                       <BigActionButton
-                        onPress={handleSendAnother}
+                        onPress={handleStopRecording}
+                        bgColor="#f43f5e"
+                        borderColor="#9f1239"
+                      >
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+                          <View style={{ width: 40, height: 40, backgroundColor: 'white', borderRadius: 8 }} />
+                          <Text style={{
+                            color: 'white',
+                            fontWeight: '900',
+                            fontSize: 32,
+                            textTransform: 'uppercase',
+                            letterSpacing: 1,
+                          }}>
+                            Stop
+                          </Text>
+                        </View>
+                      </BigActionButton>
+                    </View>
+                  </View>
+                )}
+
+                {wishState === 'typing' && (
+                  <View className="gap-4 w-full">
+                    <View className="bg-white p-6 rounded-[40px] border-8 border-sky-200 min-h-[200px]">
+                      <TextInput
+                        value={wishText}
+                        onChangeText={setWishText}
+                        placeholder="I wish for..."
+                        placeholderTextColor="#cbd5e1"
+                        multiline
+                        className="text-2xl font-black text-slate-700 text-center flex-1"
+                        autoFocus
+                      />
+                      <Text className="text-center text-slate-300 font-bold text-sm uppercase tracking-widest mt-2">
+                        Type your story idea
+                      </Text>
+                    </View>
+
+                    <View className="flex-row gap-4" style={{ height: 128 }}>
+                      <View style={{ width: 128 }}>
+                        <BigActionButton
+                          onPress={() => {
+                            setWishState('idle');
+                            setWishText('');
+                          }}
+                          bgColor="#e2e8f0"
+                          borderColor="#94a3b8"
+                        >
+                          <X size={48} color="#64748b" strokeWidth={4} />
+                        </BigActionButton>
+                      </View>
+                      <BigActionButton
+                        onPress={() => setWishState('review')}
+                        disabled={!wishText.trim()}
                         bgColor="#0ea5e9"
                         borderColor="#0369a1"
                       >
                         <Text style={{
                           color: 'white',
                           fontWeight: '900',
-                          fontSize: 32,
+                          fontSize: 36,
                           textTransform: 'uppercase',
-                          letterSpacing: 1,
+                          letterSpacing: 2,
                         }}>
-                          Again
+                          Done
                         </Text>
                       </BigActionButton>
                     </View>
-                  ) : (
-                    // Review state - Reset and Throw It buttons
-                    <View
-                      className="flex-row gap-4"
-                      style={{ height: 128 }}
-                    >
-                      <BigActionButton
-                        onPress={() => {
-                          if (wishText) {
-                            setWishState('typing');
-                          } else {
-                            setWishState('idle');
-                          }
-                        }}
-                        bgColor="#ffffff"
-                        borderColor="#cbd5e1"
-                        disabled={showBottleAnimation || wishSent}
-                      >
-                        <RotateCcw size={32} color="#64748b" strokeWidth={4} />
-                        <Text style={{
-                          color: '#64748b',
-                          fontWeight: '900',
-                          fontSize: 16,
-                          textTransform: 'uppercase',
-                          marginTop: 8,
-                          letterSpacing: 0.5,
-                        }}>
-                          Reset
-                        </Text>
-                      </BigActionButton>
-                      <BigActionButton
-                        onPress={handleSendWish}
-                        bgColor={showBottleAnimation ? "#6ee7b7" : "#10b981"}
-                        borderColor={showBottleAnimation ? "#059669" : "#047857"}
-                        flex={2}
-                        disabled={showBottleAnimation || wishSent}
-                      >
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 8 }}>
+                  </View>
+                )}
+
+                {wishState === 'review' && (
+                  <View className="gap-6 w-full">
+                    <View className="bg-white p-8 rounded-[40px] border-b-8 border-slate-200 items-center" style={{ transform: [{ rotate: '1deg' }] }}>
+                      {wishSent ? (
+                        <View className="items-center gap-2">
+                          <View className="w-16 h-16 bg-green-100 rounded-full items-center justify-center mb-2">
+                            <Sparkles size={32} color="#10b981" strokeWidth={3} fill="#10b981" />
+                          </View>
+                          <Text className="text-slate-800 font-black text-2xl">
+                            Wish Sent! ✨
+                          </Text>
+                        </View>
+                      ) : wishText ? (
+                        <>
+                          <Text className="text-slate-400 font-black text-xs uppercase tracking-widest mb-3">
+                            Your Wish
+                          </Text>
+                          <Text className="text-slate-800 font-black text-2xl leading-tight text-center">
+                            "{wishText}"
+                          </Text>
+                        </>
+                      ) : (
+                        <View className="items-center gap-2">
+                          <View className="w-16 h-16 bg-rose-100 rounded-full items-center justify-center mb-2">
+                            <Mic size={32} color="#f43f5e" strokeWidth={3} />
+                          </View>
+                          <Text className="text-slate-800 font-black text-2xl">
+                            Voice Wish Ready!
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                    {wishSent ? (
+                      // Success state - single "Again" button
+                      <View style={{ height: 128, width: '100%' }}>
+                        <BigActionButton
+                          onPress={handleSendAnother}
+                          bgColor="#0ea5e9"
+                          borderColor="#0369a1"
+                        >
                           <Text style={{
                             color: 'white',
                             fontWeight: '900',
-                            fontSize: 24,
+                            fontSize: 32,
                             textTransform: 'uppercase',
+                            letterSpacing: 1,
+                          }}>
+                            Again
+                          </Text>
+                        </BigActionButton>
+                      </View>
+                    ) : (
+                      // Review state - Reset and Throw It buttons
+                      <View
+                        className="flex-row gap-4"
+                        style={{ height: 128 }}
+                      >
+                        <BigActionButton
+                          onPress={() => {
+                            if (wishText) {
+                              setWishState('typing');
+                            } else {
+                              setWishState('idle');
+                            }
+                          }}
+                          bgColor="#ffffff"
+                          borderColor="#cbd5e1"
+                          disabled={showBottleAnimation || wishSent}
+                        >
+                          <RotateCcw size={32} color="#64748b" strokeWidth={4} />
+                          <Text style={{
+                            color: '#64748b',
+                            fontWeight: '900',
+                            fontSize: 16,
+                            textTransform: 'uppercase',
+                            marginTop: 8,
                             letterSpacing: 0.5,
                           }}>
-                            {showBottleAnimation ? 'Thrown!' : 'Throw It!'}
+                            Reset
                           </Text>
-                          {showBottleAnimation ? (
-                            <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.3)', alignItems: 'center', justifyContent: 'center' }}>
-                              <Text style={{ fontSize: 20 }}>✓</Text>
-                            </View>
-                          ) : (
-                            <Send size={32} color="white" strokeWidth={3} />
-                          )}
-                        </View>
-                      </BigActionButton>
-                    </View>
-                  )}
+                        </BigActionButton>
+                        <BigActionButton
+                          onPress={handleSendWish}
+                          bgColor={showBottleAnimation ? "#6ee7b7" : "#10b981"}
+                          borderColor={showBottleAnimation ? "#059669" : "#047857"}
+                          flex={2}
+                          disabled={showBottleAnimation || wishSent}
+                        >
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 8 }}>
+                            <Text style={{
+                              color: 'white',
+                              fontWeight: '900',
+                              fontSize: 24,
+                              textTransform: 'uppercase',
+                              letterSpacing: 0.5,
+                            }}>
+                              {showBottleAnimation ? 'Thrown!' : 'Throw It!'}
+                            </Text>
+                            {showBottleAnimation ? (
+                              <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.3)', alignItems: 'center', justifyContent: 'center' }}>
+                                <Text style={{ fontSize: 20 }}>✓</Text>
+                              </View>
+                            ) : (
+                              <Send size={32} color="white" strokeWidth={3} />
+                            )}
+                          </View>
+                        </BigActionButton>
+                      </View>
+                    )}
+                  </View>
+                )}
+
+
+              </View>
+            </View>
+          )
+        }
+
+        {
+          isLocked && (
+            <View style={{ position: 'absolute', top: insets.top + 8, right: 16, zIndex: 100 }}>
+              <LockButton
+                isLocked={isLocked}
+                onPressIn={handleLockPressStart}
+                onPressOut={handleLockPressEnd}
+              />
+              {showUnlockHint && (
+                <View
+                  style={{
+                    position: 'absolute',
+                    top: 60,
+                    right: 0,
+                    backgroundColor: '#ef4444',
+                    paddingHorizontal: 10,
+                    paddingVertical: 6,
+                    borderRadius: 10,
+                    borderWidth: 3,
+                    borderColor: '#b91c1c',
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.2,
+                    shadowRadius: 3,
+                    zIndex: 100,
+                  }}
+                >
+                  <Text style={{ fontSize: 11, fontWeight: '900', color: 'white' }}>HOLD!</Text>
                 </View>
               )}
-
-
             </View>
-          </View>
-        )}
-
-        {isLocked && (
-          <View style={{ position: 'absolute', top: insets.top + 8, right: 16, zIndex: 100 }}>
-            <LockButton
-              isLocked={isLocked}
-              onPressIn={handleLockPressStart}
-              onPressOut={handleLockPressEnd}
-            />
-            {showUnlockHint && (
-              <View
-                style={{
-                  position: 'absolute',
-                  top: 60,
-                  right: 0,
-                  backgroundColor: '#ef4444',
-                  paddingHorizontal: 10,
-                  paddingVertical: 6,
-                  borderRadius: 10,
-                  borderWidth: 3,
-                  borderColor: '#b91c1c',
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.2,
-                  shadowRadius: 3,
-                  zIndex: 100,
-                }}
-              >
-                <Text style={{ fontSize: 11, fontWeight: '900', color: 'white' }}>HOLD!</Text>
-              </View>
-            )}
-          </View>
-        )}
-      </ImageBackground>
-    </View>
+          )
+        }
+      </ImageBackground >
+    </View >
   );
 }
 
