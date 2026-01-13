@@ -1086,51 +1086,38 @@ export default function ChildHubScreen() {
           />
         </View>
 
+        {/* Persistent room container with smooth layout transitions */}
+        <Animated.View 
+          className="flex-1 relative z-10"
+          layout={LinearTransition.duration(300).easing(Easing.bezier(0.4, 0, 0.2, 1))}
+        >
         {activeRoom === 'wardrobe' && (
-          <View className="flex-1 relative z-10 pb-24">
-            {isWardrobePending ? (
-              <Animated.View entering={FadeIn} exiting={FadeOut} style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, paddingBottom: 32 }}>
-                <Image
-                  source={require('@/assets/childview/childdoor.png')}
-                  className="w-72 h-80 mb-8"
-                  resizeMode="contain"
-                />
-                <View className="bg-white px-8 py-6 rounded-3xl border-b-8 border-slate-200 items-center w-full max-w-sm" style={{ transform: [{ rotate: '-1deg' }], shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.15, shadowRadius: 20, elevation: 8 }}>
-                  <Text className="text-2xl font-black text-slate-700 text-center leading-tight mb-2">
-                    {pendingWardrobe?.status === 'processing' ? 'Getting Ready!' : 'Read a Story to Reveal!'}
-                  </Text>
-                  {pendingItem?.image && (
-                    <View className="items-center">
-                      <View className="w-20 h-20 rounded-2xl bg-slate-100 items-center justify-center">
-                        <Image source={pendingItem.image} className="w-16 h-16" resizeMode="contain" />
-                      </View>
-                    </View>
-                  )}
-                  {pendingWardrobe?.status === 'processing' && (
-                    <Text className="text-base font-bold text-slate-400 text-center uppercase tracking-wide mt-2">
-                      Making your new look...
-                    </Text>
-                  )}
-                  {pendingWardrobe?.status !== 'processing' && (
-                    <View className="mt-4 w-full">
-                      <ChunkyButton
-                        onPress={cancelPendingWardrobe}
-                        bgColor="#ef4444"
-                        borderColor="#b91c1c"
-                        size="large"
-                        style={{ width: '100%' }}
-                      >
-                        <Text className="text-white font-black text-xl uppercase tracking-wider text-center py-3">
-                          CANCEL
-                        </Text>
-                      </ChunkyButton>
-                    </View>
-                  )}
-                </View>
-              </Animated.View>
-            ) : (
-              <Animated.View entering={FadeIn} exiting={FadeOut} style={{ flex: 1 }}>
-                <View className="flex-1 items-center justify-center pt-8">
+          <Animated.View 
+            entering={FadeIn.duration(200).delay(50)} 
+            exiting={FadeOut.duration(150)}
+            className="flex-1 pb-24"
+          >
+            {/* Top section - Door image (pending) or Avatar (normal) */}
+            <View className="flex-1 items-center justify-center pt-8 px-8">
+              {isWardrobePending ? (
+                <Animated.View 
+                  key="pending-door"
+                  entering={FadeIn.duration(250)} 
+                  exiting={FadeOut.duration(200)}
+                  className="items-center"
+                >
+                  <Image
+                    source={require('@/assets/childview/childdoor.png')}
+                    className="w-72 h-80"
+                    resizeMode="contain"
+                  />
+                </Animated.View>
+              ) : (
+                <Animated.View 
+                  key="avatar"
+                  entering={FadeIn.duration(250)} 
+                  exiting={FadeOut.duration(200)}
+                >
                   <Avatar
                     scale={1.2}
                     mascotImageUrl={mascotOutfit?.currentMascotUrl}
@@ -1138,25 +1125,93 @@ export default function ChildHubScreen() {
                     avatarId={avatarId}
                     mascotCacheKey={mascotOutfit?.currentMascotId ?? userProgress?.generatedMascotId}
                   />
-                </View>
+                </Animated.View>
+              )}
+            </View>
 
-                <View className="px-4 pb-8">
-                  <View className="flex-row gap-3 mb-4 justify-center">
-                    {tabItems.map(tab => (
-                      <WardrobeTabButton
-                        key={tab.id}
-                        active={wardrobeTab === tab.id}
-                        onPress={() => setWardrobeTab(tab.id)}
-                        icon={tab.icon}
-                        activeColor={tab.bgColor}
-                        activeBorderColor={tab.borderColorValue}
-                      />
-                    ))}
-                  </View>
+            {/* Bottom section - Persistent white box that morphs */}
+            <View className="px-4 pb-8">
+              {/* Tab buttons - only show when not pending */}
+              {!isWardrobePending && (
+                <Animated.View 
+                  entering={FadeIn.duration(200).delay(100)} 
+                  exiting={FadeOut.duration(150)}
+                  className="flex-row gap-3 mb-4 justify-center"
+                >
+                  {tabItems.map(tab => (
+                    <WardrobeTabButton
+                      key={tab.id}
+                      active={wardrobeTab === tab.id}
+                      onPress={() => setWardrobeTab(tab.id)}
+                      icon={tab.icon}
+                      activeColor={tab.bgColor}
+                      activeBorderColor={tab.borderColorValue}
+                    />
+                  ))}
+                </Animated.View>
+              )}
 
-                  <Animated.View
-                    layout={LinearTransition.duration(200)}
-                    className="bg-white rounded-3xl p-4 border-4 border-slate-200"
+              {/* Persistent morphing white box */}
+              <Animated.View
+                layout={LinearTransition.duration(350).easing(Easing.bezier(0.4, 0, 0.2, 1))}
+                className={`bg-white rounded-3xl ${isWardrobePending ? 'p-6 border-b-8' : 'p-4 border-4'} border-slate-200`}
+                style={isWardrobePending ? { 
+                  transform: [{ rotate: '-1deg' }], 
+                  shadowColor: '#000', 
+                  shadowOffset: { width: 0, height: 10 }, 
+                  shadowOpacity: 0.15, 
+                  shadowRadius: 20, 
+                  elevation: 8,
+                  alignSelf: 'center',
+                  width: '100%',
+                  maxWidth: 384,
+                } : undefined}
+              >
+                {isWardrobePending ? (
+                  /* Pending state content */
+                  <Animated.View 
+                    key="pending-content"
+                    entering={FadeIn.duration(200).delay(100)} 
+                    exiting={FadeOut.duration(150)}
+                    className="items-center"
+                  >
+                    <Text className="text-2xl font-black text-slate-700 text-center leading-tight mb-2">
+                      {pendingWardrobe?.status === 'processing' ? 'Getting Ready!' : 'Read a Story to Reveal!'}
+                    </Text>
+                    {pendingItem?.image && (
+                      <View className="items-center">
+                        <View className="w-20 h-20 rounded-2xl bg-slate-100 items-center justify-center">
+                          <Image source={pendingItem.image} className="w-16 h-16" resizeMode="contain" />
+                        </View>
+                      </View>
+                    )}
+                    {pendingWardrobe?.status === 'processing' && (
+                      <Text className="text-base font-bold text-slate-400 text-center uppercase tracking-wide mt-2">
+                        Making your new look...
+                      </Text>
+                    )}
+                    {pendingWardrobe?.status !== 'processing' && (
+                      <View className="mt-4 w-full">
+                        <ChunkyButton
+                          onPress={cancelPendingWardrobe}
+                          bgColor="#ef4444"
+                          borderColor="#b91c1c"
+                          size="large"
+                          style={{ width: '100%' }}
+                        >
+                          <Text className="text-white font-black text-xl uppercase tracking-wider text-center py-3">
+                            CANCEL
+                          </Text>
+                        </ChunkyButton>
+                      </View>
+                    )}
+                  </Animated.View>
+                ) : (
+                  /* Normal wardrobe picker content */
+                  <Animated.View 
+                    key="wardrobe-content"
+                    entering={FadeIn.duration(200).delay(100)} 
+                    exiting={FadeOut.duration(150)}
                   >
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 12, paddingHorizontal: 4 }}>
                       <View className="flex-row gap-3">
@@ -1364,16 +1419,19 @@ export default function ChildHubScreen() {
                       </Animated.View>
                     )}
                   </Animated.View>
-                </View>
+                )}
               </Animated.View>
-            )}
-          </View>
-        )
-        }
+            </View>
+          </Animated.View>
+        )}
 
-        {
-          activeRoom === 'read' && (
-            <ScrollView className="flex-1 relative z-10 px-4 pt-4" contentContainerStyle={{ paddingBottom: 100 }}>
+        {activeRoom === 'read' && (
+          <Animated.View 
+            entering={FadeIn.duration(200).delay(50)} 
+            exiting={FadeOut.duration(150)}
+            className="flex-1"
+          >
+            <ScrollView className="flex-1 px-4 pt-4" contentContainerStyle={{ paddingBottom: 100 }}>
               <View className="bg-white px-6 py-4 rounded-3xl border-b-8 border-slate-200 mb-6 items-center" style={{ transform: [{ rotate: '-1deg' }] }}>
                 <Text className="text-2xl font-black text-slate-700 tracking-tight">
                   My Stories 📚
@@ -1458,12 +1516,15 @@ export default function ChildHubScreen() {
                 )}
               </View>
             </ScrollView>
-          )
-        }
+          </Animated.View>
+        )}
 
-        {
-          activeRoom === 'well' && (
-            <View className="flex-1 items-center justify-between relative z-10 pt-8 pb-24 px-4">
+        {activeRoom === 'well' && (
+          <Animated.View 
+            entering={FadeIn.duration(200).delay(50)} 
+            exiting={FadeOut.duration(150)}
+            className="flex-1 items-center justify-between pt-8 pb-24 px-4"
+          >
               {wishState !== 'typing' && (
                 <View className="bg-white px-8 py-4 rounded-3xl border-b-8 border-slate-200 mb-4" style={{ transform: [{ rotate: '-1deg' }] }}>
                   <Text className="text-2xl font-black text-slate-700 text-center tracking-tight">
@@ -1759,9 +1820,9 @@ export default function ChildHubScreen() {
 
 
               </View>
-            </View>
-          )
-        }
+            </Animated.View>
+          )}
+        </Animated.View>
 
         {
           isLocked && (
