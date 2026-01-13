@@ -369,7 +369,7 @@ const MascotRevealOverlay = ({
         >
           Meet {mascotName}!
         </Animated.Text>
-        
+
         <Animated.Text
           entering={FadeInUp.delay(600).springify()}
           style={{
@@ -454,7 +454,7 @@ export default function MagicMomentScreen() {
 
     const hasImage = existingTeaser.teaserImageStatus === "complete" && existingTeaser.teaserImageUrl;
     const mascotReady = !!data.generatedMascotId;
-    
+
     if (hasImage && mascotReady) {
       setPhase('preview');
     } else {
@@ -484,7 +484,7 @@ export default function MagicMomentScreen() {
         generatedMascotId: mascotJob.resultStorageId,
         generatedMascotUrl: mascotJob.resultImageUrl,
       });
-      
+
       // Persist the generated mascot to the database (onboardingResponses table)
       // This ensures the mascot shows up in "My Room" even after app restart
       saveGeneratedMascot({ storageId: mascotJob.resultStorageId })
@@ -492,7 +492,7 @@ export default function MagicMomentScreen() {
           // Don't block the flow if this fails - the mascot is still in local state
           console.warn("Failed to persist mascot to database:", error);
         });
-      
+
       setMascotJobError(null);
       setMascotRevealed(true);
     } else if (mascotJob?.status === "failed") {
@@ -667,442 +667,442 @@ export default function MagicMomentScreen() {
           paddingBottom: 16,
         }} />
 
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 }}>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 }}>
 
-        {/* PHASE 1 & 2: INPUT & RECORDING */}
-        {(phase === 'input' || phase === 'recording') && (
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={{ flex: 1, width: '100%' }}
-          >
-            <ScrollView
-              contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
-              scrollEnabled={contentHeight > viewportHeight}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              onLayout={(e) => setViewportHeight(e.nativeEvent.layout.height)}
-              onContentSizeChange={(_, h) => setContentHeight(h)}
+          {/* PHASE 1 & 2: INPUT & RECORDING */}
+          {(phase === 'input' || phase === 'recording') && (
+            <KeyboardAvoidingView
+              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+              style={{ flex: 1, width: '100%' }}
             >
-              <Animated.View entering={FadeIn} exiting={FadeOut} style={{ alignItems: 'center', width: '100%' }}>
-
-            {/* Star Display */}
-            <View style={{ marginBottom: 24 }}>
-              <View style={{
-                width: 180,
-                height: 180,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
-                <Image
-                  source={require('@/assets/images/friendly-star.png')}
-                  style={{ width: '100%', height: '100%' }}
-                  resizeMode="contain"
-                />
-              </View>
-            </View>
-
-            <Animated.Text
-              entering={FadeInDown.delay(100)}
-              style={{
-                fontSize: 28,
-                fontWeight: '800',
-                color: '#1F2937',
-                textAlign: 'center',
-                marginBottom: 12,
-              }}
-            >
-              What did you do today?
-            </Animated.Text>
-
-            <Animated.Text
-              entering={FadeInDown.delay(200)}
-              style={{
-                fontSize: 16,
-                color: '#6B7280',
-                textAlign: 'center',
-                marginBottom: 24,
-                fontWeight: '600',
-                lineHeight: 24,
-                paddingHorizontal: 16,
-              }}
-            >
-              Tell us about your day and we'll create a magical story just for you!
-            </Animated.Text>
-
-            {/* Error Message */}
-            {generationError && (
-              <Animated.View entering={FadeInDown} style={{
-                backgroundColor: '#FEE2E2',
-                paddingHorizontal: 16,
-                paddingVertical: 10,
-                borderRadius: 12,
-                marginBottom: 16,
-              }}>
-                <Text style={{ color: '#DC2626', fontWeight: '600', textAlign: 'center' }}>
-                  {generationError}
-                </Text>
-              </Animated.View>
-            )}
-
-            {/* Text Input */}
-            <Animated.View entering={FadeInUp.delay(300)} style={{ width: '100%', marginBottom: 20 }}>
-              <View style={{
-                backgroundColor: '#FFFFFF',
-                borderRadius: 20,
-                borderWidth: 3,
-                borderColor: promptText.length > 0 ? '#A78BFA' : '#E5E7EB',
-                padding: 4,
-                shadowColor: '#7C3AED',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.1,
-                shadowRadius: 8,
-                elevation: 4,
-              }}>
-                <TextInput
-                  value={promptText}
-                  onChangeText={setPromptText}
-                  placeholder="I played with my dog and we found a rainbow!"
-                  placeholderTextColor="#9CA3AF"
-                  multiline
-                  style={{
-                    fontSize: 18,
-                    color: '#1F2937',
-                    fontWeight: '600',
-                    padding: 16,
-                    minHeight: 100,
-                    textAlignVertical: 'top',
-                  }}
-                />
-              </View>
-            </Animated.View>
-
-            {/* Submit Button */}
-            <Animated.View entering={FadeInUp.delay(400)} style={{ width: '100%' }}>
-              <ChunkyButton
-                onPress={handleSubmitPrompt}
-                bgColor={promptText.length >= 3 ? '#10B981' : '#9CA3AF'}
-                borderColor={promptText.length >= 3 ? '#059669' : '#6B7280'}
-                size="large"
-                disabled={promptText.length < 3}
+              <ScrollView
+                contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
+                scrollEnabled={contentHeight > viewportHeight}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                onLayout={(e) => setViewportHeight(e.nativeEvent.layout.height)}
+                onContentSizeChange={(_, h) => setContentHeight(h)}
               >
-                <View style={{ padding: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
-                  <Ionicons name="sparkles" size={24} color="white" />
-                  <Text style={{ fontSize: 20, fontWeight: '800', color: 'white' }}>
-                    Create My Story!
-                  </Text>
-                </View>
-              </ChunkyButton>
-            </Animated.View>
+                <Animated.View entering={FadeIn} exiting={FadeOut} style={{ alignItems: 'center', width: '100%' }}>
 
-            {/* Quick Suggestions */}
-            <Animated.View entering={FadeInUp.delay(500)} style={{ marginTop: 20, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8 }}>
-              {['I played outside! 🌳', 'I made art! 🎨', 'I read a book! 📚'].map((suggestion) => (
-                <Pressable
-                  key={suggestion}
-                  onPress={() => setPromptText(suggestion.replace(/[🌳🎨📚]/g, '').trim())}
-                  style={{
-                    backgroundColor: '#F3E8FF',
-                    paddingHorizontal: 14,
-                    paddingVertical: 8,
-                    borderRadius: 20,
-                    borderWidth: 1,
-                    borderColor: '#DDD6FE',
-                  }}
-                >
-                  <Text style={{ color: '#7C3AED', fontWeight: '600', fontSize: 14 }}>
-                    {suggestion}
-                  </Text>
-                </Pressable>
-              ))}
-            </Animated.View>
-          </Animated.View>
-            </ScrollView>
-          </KeyboardAvoidingView>
-        )}
-
-        {phase === 'generating' && (
-          <Animated.View entering={FadeIn} exiting={FadeOut} style={{ alignItems: 'center', width: '100%' }}>
-            {activeGenerationError ? (
-              <Animated.View entering={FadeIn} style={{ alignItems: 'center', width: '100%', paddingHorizontal: 20 }}>
-                <View style={{
-                  width: 100,
-                  height: 100,
-                  borderRadius: 50,
-                  backgroundColor: '#FEE2E2',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: 24,
-                }}>
-                  <Ionicons name="alert-circle" size={48} color="#EF4444" />
-                </View>
-
-                <Text style={{
-                  fontSize: 22,
-                  fontWeight: '800',
-                  color: '#1F2937',
-                  textAlign: 'center',
-                  marginBottom: 8,
-                }}>
-                  Oops! Something went wrong
-                </Text>
-
-                <Text style={{
-                  fontSize: 16,
-                  color: '#6B7280',
-                  textAlign: 'center',
-                  marginBottom: 24,
-                  lineHeight: 24,
-                }}>
-                  {activeGenerationError}
-                </Text>
-
-                <ChunkyButton
-                  onPress={retryHandler}
-                  bgColor="#7C3AED"
-                  borderColor="#5B21B6"
-                  size="large"
-                  disabled={isRetryingActive}
-                  style={{ width: '100%' }}
-                >
-                  <View style={{ padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-                    <Ionicons name="refresh" size={22} color="white" />
-                    <Text style={{ fontSize: 18, fontWeight: '700', color: 'white' }}>
-                      {isRetryingActive ? 'Retrying...' : 'Try Again'}
-                    </Text>
+                  {/* Star Display */}
+                  <View style={{ marginBottom: 24 }}>
+                    <View style={{
+                      width: 180,
+                      height: 180,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}>
+                      <Image
+                        source={require('@/assets/images/friendly-star.png')}
+                        style={{ width: '100%', height: '100%' }}
+                        resizeMode="contain"
+                      />
+                    </View>
                   </View>
-                </ChunkyButton>
 
-                <Pressable onPress={() => setPhase('input')} style={{ marginTop: 16, padding: 12 }}>
-                  <Text style={{ fontSize: 16, color: '#7C3AED', fontWeight: '600' }}>
-                    Go Back
-                  </Text>
-                </Pressable>
-              </Animated.View>
-            ) : (
-              <>
-                <Animated.View
-                  style={{ marginBottom: 32 }}
-                  entering={FadeInDown.springify()}
-                >
-                  <StoryGenerationGrid
-                    progress={100}
-                    onComplete={() => { }}
-                  />
+                  <Animated.Text
+                    entering={FadeInDown.delay(100)}
+                    style={{
+                      fontSize: 28,
+                      fontWeight: '800',
+                      color: '#1F2937',
+                      textAlign: 'center',
+                      marginBottom: 12,
+                    }}
+                  >
+                    What did you do today?
+                  </Animated.Text>
+
+                  <Animated.Text
+                    entering={FadeInDown.delay(200)}
+                    style={{
+                      fontSize: 16,
+                      color: '#6B7280',
+                      textAlign: 'center',
+                      marginBottom: 24,
+                      fontWeight: '600',
+                      lineHeight: 24,
+                      paddingHorizontal: 16,
+                    }}
+                  >
+                    Tell us about your day and we'll create a magical story just for you!
+                  </Animated.Text>
+
+                  {/* Error Message */}
+                  {generationError && (
+                    <Animated.View entering={FadeInDown} style={{
+                      backgroundColor: '#FEE2E2',
+                      paddingHorizontal: 16,
+                      paddingVertical: 10,
+                      borderRadius: 12,
+                      marginBottom: 16,
+                    }}>
+                      <Text style={{ color: '#DC2626', fontWeight: '600', textAlign: 'center' }}>
+                        {generationError}
+                      </Text>
+                    </Animated.View>
+                  )}
+
+                  {/* Text Input */}
+                  <Animated.View entering={FadeInUp.delay(300)} style={{ width: '100%', marginBottom: 20 }}>
+                    <View style={{
+                      backgroundColor: '#FFFFFF',
+                      borderRadius: 20,
+                      borderWidth: 3,
+                      borderColor: promptText.length > 0 ? '#A78BFA' : '#E5E7EB',
+                      padding: 4,
+                      shadowColor: '#7C3AED',
+                      shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.1,
+                      shadowRadius: 8,
+                      elevation: 4,
+                    }}>
+                      <TextInput
+                        value={promptText}
+                        onChangeText={setPromptText}
+                        placeholder="I played with my dog and we found a rainbow!"
+                        placeholderTextColor="#9CA3AF"
+                        multiline
+                        style={{
+                          fontSize: 18,
+                          color: '#1F2937',
+                          fontWeight: '600',
+                          padding: 16,
+                          minHeight: 100,
+                          textAlignVertical: 'top',
+                        }}
+                      />
+                    </View>
+                  </Animated.View>
+
+                  {/* Submit Button */}
+                  <Animated.View entering={FadeInUp.delay(400)} style={{ width: '100%' }}>
+                    <ChunkyButton
+                      onPress={handleSubmitPrompt}
+                      bgColor={promptText.length >= 3 ? '#10B981' : '#9CA3AF'}
+                      borderColor={promptText.length >= 3 ? '#059669' : '#6B7280'}
+                      size="large"
+                      disabled={promptText.length < 3}
+                    >
+                      <View style={{ padding: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+                        <Ionicons name="sparkles" size={24} color="white" />
+                        <Text style={{ fontSize: 20, fontWeight: '800', color: 'white' }}>
+                          Create My Story!
+                        </Text>
+                      </View>
+                    </ChunkyButton>
+                  </Animated.View>
+
+                  {/* Quick Suggestions */}
+                  <Animated.View entering={FadeInUp.delay(500)} style={{ marginTop: 20, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8 }}>
+                    {['I played outside! 🌳', 'I made art! 🎨', 'I read a book! 📚'].map((suggestion) => (
+                      <Pressable
+                        key={suggestion}
+                        onPress={() => setPromptText(suggestion.replace(/[🌳🎨📚]/g, '').trim())}
+                        style={{
+                          backgroundColor: '#F3E8FF',
+                          paddingHorizontal: 14,
+                          paddingVertical: 8,
+                          borderRadius: 20,
+                          borderWidth: 1,
+                          borderColor: '#DDD6FE',
+                        }}
+                      >
+                        <Text style={{ color: '#7C3AED', fontWeight: '600', fontSize: 14 }}>
+                          {suggestion}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </Animated.View>
                 </Animated.View>
+              </ScrollView>
+            </KeyboardAvoidingView>
+          )}
 
-                <Animated.Text
-                  entering={FadeInUp.delay(200)}
-                  style={{
+          {phase === 'generating' && (
+            <Animated.View entering={FadeIn} exiting={FadeOut} style={{ alignItems: 'center', width: '100%' }}>
+              {activeGenerationError ? (
+                <Animated.View entering={FadeIn} style={{ alignItems: 'center', width: '100%', paddingHorizontal: 20 }}>
+                  <View style={{
+                    width: 100,
+                    height: 100,
+                    borderRadius: 50,
+                    backgroundColor: '#FEE2E2',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: 24,
+                  }}>
+                    <Ionicons name="alert-circle" size={48} color="#EF4444" />
+                  </View>
+
+                  <Text style={{
                     fontSize: 22,
                     fontWeight: '800',
                     color: '#1F2937',
                     textAlign: 'center',
-                  }}
-                >
-                  Creating your magical story...
-                </Animated.Text>
-                <Animated.Text
-                  entering={FadeInUp.delay(400)}
-                  style={{
-                    fontSize: 16,
-                    color: '#7C3AED',
-                    fontWeight: '600',
-                    marginTop: 8,
-                  }}
-                >
-                  ✨ This is going to be amazing! ✨
-                </Animated.Text>
-              </>
-            )}
-          </Animated.View>
-        )}
-
-        {phase === 'preview' && (
-          <Animated.View
-            entering={FadeIn.duration(600)}
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-            }}
-          >
-            {/* Scrollable Content Area */}
-            <View style={{ flex: 1, paddingHorizontal: 20 }}>
-
-              {/* Simple Header */}
-              <Animated.View
-                entering={FadeInDown.delay(100).springify()}
-                style={{ alignItems: 'center', marginBottom: 20, marginTop: 10 }}
-              >
-                <Text style={{
-                  fontSize: 28,
-                  fontWeight: '900',
-                  color: '#1F2937',
-                  textAlign: 'center',
-                }}>
-                  Your Story is Ready!
-                </Text>
-              </Animated.View>
-
-              {/* Large Storybook Teaser Card */}
-              <Animated.View
-                entering={FadeInUp.delay(200).springify()}
-                style={{
-                  flex: 1, // Take up available space
-                  backgroundColor: '#FFFFFF',
-                  borderRadius: 24,
-                  overflow: 'hidden',
-                  shadowColor: '#7C3AED',
-                  shadowOffset: { width: 0, height: 8 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 24,
-                  elevation: 8,
-                  marginBottom: 16,
-                  borderWidth: 1,
-                  borderColor: '#F3F4F6',
-                }}
-              >
-                <ScrollView
-                  showsVerticalScrollIndicator={false}
-                  contentContainerStyle={{ flexGrow: 1 }}
-                  bounces={false}
-                >
-                  {/* Large Cover Image Area */}
-                  <View style={{
-                    width: '100%',
-                    aspectRatio: 1.5, // Wider landscape aspect ratio for the "hero" image feel
-                    backgroundColor: '#F8F5FF',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderBottomWidth: 1,
-                    borderBottomColor: '#EDE9FE',
+                    marginBottom: 8,
                   }}>
-                    {teaserImageUrl ? (
-                      <Image
-                        source={{ uri: teaserImageUrl }}
-                        style={{ width: '100%', height: '100%' }}
-                        resizeMode="cover"
-                      />
-                    ) : (
-                      <>
-                        <Text style={{ fontSize: 80 }}>📖</Text>
+                    Oops! Something went wrong
+                  </Text>
 
-                        {/* Simple decorative sparkles */}
-                        <View style={{ position: 'absolute', top: 20, right: 30 }}>
-                          <Ionicons name="sparkles" size={24} color="#C4B5FD" />
-                        </View>
-                        <View style={{ position: 'absolute', bottom: 30, left: 30 }}>
-                          <Ionicons name="sparkles" size={20} color="#DDD6FE" />
-                        </View>
-                      </>
-                    )}
-                  </View>
+                  <Text style={{
+                    fontSize: 16,
+                    color: '#6B7280',
+                    textAlign: 'center',
+                    marginBottom: 24,
+                    lineHeight: 24,
+                  }}>
+                    {activeGenerationError}
+                  </Text>
 
-                  {/* Story Content Teaser */}
-                  <View style={{ padding: 24, flex: 1 }}>
-                    {/* Title */}
-                    <Text style={{
-                      fontSize: 28,
-                      fontWeight: '900',
-                      color: '#1F2937',
-                      lineHeight: 34,
-                      marginBottom: 16,
-                      textAlign: 'center',
-                    }}>
-                      {teaserDisplay?.title || 'Your Magical Story'}
-                    </Text>
-
-                    {/* Divider */}
-                    <View style={{
-                      height: 2,
-                      backgroundColor: '#F3F4F6',
-                      width: 60,
-                      alignSelf: 'center',
-                      marginBottom: 20
-                    }} />
-
-                    {/* Story Text Teaser */}
-                    <Text style={{
-                      fontSize: 18,
-                      color: '#4B5563',
-                      lineHeight: 28,
-                      fontFamily: 'System',
-                    }}>
-                      <Text style={{ fontSize: 24, color: '#7C3AED', fontWeight: 'bold' }}>
-                        {teaserDisplay?.teaserText?.charAt(0) || 'O'}
+                  <ChunkyButton
+                    onPress={retryHandler}
+                    bgColor="#7C3AED"
+                    borderColor="#5B21B6"
+                    size="large"
+                    disabled={isRetryingActive}
+                    style={{ width: '100%' }}
+                  >
+                    <View style={{ padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+                      <Ionicons name="refresh" size={22} color="white" />
+                      <Text style={{ fontSize: 18, fontWeight: '700', color: 'white' }}>
+                        {isRetryingActive ? 'Retrying...' : 'Try Again'}
                       </Text>
-                      {teaserDisplay?.teaserText?.slice(1) || 'nce upon a time, a wonderful adventure was about to begin...'}
+                    </View>
+                  </ChunkyButton>
+
+                  <Pressable onPress={() => setPhase('input')} style={{ marginTop: 16, padding: 12 }}>
+                    <Text style={{ fontSize: 16, color: '#7C3AED', fontWeight: '600' }}>
+                      Go Back
                     </Text>
-
-                    {/* Fade out effect at the bottom of the text */}
-                    <LinearGradient
-                      colors={['rgba(255,255,255,0)', 'rgba(255,255,255,1)']}
-                      style={{
-                        position: 'absolute',
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        height: 60,
-                      }}
+                  </Pressable>
+                </Animated.View>
+              ) : (
+                <>
+                  <Animated.View
+                    style={{ marginBottom: 32 }}
+                    entering={FadeInDown.springify()}
+                  >
+                    <StoryGenerationGrid
+                      progress={100}
+                      onComplete={() => { }}
                     />
-                  </View>
-                </ScrollView>
-              </Animated.View>
-            </View>
+                  </Animated.View>
 
-            {/* Fixed Bottom CTA Section */}
+                  <Animated.Text
+                    entering={FadeInUp.delay(200)}
+                    style={{
+                      fontSize: 22,
+                      fontWeight: '800',
+                      color: '#1F2937',
+                      textAlign: 'center',
+                    }}
+                  >
+                    Creating your magical story...
+                  </Animated.Text>
+                  <Animated.Text
+                    entering={FadeInUp.delay(400)}
+                    style={{
+                      fontSize: 16,
+                      color: '#7C3AED',
+                      fontWeight: '600',
+                      marginTop: 8,
+                    }}
+                  >
+                    ✨ This is going to be amazing! ✨
+                  </Animated.Text>
+                </>
+              )}
+            </Animated.View>
+          )}
+
+          {phase === 'preview' && (
             <Animated.View
-              entering={FadeInUp.delay(300).springify()}
+              entering={FadeIn.duration(600)}
               style={{
-                paddingHorizontal: 24,
-                paddingTop: 12,
-                paddingBottom: insets.bottom + 24,
-                backgroundColor: 'transparent',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
               }}
             >
-              <Text style={{
-                fontSize: 16,
-                color: '#6B7280',
-                textAlign: 'center',
-                marginBottom: 12,
-                fontWeight: '600',
-              }}>
-                Want to see what happens next?
-              </Text>
+              {/* Scrollable Content Area */}
+              <View style={{ flex: 1, paddingHorizontal: 20 }}>
 
-              <ChunkyButton
-                onPress={() => router.push('/(onboarding)/quiz/processing')}
-                bgColor="#10B981"
-                borderColor="#059669"
-                size="large"
-              >
-                <View style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: 18,
-                  gap: 10,
-                }}>
-                  <Ionicons name="lock-closed" size={22} color="white" />
-                  <Text style={{ fontSize: 20, fontWeight: '800', color: 'white' }}>
-                    Ask Parent to Unlock!
+                {/* Simple Header */}
+                <Animated.View
+                  entering={FadeInDown.delay(100).springify()}
+                  style={{ alignItems: 'center', marginBottom: 20, marginTop: 10 }}
+                >
+                  <Text style={{
+                    fontSize: 28,
+                    fontWeight: '900',
+                    color: '#1F2937',
+                    textAlign: 'center',
+                  }}>
+                    Your Story is Ready!
                   </Text>
-                </View>
-              </ChunkyButton>
-            </Animated.View>
-          </Animated.View>
-        )}
-      </View>
+                </Animated.View>
 
-      {showMascotReveal && (
-        <MascotRevealOverlay
-          mascotImage={mascotImage}
-          mascotName={mascotName}
-          onDismiss={handleMascotRevealDismiss}
-        />
-      )}
+                {/* Large Storybook Teaser Card */}
+                <Animated.View
+                  entering={FadeInUp.delay(200).springify()}
+                  style={{
+                    flex: 1, // Take up available space
+                    backgroundColor: '#FFFFFF',
+                    borderRadius: 24,
+                    overflow: 'hidden',
+                    shadowColor: '#7C3AED',
+                    shadowOffset: { width: 0, height: 8 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 24,
+                    elevation: 8,
+                    marginBottom: 16,
+                    borderWidth: 1,
+                    borderColor: '#F3F4F6',
+                  }}
+                >
+                  <ScrollView
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={{ flexGrow: 1 }}
+                    bounces={false}
+                  >
+                    {/* Large Cover Image Area */}
+                    <View style={{
+                      width: '100%',
+                      aspectRatio: 1.5, // Wider landscape aspect ratio for the "hero" image feel
+                      backgroundColor: '#F8F5FF',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderBottomWidth: 1,
+                      borderBottomColor: '#EDE9FE',
+                    }}>
+                      {teaserImageUrl ? (
+                        <Image
+                          source={{ uri: teaserImageUrl }}
+                          style={{ width: '100%', height: '100%' }}
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <>
+                          <Text style={{ fontSize: 80 }}>📖</Text>
+
+                          {/* Simple decorative sparkles */}
+                          <View style={{ position: 'absolute', top: 20, right: 30 }}>
+                            <Ionicons name="sparkles" size={24} color="#C4B5FD" />
+                          </View>
+                          <View style={{ position: 'absolute', bottom: 30, left: 30 }}>
+                            <Ionicons name="sparkles" size={20} color="#DDD6FE" />
+                          </View>
+                        </>
+                      )}
+                    </View>
+
+                    {/* Story Content Teaser */}
+                    <View style={{ padding: 24, flex: 1 }}>
+                      {/* Title */}
+                      <Text style={{
+                        fontSize: 28,
+                        fontWeight: '900',
+                        color: '#1F2937',
+                        lineHeight: 34,
+                        marginBottom: 16,
+                        textAlign: 'center',
+                      }}>
+                        {teaserDisplay?.title || 'Your Magical Story'}
+                      </Text>
+
+                      {/* Divider */}
+                      <View style={{
+                        height: 2,
+                        backgroundColor: '#F3F4F6',
+                        width: 60,
+                        alignSelf: 'center',
+                        marginBottom: 20
+                      }} />
+
+                      {/* Story Text Teaser */}
+                      <Text style={{
+                        fontSize: 18,
+                        color: '#4B5563',
+                        lineHeight: 28,
+                        fontFamily: 'System',
+                      }}>
+                        <Text style={{ fontSize: 24, color: '#7C3AED', fontWeight: 'bold' }}>
+                          {teaserDisplay?.teaserText?.charAt(0) || 'O'}
+                        </Text>
+                        {teaserDisplay?.teaserText?.slice(1) || 'nce upon a time, a wonderful adventure was about to begin...'}
+                      </Text>
+
+                      {/* Fade out effect at the bottom of the text */}
+                      <LinearGradient
+                        colors={['rgba(255,255,255,0)', 'rgba(255,255,255,1)']}
+                        style={{
+                          position: 'absolute',
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          height: 60,
+                        }}
+                      />
+                    </View>
+                  </ScrollView>
+                </Animated.View>
+              </View>
+
+              {/* Fixed Bottom CTA Section */}
+              <Animated.View
+                entering={FadeInUp.delay(300).springify()}
+                style={{
+                  paddingHorizontal: 24,
+                  paddingTop: 12,
+                  paddingBottom: insets.bottom + 24,
+                  backgroundColor: 'transparent',
+                }}
+              >
+                <Text style={{
+                  fontSize: 16,
+                  color: '#6B7280',
+                  textAlign: 'center',
+                  marginBottom: 12,
+                  fontWeight: '600',
+                }}>
+                  Want to see what happens next?
+                </Text>
+
+                <ChunkyButton
+                  onPress={() => router.push('/(onboarding)/parent/processing')}
+                  bgColor="#10B981"
+                  borderColor="#059669"
+                  size="large"
+                >
+                  <View style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: 18,
+                    gap: 10,
+                  }}>
+                    <Ionicons name="lock-closed" size={22} color="white" />
+                    <Text style={{ fontSize: 20, fontWeight: '800', color: 'white' }}>
+                      Ask Parent to Unlock!
+                    </Text>
+                  </View>
+                </ChunkyButton>
+              </Animated.View>
+            </Animated.View>
+          )}
+        </View>
+
+        {showMascotReveal && (
+          <MascotRevealOverlay
+            mascotImage={mascotImage}
+            mascotName={mascotName}
+            onDismiss={handleMascotRevealDismiss}
+          />
+        )}
       </LinearGradient>
     </>
   );

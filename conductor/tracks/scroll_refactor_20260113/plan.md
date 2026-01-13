@@ -9,7 +9,7 @@
     - [ ] Sub-task: Add standard `paddingBottom` to `contentContainerStyle` to account for floating action buttons.
 - [ ] Task: Conductor - User Manual Verification 'Foundation & Component Refactor' (Protocol in workflow.md)
 
-## Phase 2: Audit & Apply to Onboarding Screens [checkpoint: a21eced]
+## Phase 2: Audit & Apply to Onboarding Screens [checkpoint: 8ede98d]
 
 
 
