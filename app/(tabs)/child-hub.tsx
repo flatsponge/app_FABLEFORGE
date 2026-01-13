@@ -428,18 +428,19 @@ const Avatar = ({
   avatarId?: string;
   mascotCacheKey?: string | null;
 }) => {
+  const [imageLoadError, setImageLoadError] = useState(false);
   const resolvedAvatarId = avatarId || 'bears';
   const baseAvatar = BASE_AVATARS.find(a => a.id === resolvedAvatarId);
   const baseImage = baseAvatar?.image ?? BASE_AVATARS[0]?.image;
-  
+
   const shouldCacheMascot = Boolean(mascotImageUrl);
   const resolvedCacheKey = shouldCacheMascot
     ? mascotCacheKey ?? mascotImageUrl ?? resolvedAvatarId
     : undefined;
 
   // Use mascot URL if provided, otherwise fall back to base avatar
-  const imageSource = mascotImageUrl 
-    ? { uri: mascotImageUrl, cacheKey: resolvedCacheKey } 
+  const imageSource = mascotImageUrl
+    ? { uri: mascotImageUrl, cacheKey: resolvedCacheKey }
     : baseImage;
 
   return (
@@ -457,6 +458,7 @@ const Avatar = ({
           backgroundColor: '#ffffff',
           top: '50%',
           marginTop: -85,
+          zIndex: 1,
           // Soft shadow for depth
           shadowColor: '#000',
           shadowOffset: { width: 0, height: 8 },
@@ -478,17 +480,33 @@ const Avatar = ({
           backgroundColor: 'transparent',
           top: '50%',
           marginTop: -80,
+          zIndex: 2,
           borderWidth: 2,
           borderColor: 'rgba(0,0,0,0.03)',
         }}
       />
-      {/* Avatar/Mascot Image */}
-      <ExpoImage
-        source={imageSource}
-        className="absolute w-full h-full"
-        cachePolicy={shouldCacheMascot ? "disk" : undefined}
-        contentFit="contain"
-      />
+      {/* Avatar/Mascot Image - clipped to circle */}
+      <View
+        style={{
+          position: 'absolute',
+          width: 164,
+          height: 164,
+          borderRadius: 82,
+          overflow: 'hidden',
+          top: '50%',
+          marginTop: -82,
+          zIndex: 10,
+        }}
+      >
+        <ExpoImage
+          source={imageLoadError ? baseImage : imageSource}
+          style={{ width: '100%', height: '100%' }}
+          cachePolicy={shouldCacheMascot && !imageLoadError ? "disk" : undefined}
+          contentFit="cover"
+          transition={200}
+          onError={() => setImageLoadError(true)}
+        />
+      </View>
       {/* Loading overlay */}
       {isLoading && (
         <View
@@ -742,7 +760,7 @@ export default function ChildHubScreen() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [pendingWardrobe, setPendingWardrobe] = useState<PendingWardrobe | null>(null);
   const [pendingLoaded, setPendingLoaded] = useState(false);
-  
+
   const liveUserProgress = useQuery(api.onboarding.getUserProgress);
   const liveMascotOutfit = useQuery(api.onboarding.getMascotOutfit);
   const liveUserBooks = useQuery(api.storyGeneration.getUserBooks, {});
@@ -753,7 +771,7 @@ export default function ChildHubScreen() {
     liveUserBooks
   );
   const resetMascotOutfitAction = useAction(api.imageGeneration.resetMascotOutfit);
-  
+
   const [showUnlockHint, setShowUnlockHint] = useState(false);
   const [showBottleAnimation, setShowBottleAnimation] = useState(false);
   const [showGlitter, setShowGlitter] = useState(false);
@@ -1019,7 +1037,7 @@ export default function ChildHubScreen() {
   // Handle reset outfit
   const handleResetOutfit = async () => {
     if (isGenerating) return;
-    
+
     setIsGenerating(true);
     try {
       const result = await resetMascotOutfitAction();
@@ -1141,8 +1159,8 @@ export default function ChildHubScreen() {
             ) : (
               <Animated.View entering={FadeIn} exiting={FadeOut} style={{ flex: 1 }}>
                 <View className="flex-1 items-center justify-center pt-8">
-                  <Avatar 
-                    scale={1.2} 
+                  <Avatar
+                    scale={1.2}
                     mascotImageUrl={mascotOutfit?.currentMascotUrl}
                     isLoading={isGenerating}
                     avatarId={avatarId}
@@ -1200,8 +1218,8 @@ export default function ChildHubScreen() {
                                 key={item.id}
                                 onPress={() => handleAccessoryClick(item.id, item.accessoryType)}
                                 disabled={isGenerating}
-                                style={isEquipped 
-                                  ? { shadowColor, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.4, shadowRadius: 6, elevation: 4 } 
+                                style={isEquipped
+                                  ? { shadowColor, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.4, shadowRadius: 6, elevation: 4 }
                                   : { opacity: isGenerating ? 0.5 : 0.9 }}
                                 className={`w-20 h-20 rounded-2xl items-center justify-center bg-slate-100 border-4 ${isEquipped
                                   ? `${borderColor} bg-white`
@@ -1210,10 +1228,9 @@ export default function ChildHubScreen() {
                               >
                                 <Image source={item.image} style={{ width: 60, height: 60 }} resizeMode="contain" />
                                 {/* Small badge showing if it's a hat or toy */}
-                                <View 
-                                  className={`absolute -top-1 -right-1 w-5 h-5 rounded-full items-center justify-center ${
-                                    item.accessoryType === 'hat' ? 'bg-yellow-400' : 'bg-purple-400'
-                                  }`}
+                                <View
+                                  className={`absolute -top-1 -right-1 w-5 h-5 rounded-full items-center justify-center ${item.accessoryType === 'hat' ? 'bg-yellow-400' : 'bg-purple-400'
+                                    }`}
                                 >
                                   {item.accessoryType === 'hat' ? (
                                     <Crown size={12} color="white" />

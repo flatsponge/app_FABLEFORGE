@@ -11,7 +11,7 @@ import { UnifiedHeader } from '@/components/UnifiedHeader';
 import { FeaturedCard } from '@/components/FeaturedCard';
 import { FulfillmentTracker } from '@/components/FulfillmentTracker';
 import { LibraryView } from '@/components/LibraryView';
-import { Book } from '@/types';
+import { Book, ReadingMode } from '@/types';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -42,8 +42,8 @@ export default function HomeScreen() {
     router.push(`/book/${book.id}`);
   };
 
-  const handleRead = (book: Book) => {
-    router.push(`/reading/${book.id}`);
+  const handleRead = (book: Book, mode: ReadingMode) => {
+    router.push(`/reading/${book.id}?mode=${mode}`);
   };
 
   const handleFulfillmentPress = () => {

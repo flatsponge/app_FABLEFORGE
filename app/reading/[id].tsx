@@ -38,7 +38,7 @@ type PendingWardrobeResult = {
 const PROCESSING_STALE_MS = 10 * 60 * 1000;
 
 export default function ReadingScreen() {
-  const { id, mode: modeParam } = useLocalSearchParams<{ id: string; mode?: string }>();
+  const { id, mode: modeParam, restart: restartParam } = useLocalSearchParams<{ id: string; mode?: string; restart?: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -149,12 +149,13 @@ export default function ReadingScreen() {
     if (
       convexBook?.lastReadPageIndex !== undefined &&
       convexBook.lastReadPageIndex > 0 &&
-      !hasInitializedPageRef.current
+      !hasInitializedPageRef.current &&
+      restartParam !== 'true'
     ) {
       hasInitializedPageRef.current = true;
       setPage(convexBook.lastReadPageIndex);
     }
-  }, [convexBook?.lastReadPageIndex]);
+  }, [convexBook?.lastReadPageIndex, restartParam]);
 
   useEffect(() => {
     if (convexBook?.userRating && !hasInitializedRatingRef.current) {

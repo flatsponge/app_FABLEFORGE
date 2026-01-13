@@ -9,6 +9,8 @@ import Animated, {
     useSharedValue,
     Easing,
     useAnimatedProps,
+    runOnJS,
+    useAnimatedReaction,
 } from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
@@ -79,10 +81,6 @@ export default function ProcessingScreen() {
 
     // Track total duration for percentage calculation
     const totalDuration = STEPS.reduce((acc, s) => acc + s.duration, 0) + 500;
-
-    import { runOnJS, useAnimatedReaction } from 'react-native-reanimated';
-
-    // ... inside component ...
 
     // Sync percentage with the shared value
     useAnimatedReaction(
