@@ -4,6 +4,8 @@ import Animated, { useSharedValue, useAnimatedScrollHandler } from 'react-native
 import { useRouter } from 'expo-router';
 import { useAuthActions } from '@convex-dev/auth/react';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
+import { clearAllDataCaches } from '@/lib/queryCache';
+import { clearAuthOptimisticCache } from '@/lib/onboardingStorage';
 import {
   Bell,
   Volume2,
@@ -82,6 +84,10 @@ export default function SettingsScreen() {
 
   const handleLogout = async () => {
     try {
+      await Promise.all([
+        clearAllDataCaches(),
+        clearAuthOptimisticCache(),
+      ]);
       await signOut();
       router.replace('/(onboarding)');
     } catch (error) {

@@ -4,6 +4,7 @@ import * as SecureStore from "expo-secure-store";
 export const ONBOARDING_STORAGE_KEY = "onboarding_progress";
 export const ONBOARDING_STATUS_KEY = "onboarding_status_cache";
 export const AUTH_SEEN_KEY = "auth_has_seen";
+export const APP_HAS_RUN_KEY = "app_has_run_before";
 
 export type CachedOnboardingStatus = {
   hasOnboardingData: boolean;
@@ -99,5 +100,22 @@ export async function clearAuthOptimisticCache(): Promise<void> {
     await AsyncStorage.multiRemove([ONBOARDING_STATUS_KEY, AUTH_SEEN_KEY]);
   } catch {
     // Ignore storage cleanup errors.
+  }
+}
+
+export async function checkIsReinstall(): Promise<boolean> {
+  try {
+    const hasRun = await AsyncStorage.getItem(APP_HAS_RUN_KEY);
+    return hasRun !== "true";
+  } catch {
+    return true;
+  }
+}
+
+export async function markAppHasRun(): Promise<void> {
+  try {
+    await AsyncStorage.setItem(APP_HAS_RUN_KEY, "true");
+  } catch {
+    // Ignore storage write errors.
   }
 }

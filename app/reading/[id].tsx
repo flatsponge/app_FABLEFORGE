@@ -240,7 +240,7 @@ export default function ReadingScreen() {
           type: 'timing',
           duration: 500,
         }}
-        style={isLandscape ? { overflow: 'hidden' } : { width: '100%', height: width }}
+        style={isLandscape ? { overflow: 'hidden' } : { width: '100%', height: width, zIndex: 20 }}
       >
         <ReadingImageDisplay
           imageUrl={currentImage}
@@ -286,6 +286,7 @@ export default function ReadingScreen() {
             animate={{ opacity: isTransitioning ? 0 : 1 }}
             transition={{ type: 'timing', duration: isTransitioning ? 0 : 300 }}
             className="flex-1 flex-col"
+            style={{ overflow: 'visible' }}
           >
             <StoryTextDisplay
               text={currentText}

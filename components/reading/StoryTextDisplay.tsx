@@ -14,15 +14,17 @@ const TYPOGRAPHY = {
     /** Maximum font size for portrait mode */
     PORTRAIT_MAX_FONT_SIZE: 38,
     /** Minimum font size for portrait mode */
-    PORTRAIT_MIN_FONT_SIZE: 22,
+    PORTRAIT_MIN_FONT_SIZE: 18,
     /** Maximum font size for landscape mode (larger to utilize space) */
     LANDSCAPE_MAX_FONT_SIZE: 32,
     /** Minimum font size for landscape mode */
-    LANDSCAPE_MIN_FONT_SIZE: 20,
+    LANDSCAPE_MIN_FONT_SIZE: 16,
     /** Step size for font adjustments (smaller = smoother transitions) */
     FONT_STEP_SIZE: 2,
     /** Line height multiplier for readability */
     LINE_HEIGHT_MULTIPLIER: 1.35,
+    /** Character width ratio estimate for bold text */
+    CHAR_WIDTH_RATIO: 0.58,
 } as const;
 
 // ============================================================================
@@ -73,22 +75,26 @@ function calculateOptimalFontSize(
         : TYPOGRAPHY.PORTRAIT_MIN_FONT_SIZE;
 
     // Estimate characters per line based on container width
-    // Average character width is roughly 0.5-0.6 of font size for bold text
-    const charWidthRatio = 0.55;
+    // Using a larger char width ratio for more conservative estimation
+    const charWidthRatio = TYPOGRAPHY.CHAR_WIDTH_RATIO;
 
-    // Landscape has more horizontal space, use it better
-    const effectiveWidth = isLandscape ? width * 0.95 : width * 0.9;
+    // Account for internal padding (24px on each side in landscape, 4px in portrait)
+    const horizontalPadding = isLandscape ? 48 : 8;
+    const effectiveWidth = width - horizontalPadding;
+
+    // Reserve some vertical space for safety margin
+    const effectiveHeight = height * 0.95;
 
     // Iterate from max to min font size in steps
     for (let fontSize = maxFontSize; fontSize >= minFontSize; fontSize -= TYPOGRAPHY.FONT_STEP_SIZE) {
         const avgCharWidth = fontSize * charWidthRatio;
         const charsPerLine = Math.floor(effectiveWidth / avgCharWidth);
         const lineHeight = fontSize * TYPOGRAPHY.LINE_HEIGHT_MULTIPLIER;
-        const maxLines = Math.floor(height / lineHeight);
+        const maxLines = Math.floor(effectiveHeight / lineHeight);
         const totalCharsCapacity = charsPerLine * maxLines;
 
-        // Add buffer for word wrapping (words don't always fit perfectly)
-        const adjustedCapacity = totalCharsCapacity * 0.85;
+        // Buffer for word wrapping - balanced for readable size without clipping
+        const adjustedCapacity = totalCharsCapacity * 0.72;
 
         if (textLength <= adjustedCapacity) {
             return fontSize;
@@ -183,6 +189,7 @@ export function StoryTextDisplay({
                         fontWeight: '900',
                         color: '#1e293b',
                         textAlign: 'center',
+                        flexShrink: 1,
                     }}
                 >
                     {text}

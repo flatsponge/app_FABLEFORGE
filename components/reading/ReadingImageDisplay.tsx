@@ -84,10 +84,17 @@ export function ReadingImageDisplay({
         );
     }
 
+    // Portrait mode: position image to sit on top of the white card
+    // White card starts at height * 0.38 (100% - 62% = 38%)
+    // Image height is 192px, position so ~half overlaps the white card
+    const whiteCardTop = height * 0.38;
+    // Position image so its center aligns near the white card edge
+    const imageTop = whiteCardTop - 100;
+
     return (
         <View
             className="absolute left-0 right-0 px-6 items-center z-10"
-            style={{ top: height * 0.38 - 120 }}
+            style={{ top: imageTop }}
         >
             <View
                 className="w-64 h-48 rounded-3xl overflow-hidden border-4 border-white/20"

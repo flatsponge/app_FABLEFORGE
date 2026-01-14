@@ -5,14 +5,17 @@ import * as SplashScreen from 'expo-splash-screen';
 import { api } from '../convex/_generated/api';
 import {
   CachedOnboardingStatus,
+  checkIsReinstall,
   clearAuthOptimisticCache,
   clearPersistedOnboardingData,
   loadAuthSeen,
   loadCachedOnboardingStatus,
+  markAppHasRun,
   markAuthSeen,
   saveCachedOnboardingStatus,
 } from '../lib/onboardingStorage';
 import { clearAllDataCaches } from '../lib/queryCache';
+import { useAuthActions } from '@convex-dev/auth/react';
 
 interface AuthGateProps {
   children: ReactNode;
@@ -23,9 +26,11 @@ export function AuthGate({ children }: AuthGateProps) {
   const segments = useSegments();
   const navigationState = useRootNavigationState();
   const { isAuthenticated, isLoading: authLoading } = useConvexAuth();
+  const { signOut } = useAuthActions();
   const [cachedStatus, setCachedStatus] = useState<CachedOnboardingStatus | null>(null);
   const [authSeen, setAuthSeen] = useState(false);
   const [bootstrapLoaded, setBootstrapLoaded] = useState(false);
+  const [reinstallChecked, setReinstallChecked] = useState(false);
   const didInitialRedirect = useRef(false);
   const didAuthRedirect = useRef(false);
   const didConvertTeaser = useRef(false);
@@ -44,13 +49,17 @@ export function AuthGate({ children }: AuthGateProps) {
   useEffect(() => {
     let isMounted = true;
 
-    Promise.all([loadCachedOnboardingStatus(), loadAuthSeen()])
-      .then(([cached, seen]) => {
+    Promise.all([loadCachedOnboardingStatus(), loadAuthSeen(), checkIsReinstall()])
+      .then(([cached, seen, isReinstall]) => {
         if (!isMounted) {
           return;
         }
         setCachedStatus(cached);
         setAuthSeen(seen);
+        
+        if (isReinstall) {
+          markAppHasRun().catch(() => {});
+        }
       })
       .finally(() => {
         if (isMounted) {
@@ -62,6 +71,31 @@ export function AuthGate({ children }: AuthGateProps) {
       isMounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (reinstallChecked || authLoading || !bootstrapLoaded) {
+      return;
+    }
+
+    const handleReinstallCheck = async () => {
+      const isReinstall = await checkIsReinstall();
+      
+      if (isReinstall && isAuthenticated) {
+        await Promise.all([
+          clearAllDataCaches(),
+          clearAuthOptimisticCache(),
+        ]);
+        await signOut();
+      }
+      
+      await markAppHasRun();
+      setReinstallChecked(true);
+    };
+
+    handleReinstallCheck().catch(() => {
+      setReinstallChecked(true);
+    });
+  }, [authLoading, bootstrapLoaded, isAuthenticated, reinstallChecked, signOut]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -113,7 +147,7 @@ export function AuthGate({ children }: AuthGateProps) {
     didAuthRedirect.current = false;
   }, [isAuthenticated]);
 
-  const isReady = !authLoading && bootstrapLoaded && navigationState?.key;
+  const isReady = !authLoading && bootstrapLoaded && reinstallChecked && navigationState?.key;
 
   useEffect(() => {
     if (!isReady || didHideSplash.current) {
