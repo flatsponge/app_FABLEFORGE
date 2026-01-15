@@ -7,7 +7,7 @@ interface OnboardingData {
   primaryGoal: string[];
   parentingStyle: string;
   parentChallenges: string[];
-  parentReaction: string;
+  parentReaction: string[];
   previousAttempts: string;
   struggleBehavior: string;
   triggerSituations: string[];
@@ -72,7 +72,12 @@ export function calculateInitialScores(data: OnboardingData): SkillScores {
     'time_out': -2,
     'distract': -3,
   };
-  const reactPen = reactionPenalty[data.parentReaction] || -3;
+  let reactPen = 0;
+  for (const reaction of data.parentReaction) {
+    reactPen += reactionPenalty[reaction] || -3;
+  }
+  // Clamp negative penalty so it doesn't go below -10 (reasonable max penalty)
+  reactPen = Math.max(-10, reactPen);
 
   // Bonus for good parenting style
   const styleBonus: Record<string, number> = {

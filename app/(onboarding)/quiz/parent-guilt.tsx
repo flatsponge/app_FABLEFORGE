@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
-import OnboardingSingleSelect, { SelectOption } from '../../../components/OnboardingSingleSelect';
+import OnboardingMultiSelect, { SelectOption } from '../../../components/OnboardingMultiSelect';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 
 const REACTIONS: SelectOption[] = [
@@ -22,14 +22,19 @@ const REACTIONS: SelectOption[] = [
 export default function ParentGuiltScreen() {
     const router = useRouter();
     const { updateData } = useOnboarding();
-    const [selected, setSelected] = useState<string | null>(null);
+    const [selected, setSelected] = useState<string[]>([]);
 
-    const handleSelect = (id: string) => {
-        setSelected(id);
+    const handleToggle = (id: string) => {
+        setSelected((prev) => {
+            if (prev.includes(id)) {
+                return prev.filter((item) => item !== id);
+            }
+            return [...prev, id];
+        });
     };
 
     const handleNext = () => {
-        if (selected) {
+        if (selected.length > 0) {
             updateData({ parentReaction: selected });
             router.push('/(onboarding)/quiz/commitment');
         }
@@ -38,7 +43,7 @@ export default function ParentGuiltScreen() {
     return (
         <OnboardingLayout
             showProgressBar={false} skipTopSafeArea progress={0.8}
-            showNextButton={!!selected}
+            showNextButton={selected.length > 0}
             isScrollable={true}
             onNext={handleNext}
         >
@@ -48,11 +53,11 @@ export default function ParentGuiltScreen() {
                     There's no judgment here—this is a safe space.
                 </OnboardingBody>
 
-                <OnboardingSingleSelect
+                <OnboardingMultiSelect
                     options={REACTIONS}
-                    selectedId={selected}
-                    onSelect={handleSelect}
-                    showCheckbox={false}
+                    selectedValues={selected}
+                    onToggle={handleToggle}
+                    showCheckbox={true}
                 />
             </View>
         </OnboardingLayout>

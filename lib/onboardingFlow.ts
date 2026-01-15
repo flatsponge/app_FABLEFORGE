@@ -24,7 +24,7 @@ type OnboardingData = {
   moralHonesty: string;
   moralPatience: string;
   moralKindness: string;
-  parentReaction: string;
+  parentReaction: string[];
   email?: string;
   mascotName?: string;
   mascotJobId?: string;
@@ -70,12 +70,12 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
   { path: '/(onboarding)/quiz/parent-guilt', isComplete: (d) => hasValue(d.parentReaction) },
   { path: '/(onboarding)/auth/email', isComplete: (d) => hasValue(d.email) },
   { path: '/(onboarding)/child/mascot-name', isComplete: (d) => hasValue(d.mascotName) },
-  { 
-    path: '/(onboarding)/child/avatar', 
+  {
+    path: '/(onboarding)/child/avatar',
     isComplete: (d) => hasValue(d.mascotJobId) || hasValue(d.generatedMascotId),
   },
-  { 
-    path: '/(onboarding)/child/magic-moment', 
+  {
+    path: '/(onboarding)/child/magic-moment',
     isComplete: (d) => hasValue(d.generatedMascotId),
   },
 ];

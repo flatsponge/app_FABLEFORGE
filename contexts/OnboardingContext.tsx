@@ -17,7 +17,7 @@ type OnboardingData = {
     goalsTimeline: string;
     parentingStyle: string;
     parentChallenges: string[];
-    parentReaction: string;
+    parentReaction: string[];
     previousAttempts: string;
     dailyRoutine: string;
     readingTime: string;
@@ -64,7 +64,7 @@ const defaultData: OnboardingData = {
     goalsTimeline: '',
     parentingStyle: '',
     parentChallenges: [],
-    parentReaction: '',
+    parentReaction: [],
     previousAttempts: '',
     dailyRoutine: '',
     readingTime: '',

@@ -92,7 +92,7 @@ export const saveOnboardingResponses = mutation({
     goalsTimeline: v.string(),
     parentingStyle: v.string(),
     parentChallenges: v.array(v.string()),
-    parentReaction: v.string(),
+    parentReaction: v.array(v.string()),
     previousAttempts: v.string(),
     dailyRoutine: v.string(),
     readingTime: v.string(),
