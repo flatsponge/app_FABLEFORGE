@@ -3,6 +3,8 @@ import { View, StyleSheet, Text, TouchableOpacity, ScrollView } from 'react-nati
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import { useMutation } from 'convex/react';
+import { api } from '@/convex/_generated/api';
 import OnboardingLayout from '../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody } from '../../components/OnboardingTypography';
 import { OnboardingTheme } from '../../constants/OnboardingTheme';
@@ -10,16 +12,29 @@ import { OnboardingTheme } from '../../constants/OnboardingTheme';
 export default function PaywallScreen() {
   const router = useRouter();
   const [selectedPlan, setSelectedPlan] = useState<'yearly' | 'monthly'>('yearly');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const grantEntitlement = useMutation(api.credits.grantPaidEntitlement);
 
-  const handlePurchase = () => {
-    router.replace('/(tabs)');
+  const handlePurchase = async () => {
+    if (isProcessing) return;
+    setIsProcessing(true);
+    
+    try {
+      // Grant paid entitlement and initialize credits
+      // TODO: Connect to Superwall for real payment processing
+      await grantEntitlement();
+      router.replace('/(tabs)');
+    } catch (error) {
+      console.error('Failed to grant entitlement:', error);
+      setIsProcessing(false);
+    }
   };
 
   return (
     <OnboardingLayout
         progress={1.0}
         onNext={handlePurchase}
-        nextLabel="Start 7-Day Free Trial"
+        nextLabel={isProcessing ? "Setting up..." : "Start 7-Day Free Trial"}
         isScrollable={true}
     >
       <View style={styles.container}>

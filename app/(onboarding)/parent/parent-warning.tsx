@@ -17,7 +17,7 @@ export default function ParentWarningScreen() {
     }, []);
 
     const handleNext = () => {
-        router.push('/(onboarding)/parent/trajectory');
+        router.push('/(onboarding)/parent/radar-bad');
     };
 
     return (

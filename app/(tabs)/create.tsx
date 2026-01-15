@@ -61,7 +61,7 @@ import { CrystalModal } from '@/components/CrystalModal';
 import { DurationSelector } from '@/components/DurationSelector';
 import { VibeSelector } from '@/components/VibeSelector';
 import { WishDetailModal } from '@/components/WishDetailModal';
-import { MAX_CRYSTALS } from '@/constants/crystals';
+import { MAX_CRYSTALS, computeStoryCostClient } from '@/constants/crystals';
 import { FRIENDS, PRESET_LOCATIONS, VOICE_PRESETS, WISHES, FOCUS_VALUES } from '@/constants/data';
 import { STORY_STARTERS, CHALLENGE_SUGGESTIONS } from '@/constants/suggestions';
 import { Friend, PresetLocation, StoryLength, VoicePreset, Wish } from '@/types';
@@ -517,13 +517,14 @@ export const CreateScreen: React.FC = () => {
   const [viewingWish, setViewingWish] = useState<Wish | null>(null);
   const [showCrystalModal, setShowCrystalModal] = useState(false);
 
-  // Server-side credits
+  // Server-side credits & entitlement
   const liveCreditsData = useQuery(api.credits.getUserCredits);
   const { data: creditsData } = useCachedValue(
     CACHE_KEYS.userCredits,
     liveCreditsData
   );
   const addCreditsMutation = useMutation(api.credits.addCredits);
+  const hasPaidEntitlement = useQuery(api.credits.hasPaidEntitlement);
 
   // Story generation
   const [currentJobId, setCurrentJobId] = useState<Id<"storyJobs"> | null>(null);
@@ -642,18 +643,23 @@ export const CreateScreen: React.FC = () => {
   const activeCount = [overrideLocation, overrideCharacter, overrideValue].filter((item) => item).length;
   const isAutoElements = activeCount === 0;
 
-  const calculateTotalCost = () => {
-    let cost = 5;
-    if (overrideLocation) cost += overrideLocation.cost;
-    if (overrideCharacter) cost += overrideCharacter.cost;
-    if (overrideVoice) cost += overrideVoice.cost;
-    return cost;
-  };
-  const totalCost = calculateTotalCost();
+  // Use centralized cost calculation (matches server-side logic)
+  const totalCost = computeStoryCostClient({
+    hasLocation: !!overrideLocation,
+    hasCharacter: !!overrideCharacter,
+    hasVoice: !!overrideVoice,
+  });
   const hasEnoughCredits = crystalBalance >= totalCost;
 
   const handleCreateStory = async () => {
     if (!hasValidPrompt) return;
+    
+    // Check entitlement first - redirect to paywall if not entitled
+    if (!hasPaidEntitlement) {
+      router.push('/(onboarding)/paywall');
+      return;
+    }
+    
     if (crystalBalance < totalCost) {
       setShowCrystalModal(true);
       return;
@@ -743,7 +749,10 @@ export const CreateScreen: React.FC = () => {
 
     if (!result.success) {
       setAppState('studio');
-      if (result.error === 'Insufficient credits') {
+      if (result.error === 'No entitlement') {
+        // User hasn't completed paywall - redirect there
+        router.push('/(onboarding)/paywall');
+      } else if (result.error === 'Insufficient credits') {
         setShowCrystalModal(true);
       }
       return;

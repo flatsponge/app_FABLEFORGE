@@ -29,6 +29,8 @@ export default defineSchema({
     lastRegenTime: v.number(),
     isStoryMax: v.boolean(),
     storyMaxExpiresAt: v.optional(v.number()),
+    // Entitlement flag - set when user completes paywall (for testing, will connect to Superwall later)
+    hasPaidEntitlement: v.optional(v.boolean()),
   }).index("by_user", ["userId"]),
 
   onboardingResponses: defineTable({

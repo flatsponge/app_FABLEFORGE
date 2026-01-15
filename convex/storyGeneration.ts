@@ -9,6 +9,7 @@ import {
 import { internal } from "./_generated/api";
 import { Id, Doc } from "./_generated/dataModel";
 import { getAuthUser, requireAuthUser } from "./authHelpers";
+import { computeCreditState, computeStoryCost } from "./creditLogic";
 
 const SKILL_KEYS = [
   "empathy",
@@ -123,7 +124,8 @@ export const queueStoryJob = mutation({
     locationId: v.optional(v.string()),
     locationName: v.optional(v.string()),
     voiceId: v.optional(v.string()),
-    creditCost: v.number(),
+    // creditCost is kept for display purposes but NOT trusted - server computes actual cost
+    creditCost: v.optional(v.number()),
   },
   returns: v.object({
     success: v.boolean(),
@@ -188,12 +190,31 @@ export const queueStoryJob = mutation({
       .withIndex("by_user", (q) => q.eq("userId", user._id))
       .unique();
 
-    if (!credits || credits.balance < args.creditCost) {
+    // Require paid entitlement - user must complete paywall first
+    if (!credits || !credits.hasPaidEntitlement) {
+      return { success: false, error: "No entitlement" };
+    }
+
+    const now = Date.now();
+    
+    // Use centralized credit logic
+    const state = computeCreditState(credits, now);
+
+    // Compute cost server-side - never trust client
+    const actualCost = computeStoryCost({
+      hasLocation: !!args.locationId,
+      hasCharacter: !!args.extraCharacterId,
+      hasVoice: !!args.voiceId,
+    });
+
+    if (state.balance < actualCost) {
       return { success: false, error: "Insufficient credits" };
     }
 
+    // Deduct credits and reset regen timer
     await ctx.db.patch(credits._id, {
-      balance: credits.balance - args.creditCost,
+      balance: state.balance - actualCost,
+      lastRegenTime: now,
     });
 
     const childContext = await ctx.db
@@ -248,7 +269,7 @@ export const queueStoryJob = mutation({
       userId: user._id,
       status: "queued",
       progress: 0,
-      reservedCredits: args.creditCost,
+      reservedCredits: actualCost,
       mode: args.mode,
       prompt: args.prompt || "a magical adventure",
       storyLength: args.storyLength,

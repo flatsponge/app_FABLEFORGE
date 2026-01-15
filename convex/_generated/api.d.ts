@@ -12,6 +12,7 @@ import type * as actionAuthHelpers from "../actionAuthHelpers.js";
 import type * as aiProviders from "../aiProviders.js";
 import type * as auth from "../auth.js";
 import type * as authHelpers from "../authHelpers.js";
+import type * as creditLogic from "../creditLogic.js";
 import type * as credits from "../credits.js";
 import type * as crons from "../crons.js";
 import type * as http from "../http.js";
@@ -34,6 +35,7 @@ declare const fullApi: ApiFromModules<{
   aiProviders: typeof aiProviders;
   auth: typeof auth;
   authHelpers: typeof authHelpers;
+  creditLogic: typeof creditLogic;
   credits: typeof credits;
   crons: typeof crons;
   http: typeof http;
