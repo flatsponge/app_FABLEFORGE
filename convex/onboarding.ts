@@ -463,3 +463,54 @@ export const updateVocabularyOverride = mutation({
     return true;
   },
 });
+
+export const getDefaultReadingMode = query({
+  args: {},
+  returns: v.union(
+    v.literal("autoplay"),
+    v.literal("child"),
+    v.null()
+  ),
+  handler: async (ctx) => {
+    const user = await getAuthUser(ctx);
+    if (!user) return null;
+
+    const onboarding = await ctx.db
+      .query("onboardingResponses")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .unique();
+
+    if (!onboarding) return null;
+
+    return onboarding.defaultReadingMode ?? null;
+  },
+});
+
+export const updateDefaultReadingMode = mutation({
+  args: {
+    defaultReadingMode: v.union(
+      v.literal("autoplay"),
+      v.literal("child"),
+      v.null()
+    ),
+  },
+  returns: v.boolean(),
+  handler: async (ctx, args) => {
+    const user = await requireAuthUser(ctx);
+
+    const onboarding = await ctx.db
+      .query("onboardingResponses")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .unique();
+
+    if (!onboarding) {
+      throw new Error("Onboarding record not found");
+    }
+
+    await ctx.db.patch(onboarding._id, {
+      defaultReadingMode: args.defaultReadingMode ?? undefined,
+    });
+
+    return true;
+  },
+});

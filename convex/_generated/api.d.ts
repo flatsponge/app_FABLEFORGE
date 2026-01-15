@@ -23,6 +23,7 @@ import type * as mascotHelpers from "../mascotHelpers.js";
 import type * as onboarding from "../onboarding.js";
 import type * as storyGeneration from "../storyGeneration.js";
 import type * as storyGenerationActions from "../storyGenerationActions.js";
+import type * as wishes from "../wishes.js";
 
 import type {
   ApiFromModules,
@@ -46,6 +47,7 @@ declare const fullApi: ApiFromModules<{
   onboarding: typeof onboarding;
   storyGeneration: typeof storyGeneration;
   storyGenerationActions: typeof storyGenerationActions;
+  wishes: typeof wishes;
 }>;
 
 /**

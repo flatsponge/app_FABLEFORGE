@@ -1,4 +1,4 @@
-import { Category, AvatarItem, PresetLocation, Friend, VoicePreset, Wish } from '../types';
+import { Category, AvatarItem, PresetLocation, Friend, VoicePreset } from '../types';
 
 import { Heart, Shield, Scale, Hourglass, Users, Search, Sun, ClipboardList, Puzzle, Sparkles } from 'lucide-react-native';
 import { LucideIcon } from 'lucide-react-native';
@@ -125,30 +125,7 @@ export const CATEGORIES: Category[] = [
   { id: 'fantasy', name: 'Magic', color: 'bg-pink-50', text: 'text-pink-600', iconName: 'Sparkles' },
 ];
 
-export const WISHES: Wish[] = [
-  {
-    id: 'wish-1',
-    text: 'A big red dragon that eats ice cream.',
-    detail: 'I want a big red dragon that eats ice cream and makes friends at the park.',
-    createdAt: '2 hours ago',
-    isNew: true,
-    type: 'audio',
-  },
-  {
-    id: 'wish-2',
-    text: 'The time I lost my tooth at school.',
-    detail: 'I lost my tooth at school and felt nervous. I want a story about it.',
-    createdAt: 'Yesterday',
-    type: 'text',
-  },
-  {
-    id: 'wish-3',
-    text: 'Swimming with dolphins in the sky.',
-    detail: 'I want to swim with dolphins in the sky and explore a rainbow ocean.',
-    createdAt: '2 days ago',
-    type: 'audio',
-  },
-];
+
 
 
 

@@ -50,7 +50,7 @@ type VocabularyPreference = "behind" | "average" | "advanced";
 
 function buildVocabularyPromptInstructions(level: VocabularyLevel, ageYears: number): string {
   const ageContext = `for a ${ageYears}-year-old child`;
-  
+
   switch (level) {
     case "beginner":
       return `VOCABULARY LEVEL: Easy ${ageContext}
@@ -78,7 +78,7 @@ function calculateVocabularyLevelFromPreference(
   override: VocabularyLevel | null
 ): VocabularyLevel {
   if (override) return override;
-  
+
   if (preference === "behind") return "beginner";
   if (preference === "advanced") return "advanced";
   return "intermediate";
@@ -144,7 +144,7 @@ function buildOutlinePrompt(
 ${modeInstructions[mode]}
 
 STORY CONTEXT:
-- Hero of the story: ${mascot} (the mascot hero; mascots can be any type of character, like a dragon, unicorn, or robot)
+- Hero of the story: ${mascot} (the mascot hero)
 ${extraCharacterName ? `- Supporting friend: ${extraCharacterName} (a supporting character who joins ${mascot})` : ""}
 ${locationName ? `- Magical setting: ${locationName}` : ""}
 - Core value to teach: ${moralInfo.name} - ${moralInfo.description}
@@ -155,9 +155,11 @@ GUIDING PRINCIPLES:
 2. ${mascot} should face a relatable challenge and grow through their choices
 3. Keep the focus entirely on ${mascot}; do NOT introduce human child characters
 4. If the prompt mentions a child, reinterpret it as ${mascot}'s experience
-5. Show, don't tell - let actions and consequences teach the lesson
-6. Create moments of wonder, warmth, and gentle humor
-7. End with a satisfying resolution that reinforces the positive value
+5. NOTE: If the prompt uses "I" (e.g., "I got insulted"), it refers to the PARENT. The story should address the child's behavior (e.g. unkind words) that caused this.
+6. Show, don't tell - let actions and consequences teach the lesson
+7. Create moments of wonder, warmth, and gentle humor
+8. End with a satisfying resolution that reinforces the positive value
+9. ALWAYS use the name "${mascot}" in the outline points, never "the mascot"
 
 Create exactly ${pageCount} story beats (one per page), building tension in the middle and resolving beautifully.
 
@@ -185,12 +187,12 @@ function buildStoryPrompt(
     extraCharacterName?: string;
     locationName?: string;
   },
-  childContext: { 
-    childName: string; 
-    childAge: string; 
+  childContext: {
+    childName: string;
+    childAge: string;
     childBirthMonth?: number | null;
     childBirthYear?: number | null;
-    gender: string; 
+    gender: string;
     mascotName?: string | null;
   } | null
 ): string {
@@ -198,8 +200,9 @@ function buildStoryPrompt(
   const moralInfo = MORAL_DESCRIPTIONS[job.moral] || { name: job.moral, description: "" };
 
   const mascotName = childContext?.mascotName?.trim() || "the mascot";
-  const mascotPronoun = "they";
-  const mascotPossessive = "their";
+  // Pronouns removed to enforce gender neutrality
+  // const mascotPronoun = "they"; 
+  // const mascotPossessive = "their";
 
   const vibeDescriptions: Record<StoryVibe, string> = {
     energizing: "exciting, adventurous, filled with wonder and triumphant moments",
@@ -244,6 +247,10 @@ Let your creativity soar while keeping the story grounded in relatable emotions.
 
 A parent has shared this real-life challenge: "${job.prompt}"
 
+INTERPRETATION GUIDE:
+- If the prompt uses "I", "me", or "my", it refers to the PARENT (e.g., "I got insulted" means the parent was insulted by the child).
+- In this case, the story should address the underlying issue (e.g., respect, unkind words) through the mascot's journey.
+
 YOUR MISSION: Create a story that helps ${mascotName} process this experience safely and learn from it positively.
 
 📋 SITUATION ANALYSIS:
@@ -261,7 +268,7 @@ First, identify what the mascot is experiencing:
 6. ENSURE HOPE - the story ends with connection, understanding, and a path forward
 
 ⚠️ CRITICAL SAFETY RULES FOR SENSITIVE TOPICS:
-- NEVER blame or shame ${mascotName} for the situation or ${mascotPossessive} feelings
+- NEVER blame or shame ${mascotName} for the situation or ${mascotName}'s feelings
 - NEVER make "wrong" behavior seem exciting, fun, or rewarded in the story
 - NEVER dismiss, minimize, or mock the mascot's emotions
 - NEVER include scary consequences or punishments
@@ -270,7 +277,7 @@ First, identify what the mascot is experiencing:
 - If the topic involves conflict, focus on REPAIR and UNDERSTANDING, not who was "right"
 
 🎯 STORY STRUCTURE FOR REAL-LIFE SITUATIONS:
-Page 1: Establish ${mascotName}'s world and show ${mascotPronoun} is loved
+Page 1: Establish ${mascotName}'s world and show ${mascotName} is loved
 Page 2: The challenge appears (mirror the real situation through metaphor or directly)
 Page 3: ${mascotName} feels the difficult emotions - VALIDATE these fully
 Page 4: A caring figure (friend, mentor, or wise character) offers gentle support
@@ -318,7 +325,7 @@ ${ageAndVocabularySection}
 ═══════════════════════════════════════
 
 HERO: ${mascotName}
-This is the reader's story about ${mascotName}. Make ${mascotPronoun} feel heroic, capable, and deeply loved.
+This is the reader's story about ${mascotName}. Make ${mascotName} feel heroic, capable, and deeply loved.
 Do NOT introduce a human child or child companion.
 If the input mentions a child, reinterpret it as ${mascotName}'s experience.
 
@@ -340,7 +347,7 @@ ${moralInfo.description}
 - Show ${mascotName} making a CHOICE that reflects the value
 - Include a NATURAL CONSEQUENCE that reinforces why this value matters
 - The hero should FEEL the truth of the lesson, not just hear it
-- Example: Don't say "Sharing is good." Instead, show ${mascotName} sharing ${mascotPossessive} last cookie, seeing a friend's face light up, and feeling warm inside.
+- Example: Don't say "Sharing is good." Instead, show ${mascotName} sharing ${mascotName}'s last cookie, seeing a friend's face light up, and feeling warm inside.
 
 🎭 EMOTIONAL JOURNEY:
 - Page 1-2: Establish ${mascotName}'s world, then introduce a challenge or desire
@@ -371,6 +378,12 @@ STRUCTURE:
 - Each page should have ONE clear visual moment
 - Text must work when read aloud by a parent
 
+RULES FOR STORY TEXT:
+- ALWAYS refer to the hero by their name: "${mascotName}"
+- NEVER refer to them as "the mascot" in the story text
+- NO PRONOUNS: The mascot is gender neutral. Do NOT use "he", "she", "him", or "her".
+- Use the name "${mascotName}" instead of pronouns.
+
 ═══════════════════════════════════════
           IMAGE PROMPTS (CRITICAL)
 ═══════════════════════════════════════
@@ -379,7 +392,7 @@ STRUCTURE:
 The illustration should be a visual representation of what is happening in the story at that moment.
 
 IMPORTANT: The mascot character (from the reference image) is the HERO of the illustrations. 
-The mascot can be any creature - animal, dragon, unicorn, robot, magical being, etc.
+Use the reference image as the sole source of truth for the mascot's appearance.
 NO human children appear in the images - only the mascot character goes on adventures.
 
 IMAGE PROMPT STRUCTURE (follow precisely):
@@ -401,7 +414,7 @@ MATCHING EXAMPLES:
 
 ❌ DO NOT:
 - Use character names (image model doesn't know "Loli" or "Benny")
-- Use animal types (don't say "the bunny" or "the bear" - just say "the mascot")
+- Use specific animal types (never name a specific animal - just say "the mascot")
 - Create generic prompts that don't match the specific scene
 - Include abstract concepts without visual representation
 - Add style instructions (these are added separately)
@@ -455,13 +468,64 @@ function buildImagePrompt(
 
   return `${basePrompt}. ${mascotInstruction} ${noHumanInstruction} ${styleGuide}`.replace(/\s+/g, " ").trim();
 }
+/**
+ * Builds a dedicated cover image prompt that creates visually distinct,
+ * book-cover-worthy compositions based on story content.
+ */
+function buildCoverImagePrompt(args: {
+  title: string;
+  description: string;
+  moral: string;
+  moralDescription: string;
+  storyVibe: StoryVibe;
+  firstPageImagePrompt: string;
+  mascotUrl: string | null;
+}): string {
+  // Vibe affects lighting and mood only - story content drives the scene
+  const vibeLighting: Record<StoryVibe, string> = {
+    energizing: "vibrant saturated colors, dynamic lighting with lens flares, high energy atmosphere",
+    soothing: "soft pastel tones, gentle diffused lighting, calm peaceful atmosphere",
+    whimsical: "magical sparkles and glow, candy-bright accents, enchanted atmosphere",
+    thoughtful: "warm golden hour lighting, soft amber tones, intimate cozy atmosphere",
+  };
+
+  // The story title and description ARE the cover - this is what makes each cover unique
+  const storyScene = `
+STORY: "${args.title}"
+SCENE TO ILLUSTRATE: ${args.description}
+`.trim();
+
+  // Use first page prompt for additional scene context if available
+  const sceneDetails = args.firstPageImagePrompt
+    ? `KEY VISUAL ELEMENTS from the story: ${args.firstPageImagePrompt}`
+    : "";
+
+  // Cover-specific composition - emphasizes the story's world
+  const coverComposition = `BOOK COVER ILLUSTRATION for a children's picture book. 
+The mascot character is the hero, positioned prominently in the scene.
+The background and setting should DIRECTLY REFLECT the story: ${args.description}
+Make the cover visually tell what this specific story is about.
+Leave space at top for title. Eye-catching, memorable composition.`;
+
+  // Reference image instruction for mascot
+  const mascotInstruction = args.mascotUrl
+    ? "The mascot character from the reference image is the central hero. Use the reference image as the sole source of truth for the mascot's appearance."
+    : "";
+
+  const noHumanInstruction = "No human children or human companions appear in the scene.";
+
+  // Style with vibe-appropriate lighting
+  const styleGuide = `Award-winning children's book cover illustration, professional publishing quality, ${vibeLighting[args.storyVibe]}, detailed rich background, cinematic framing, no text or typography in image`;
+
+  return `${coverComposition} ${storyScene} ${sceneDetails} ${mascotInstruction} ${noHumanInstruction} ${styleGuide}`.replace(/\s+/g, " ").trim();
+}
 
 function buildTeaserImageBasePrompt(args: {
   prompt: string;
 }): string {
   const safePrompt = args.prompt.replace(/\s+/g, " ").trim();
 
-  return `The friendly character from the reference image in a magical adventure scene, inspired by: ${safePrompt}. The character stands heroically in an enchanted setting, warm golden hour lighting, magical sparkles and soft glow in the air, whimsical background with fantastical elements.`;
+  return `The mascot character from the reference image in a magical adventure scene, inspired by: ${safePrompt}. The character stands heroically in an enchanted setting, warm golden hour lighting, magical sparkles and soft glow in the air, whimsical background with fantastical elements. Use the reference image as the sole source of truth for the mascot's appearance.`;
 }
 
 async function generatePageImage(
@@ -638,13 +702,6 @@ export const generateStory = internalAction({
                 pageId,
                 imageStorageId: storageId,
               });
-
-              if (i === 0) {
-                await ctx.runMutation(internal.storyGeneration.updateBookCover, {
-                  bookId,
-                  coverImageStorageId: storageId,
-                });
-              }
             }
           }
         } catch (imageError) {
@@ -655,6 +712,54 @@ export const generateStory = internalAction({
           jobId: args.jobId,
           progress: progressPercent,
         });
+      }
+
+      // Generate dedicated cover image with story-specific prompt
+      try {
+        const coverPrompt = buildCoverImagePrompt({
+          title: story.title,
+          description: story.description,
+          moral: job.moral,
+          moralDescription: story.moralDescription,
+          storyVibe: job.storyVibe as StoryVibe,
+          firstPageImagePrompt: story.pages[0]?.imagePrompt ?? "",
+          mascotUrl,
+        });
+
+        const referenceImages: string[] = mascotUrl ? [mascotUrl] : [];
+        const coverResult = await generatePageImage(
+          runwareApiKey,
+          coverPrompt,
+          referenceImages
+        );
+
+        if (coverResult.imageUrl) {
+          const coverResponse = await fetch(coverResult.imageUrl);
+          if (coverResponse.ok) {
+            const coverBlob = await coverResponse.blob();
+            const coverStorageId = await ctx.storage.store(coverBlob);
+
+            await ctx.runMutation(internal.storyGeneration.updateBookCover, {
+              bookId,
+              coverImageStorageId: coverStorageId,
+            });
+          }
+        }
+      } catch (coverError) {
+        console.error("Failed to generate dedicated cover image:", coverError);
+        // Fallback: use first page's image if cover generation fails
+        const firstPage = pageIds[0];
+        if (firstPage) {
+          const pageData = await ctx.runQuery(internal.storyGeneration.getPageImageStorageId, {
+            pageId: firstPage.pageId,
+          });
+          if (pageData?.imageStorageId) {
+            await ctx.runMutation(internal.storyGeneration.updateBookCover, {
+              bookId,
+              coverImageStorageId: pageData.imageStorageId,
+            });
+          }
+        }
       }
 
       await ctx.runMutation(internal.storyGeneration.updateJobProgress, {
@@ -1002,7 +1107,7 @@ ${buildVocabularyPromptInstructions(vocabularyLevel, ageYears)}
     const teaserPrompt = `You are a beloved children's book author. Create a SHORT story teaser about a mascot hero.
 
 STORY INSPIRATION: "${args.prompt}"
-MASCOT HERO: ${mascotName} (the main character; mascots can be any type of character, like a dragon, unicorn, or robot)
+MASCOT HERO: ${mascotName} (the main character)
 
 CREATE A STORY ABOUT: ${mascotName}'s adventure inspired by the input above
 TONE: Warm, soothing, and magical
@@ -1014,6 +1119,9 @@ TASK: Generate:
 
 REQUIREMENTS:
 - ${mascotName} is the sole hero of the story
+- ALWAYS use the name "${mascotName}" in the story text
+- NEVER refer to them as "the mascot" in the story text
+- NO PRONOUNS: The mascot is gender neutral. Do NOT use "he", "she", "him", or "her".
 - Do NOT introduce a human child or child companion
 - Keep the focus entirely on ${mascotName}'s adventure
 - The teaser should make the reader EXCITED to hear the rest of the story!
@@ -1163,6 +1271,9 @@ TASK: Generate exactly 2 more pages to complete this 3-page story. Each page sho
 REQUIREMENTS:
 - Keep it very short and simple for young children
 - ${mascotName} is the sole hero
+- ALWAYS use the name "${mascotName}" in the story text
+- NEVER refer to them as "the mascot" in the story text
+- NO PRONOUNS: The mascot is gender neutral. Do NOT use "he", "she", "him", or "her".
 - Warm, soothing, magical tone
 - End on a positive, cozy note
 - Match the vocabulary level specified above
@@ -1170,7 +1281,7 @@ REQUIREMENTS:
 IMAGE PROMPT RULES (CRITICAL):
 - Each imagePrompt MUST illustrate the EXACT scene from that page's text
 - NEVER use the mascot's name or animal type - the image model doesn't know them
-- Always say "the mascot" - never "the bunny", "the bear", "Loli", etc.
+- Always say "the mascot" - never use specific animal names
 - The imagePrompt should visually represent what happens in the story text
 
 STRUCTURE: "The mascot [exact action from text], [expression], [specific setting from story], [lighting/mood]"

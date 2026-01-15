@@ -1076,7 +1076,7 @@ export default function MagicMomentScreen() {
                 </Text>
 
                 <ChunkyButton
-                  onPress={() => router.push('/(onboarding)/parent/processing')}
+                  onPress={() => router.push('/parent/handoff')}
                   bgColor="#10B981"
                   borderColor="#059669"
                   size="large"

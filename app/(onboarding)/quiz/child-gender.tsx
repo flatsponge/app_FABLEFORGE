@@ -22,7 +22,7 @@ export default function ChildGenderScreen() {
     const handleNext = () => {
         if (canProceed) {
             updateData({ gender: selectedGender! });
-            router.push('/(onboarding)/quiz/vocabulary-level');
+            router.push('/quiz/vocabulary-level');
         }
     };
 

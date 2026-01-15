@@ -3,7 +3,7 @@ import { View, Alert } from 'react-native';
 import { MotiView } from 'moti';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useMutation, useAction } from 'convex/react';
+import { useMutation, useAction, useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
 import { ReadingMode } from '@/types';
@@ -31,7 +31,11 @@ export default function ReadingScreen() {
   const insets = useSafeAreaInsets();
   const { isLandscape, width, height } = useOrientation(true);
 
-  const mode = (modeParam || 'autoplay') as ReadingMode;
+  // Fetch user's default reading mode preference
+  const defaultReadingMode = useQuery(api.onboarding.getDefaultReadingMode);
+
+  // Use URL param if provided, otherwise use stored preference, fallback to 'autoplay'
+  const mode = (modeParam || defaultReadingMode || 'autoplay') as ReadingMode;
   const isChildMode = mode === 'child';
 
   // Reading state hook

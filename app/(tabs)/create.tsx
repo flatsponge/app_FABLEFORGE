@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, ScrollView, Pressable, TextInput, Vibration, StyleSheet, LayoutAnimation, Platform, UIManager, ActivityIndicator } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -62,7 +62,7 @@ import { DurationSelector } from '@/components/DurationSelector';
 import { VibeSelector } from '@/components/VibeSelector';
 import { WishDetailModal } from '@/components/WishDetailModal';
 import { MAX_CRYSTALS, computeStoryCostClient } from '@/constants/crystals';
-import { FRIENDS, PRESET_LOCATIONS, VOICE_PRESETS, WISHES, FOCUS_VALUES } from '@/constants/data';
+import { FRIENDS, PRESET_LOCATIONS, VOICE_PRESETS, FOCUS_VALUES } from '@/constants/data';
 import { STORY_STARTERS, CHALLENGE_SUGGESTIONS } from '@/constants/suggestions';
 import { Friend, PresetLocation, StoryLength, VoicePreset, Wish } from '@/types';
 
@@ -515,6 +515,7 @@ export const CreateScreen: React.FC = () => {
   const [overrideCharacter, setOverrideCharacter] = useState<Friend | null>(null);
   const [overrideVoice, setOverrideVoice] = useState<VoicePreset | null>(null);
   const [viewingWish, setViewingWish] = useState<Wish | null>(null);
+  const [selectedWishId, setSelectedWishId] = useState<string | null>(null);
   const [showCrystalModal, setShowCrystalModal] = useState(false);
 
   // Server-side credits & entitlement
@@ -525,6 +526,12 @@ export const CreateScreen: React.FC = () => {
   );
   const addCreditsMutation = useMutation(api.credits.addCredits);
   const hasPaidEntitlement = useQuery(api.credits.hasPaidEntitlement);
+
+  // Wishes from child's wishing well
+  const liveWishes = useQuery(api.wishes.getUserWishes);
+  const markWishesAsReadMutation = useMutation(api.wishes.markWishesAsRead);
+  const markWishAsUsedMutation = useMutation(api.wishes.markWishAsUsed);
+  const dismissWishMutation = useMutation(api.wishes.dismissWish);
 
   // Story generation
   const [currentJobId, setCurrentJobId] = useState<Id<"storyJobs"> | null>(null);
@@ -600,7 +607,7 @@ export const CreateScreen: React.FC = () => {
     setPrompt('');
     setShowRemix(false);
     setShowElements(false);
-
+    setSelectedWishId(null);
     setShowSuggestions(false);
   }, [studioMode]);
 
@@ -621,6 +628,7 @@ export const CreateScreen: React.FC = () => {
       setOverrideCharacter(null);
       setOverrideValue(null);
       setOverrideVoice(null);
+      setSelectedWishId(null);
       router.push({
         pathname: '/reading/[id]',
         params: { id: storyJob.bookId },
@@ -642,6 +650,40 @@ export const CreateScreen: React.FC = () => {
   const hasValidPrompt = prompt.trim().length > 3 || isAuto;
   const activeCount = [overrideLocation, overrideCharacter, overrideValue].filter((item) => item).length;
   const isAutoElements = activeCount === 0;
+
+  // Format relative time for wishes
+  const formatRelativeTime = (timestamp: number): string => {
+    const now = Date.now();
+    const diff = now - timestamp;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    if (days === 1) return 'Yesterday';
+    return `${days} days ago`;
+  };
+
+  // Convert Convex wishes to UI format
+  const wishes: Wish[] = useMemo(() => {
+    if (!liveWishes) return [];
+    return liveWishes.map((w: { _id: string; text: string; createdAt: number; isNew: boolean; type: 'text' }) => ({
+      id: w._id,
+      text: w.text,
+      createdAt: formatRelativeTime(w.createdAt),
+      isNew: w.isNew,
+      type: w.type,
+    }));
+  }, [liveWishes]);
+
+  // Mark wishes as read when user opens the wishes section
+  useEffect(() => {
+    if (showRemix && liveWishes?.some((w: { isNew: boolean }) => w.isNew)) {
+      markWishesAsReadMutation().catch(console.error);
+    }
+  }, [showRemix, liveWishes, markWishesAsReadMutation]);
 
   // Use centralized cost calculation (matches server-side logic)
   const totalCost = computeStoryCostClient({
@@ -672,7 +714,7 @@ export const CreateScreen: React.FC = () => {
     let finalVoice = overrideVoice;
 
     if (studioMode === 'auto') {
-      const randomWish = getRandomItem(WISHES);
+      const randomWish = getRandomItem(wishes);
       const randomLoc = getRandomItem(PRESET_LOCATIONS);
       const randomChar = getRandomItem(FRIENDS);
       const randomValue = getRandomItem(FOCUS_VALUES);
@@ -725,8 +767,8 @@ export const CreateScreen: React.FC = () => {
   };
 
   const handleRandomPrompt = () => {
-    if (!WISHES.length) return;
-    const randomWish = getRandomItem(WISHES);
+    if (!wishes.length) return;
+    const randomWish = getRandomItem(wishes);
     if (randomWish) setPrompt(randomWish.text);
   };
 
@@ -776,7 +818,21 @@ export const CreateScreen: React.FC = () => {
 
   const handleUseWish = (wish: Wish) => {
     setPrompt(wish.text);
+    setSelectedWishId(wish.id);
     setViewingWish(null);
+    // Mark wish as used (hides from list)
+    markWishAsUsedMutation({ wishId: wish.id as Id<"wishes"> }).catch(console.error);
+  };
+
+  const handleDismissWish = (wish: Wish) => {
+    setViewingWish(null);
+    // If this was the selected wish, clear it
+    if (selectedWishId === wish.id) {
+      setSelectedWishId(null);
+      setPrompt('');
+    }
+    // Dismiss wish (hides from list)
+    dismissWishMutation({ wishId: wish.id as Id<"wishes"> }).catch(console.error);
   };
 
   const scrollY = useSharedValue(0);
@@ -1120,10 +1176,20 @@ export const CreateScreen: React.FC = () => {
                         }`}
                     >
                       <View className="flex-row items-center gap-2">
-                        <Shuffle size={16} color={showRemix ? '#a855f7' : '#94a3b8'} />
+                        <View className="relative">
+                          <Shuffle size={16} color={showRemix ? '#a855f7' : '#94a3b8'} />
+                          {wishes.some(w => w.isNew) && !showRemix && (
+                            <View className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-rose-500" />
+                          )}
+                        </View>
                         <Text className={`text-sm font-medium ${showRemix ? 'text-slate-800' : 'text-slate-500'}`}>
                           Child's Wishes
                         </Text>
+                        {wishes.length > 0 && !showRemix && (
+                          <View className="bg-slate-200 px-1.5 py-0.5 rounded">
+                            <Text className="text-[10px] font-bold text-slate-600">{wishes.length}</Text>
+                          </View>
+                        )}
                       </View>
                       <View className={`w-8 h-5 rounded-full ${showRemix ? 'bg-primary-500' : 'bg-slate-300'}`}>
                         <MotiView
@@ -1139,57 +1205,71 @@ export const CreateScreen: React.FC = () => {
                 {showRemix ? (
                   <View className="mb-8">
                     <SectionHeader title="From the Wish Jar" />
-                    <ScrollView
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      contentContainerStyle={{ paddingRight: 12 }}
-                      className="pb-2"
-                    >
-                      <Pressable
-                        onPress={() => { }}
-                        className="w-12 items-center justify-center mr-3"
-                      >
-                        <View className="w-12 h-12 rounded-full bg-slate-100 border border-slate-200 items-center justify-center">
-                          <Plus size={20} color="#94a3b8" />
+                    {wishes.length === 0 ? (
+                      <View className="bg-slate-50 rounded-2xl border border-slate-200 p-6 items-center">
+                        <View className="w-12 h-12 rounded-full bg-slate-100 items-center justify-center mb-3">
+                          <Sparkles size={24} color="#94a3b8" />
                         </View>
-                        <Text className="text-[10px] font-bold text-slate-400 mt-1">Add</Text>
-                      </Pressable>
-                      {WISHES.map((wish) => (
-                        <Pressable
-                          key={wish.id}
-                          onPress={() => setViewingWish(wish)}
-                          className="w-64 p-4 rounded-2xl bg-white border border-slate-100 shadow-sm mr-3"
-                        >
-                          <View className="flex-row items-start gap-3">
-                            <View className={`w-8 h-8 rounded-full items-center justify-center ${wish.type === 'audio' ? 'bg-rose-50' : 'bg-indigo-50'}`}>
-                              {wish.type === 'audio' ? (
-                                <Mic size={14} color="#f43f5e" />
-                              ) : (
-                                <FileText size={14} color="#6366f1" />
-                              )}
-                            </View>
-                            <View className="flex-1">
-                              <Text
-                                className="text-sm font-bold text-slate-700"
-                                numberOfLines={2}
-                              >
-                                "{wish.text}"
-                              </Text>
-                              <View className="flex-row items-center justify-between mt-1">
-                                <Text className="text-[10px] font-bold text-slate-400">
-                                  {wish.createdAt}
-                                </Text>
-                                {wish.isNew && (
-                                  <View className="bg-rose-500 px-1.5 py-0.5 rounded">
-                                    <Text className="text-[8px] font-bold text-white">NEW</Text>
+                        <Text className="text-sm font-bold text-slate-500 text-center">
+                          No wishes yet
+                        </Text>
+                        <Text className="text-xs text-slate-400 text-center mt-1">
+                          Your child can make wishes in My Room
+                        </Text>
+                      </View>
+                    ) : (
+                      <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={{ paddingRight: 12 }}
+                        className="pb-2"
+                      >
+                        {wishes.map((wish) => {
+                          const isSelected = selectedWishId === wish.id;
+                          return (
+                            <Pressable
+                              key={wish.id}
+                              onPress={() => setViewingWish(wish)}
+                              className={`w-64 p-4 rounded-2xl border shadow-sm mr-3 ${
+                                isSelected 
+                                  ? 'bg-primary-50 border-primary-300' 
+                                  : 'bg-white border-slate-100'
+                              }`}
+                            >
+                              <View className="flex-row items-start gap-3">
+                                <View className={`w-8 h-8 rounded-full items-center justify-center ${
+                                  isSelected ? 'bg-primary-100' : 'bg-indigo-50'
+                                }`}>
+                                  {isSelected ? (
+                                    <Check size={14} color="#a855f7" />
+                                  ) : (
+                                    <FileText size={14} color="#6366f1" />
+                                  )}
+                                </View>
+                                <View className="flex-1">
+                                  <Text
+                                    className={`text-sm font-bold ${isSelected ? 'text-primary-700' : 'text-slate-700'}`}
+                                    numberOfLines={2}
+                                  >
+                                    "{wish.text}"
+                                  </Text>
+                                  <View className="flex-row items-center justify-between mt-1">
+                                    <Text className="text-[10px] font-bold text-slate-400">
+                                      {wish.createdAt}
+                                    </Text>
+                                    {wish.isNew && (
+                                      <View className="bg-rose-500 px-1.5 py-0.5 rounded">
+                                        <Text className="text-[8px] font-bold text-white">NEW</Text>
+                                      </View>
+                                    )}
                                   </View>
-                                )}
+                                </View>
                               </View>
-                            </View>
-                          </View>
-                        </Pressable>
-                      ))}
-                    </ScrollView>
+                            </Pressable>
+                          );
+                        })}
+                      </ScrollView>
+                    )}
                   </View>
                 ) : null}
 
@@ -1335,9 +1415,10 @@ export const CreateScreen: React.FC = () => {
         <WishDetailModal
           visible={Boolean(viewingWish)}
           wish={viewingWish}
-          isSelected={Boolean(viewingWish && viewingWish.text === prompt)}
+          isSelected={Boolean(viewingWish && selectedWishId === viewingWish.id)}
           onClose={() => setViewingWish(null)}
           onUse={handleUseWish}
+          onDismiss={handleDismissWish}
         />
 
         <CrystalModal

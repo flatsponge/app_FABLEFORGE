@@ -47,7 +47,7 @@ function calculateVocabularyLevelFromPreference(
   override: VocabularyLevel | null
 ): VocabularyLevel {
   if (override) return override;
-  
+
   if (preference === "behind") return "beginner";
   if (preference === "advanced") return "advanced";
   return "intermediate";
@@ -226,7 +226,7 @@ export const queueStoryJob = mutation({
     }
 
     const now = Date.now();
-    
+
     // Use centralized credit logic
     const state = computeCreditState(credits, now);
 
@@ -451,6 +451,23 @@ export const updateBookCover = internalMutation({
   },
 });
 
+export const getPageImageStorageId = internalQuery({
+  args: {
+    pageId: v.id("bookPages"),
+  },
+  returns: v.union(
+    v.object({
+      imageStorageId: v.id("_storage"),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    const page = await ctx.db.get(args.pageId);
+    if (!page || !page.imageStorageId) return null;
+    return { imageStorageId: page.imageStorageId };
+  },
+});
+
 export const debugBookPageImage = internalQuery({
   args: {
     bookId: v.id("books"),
@@ -474,7 +491,7 @@ export const debugBookPageImage = internalQuery({
   }),
   handler: async (ctx, args) => {
     const book = await ctx.db.get(args.bookId);
-    
+
     const page = await ctx.db
       .query("bookPages")
       .withIndex("by_book_and_page", (q) =>
@@ -1135,7 +1152,7 @@ export const getSkillContributions = query({
     // Batch fetch all unique books to avoid N+1 queries
     const uniqueBookIds = [...new Set(contributions.map(c => c.bookId))];
     const booksMap: Map<Id<"books">, { title: string; coverUrl: string | null }> = new Map();
-    
+
     await Promise.all(
       uniqueBookIds.map(async (bookId) => {
         const book = await ctx.db.get(bookId);

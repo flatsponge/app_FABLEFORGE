@@ -6,7 +6,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
 import { useChildLock } from '@/contexts/ChildLockContext';
 import { useOrientation } from '@/components/useOrientation';
-import { useQuery, useAction } from 'convex/react';
+import { useQuery, useAction, useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import ChildBackground from '@/childbackground/childbackground1.png';
 import ChildBackground2 from '@/childbackground/childbackground2.png';
@@ -728,6 +728,7 @@ export default function ChildHubScreen() {
     liveUserBooks
   );
   const resetMascotOutfitAction = useAction(api.imageGeneration.resetMascotOutfit);
+  const createWishMutation = useMutation(api.wishes.createWish);
 
   const [showUnlockHint, setShowUnlockHint] = useState(false);
   const [showBottleAnimation, setShowBottleAnimation] = useState(false);
@@ -930,7 +931,16 @@ export default function ChildHubScreen() {
     setWishState('review');
   };
 
-  const handleSendWish = () => {
+  const handleSendWish = async () => {
+    // Only save text wishes for now (audio will be added later)
+    if (wishText.trim()) {
+      try {
+        await createWishMutation({ text: wishText.trim() });
+      } catch (error) {
+        console.error("Failed to save wish:", error);
+        // Still show animation even if save fails - better UX for child
+      }
+    }
     // Start animation immediately - buttons will stay visible
     setShowBottleAnimation(true);
   };

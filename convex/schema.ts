@@ -75,6 +75,10 @@ export default defineSchema({
     vocabularyOverride: v.optional(
       v.union(v.literal("beginner"), v.literal("intermediate"), v.literal("advanced"))
     ),
+    // Default reading mode for stories - autoplay (AI narration) or child (read solo)
+    defaultReadingMode: v.optional(
+      v.union(v.literal("autoplay"), v.literal("child"))
+    ),
   }).index("by_user", ["userId"]),
 
   userSkills: defineTable({
@@ -296,4 +300,27 @@ export default defineSchema({
   })
     .index("by_email", ["email"])
     .index("by_user", ["userId"]),
+
+  // Child's wishes from the Wishing Well
+  // Children submit text wishes that parents can see and use as story prompts
+  wishes: defineTable({
+    userId: v.id("users"),
+    text: v.string(), // The wish text
+    type: v.literal("text"), // For now only text, audio support later
+    // Status tracking
+    isNew: v.boolean(), // Whether parent has seen this wish
+    status: v.union(
+      v.literal("active"), // Visible to parent
+      v.literal("used"), // Used in a story, hidden from list
+      v.literal("dismissed") // Rejected by parent, hidden from list
+    ),
+    usedInStoryId: v.optional(v.id("books")), // If used to create a story
+    usedAt: v.optional(v.number()), // When it was used
+    dismissedAt: v.optional(v.number()), // When it was dismissed
+    // Timestamps
+    createdAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_and_status", ["userId", "status"])
+    .index("by_user_and_new", ["userId", "isNew"]),
 });

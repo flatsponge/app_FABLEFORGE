@@ -23,21 +23,32 @@ import {
   Pencil,
   BookOpen,
   Check,
+  Headphones,
 } from 'lucide-react-native';
 import { LucideIcon } from 'lucide-react-native';
 
 type VocabularyOverride = 'beginner' | 'intermediate' | 'advanced' | null;
+type ReadingModePreference = 'autoplay' | 'child' | null;
 
 const VOCABULARY_OPTIONS: Array<{
   value: VocabularyOverride;
   label: string;
   description: string;
 }> = [
-  { value: null, label: 'Auto', description: 'Age + preference' },
-  { value: 'beginner', label: 'Easy', description: 'Simple words' },
-  { value: 'intermediate', label: 'Medium', description: 'Age-appropriate' },
-  { value: 'advanced', label: 'Advanced', description: 'Richer vocabulary' },
-];
+    { value: null, label: 'Auto', description: 'Age + preference' },
+    { value: 'beginner', label: 'Easy', description: 'Simple words' },
+    { value: 'intermediate', label: 'Medium', description: 'Age-appropriate' },
+    { value: 'advanced', label: 'Advanced', description: 'Richer vocabulary' },
+  ];
+
+const READING_MODE_OPTIONS: Array<{
+  value: 'autoplay' | 'child';
+  label: string;
+  description: string;
+}> = [
+    { value: 'autoplay', label: 'Auto Play', description: 'AI narration' },
+    { value: 'child', label: 'Read Solo', description: 'Child reads' },
+  ];
 
 interface SettingItemProps {
   icon: LucideIcon;
@@ -99,6 +110,10 @@ export default function SettingsScreen() {
   const updateVocabularyOverride = useMutation(api.onboarding.updateVocabularyOverride);
   const [isUpdatingVocabulary, setIsUpdatingVocabulary] = useState(false);
 
+  const defaultReadingMode = useQuery(api.onboarding.getDefaultReadingMode);
+  const updateDefaultReadingMode = useMutation(api.onboarding.updateDefaultReadingMode);
+  const [isUpdatingReadingMode, setIsUpdatingReadingMode] = useState(false);
+
   const handleVocabularyChange = async (value: VocabularyOverride) => {
     if (isUpdatingVocabulary) return;
     setIsUpdatingVocabulary(true);
@@ -108,6 +123,18 @@ export default function SettingsScreen() {
       console.error('Failed to update vocabulary:', error);
     } finally {
       setIsUpdatingVocabulary(false);
+    }
+  };
+
+  const handleReadingModeChange = async (value: ReadingModePreference) => {
+    if (isUpdatingReadingMode) return;
+    setIsUpdatingReadingMode(true);
+    try {
+      await updateDefaultReadingMode({ defaultReadingMode: value });
+    } catch (error) {
+      console.error('Failed to update reading mode:', error);
+    } finally {
+      setIsUpdatingReadingMode(false);
     }
   };
 
@@ -233,11 +260,10 @@ export default function SettingsScreen() {
                           key={option.value ?? 'auto'}
                           onPress={() => handleVocabularyChange(option.value)}
                           disabled={isUpdatingVocabulary}
-                          className={`flex-1 py-3 px-2 rounded-xl border ${
-                            isSelected
-                              ? 'border-purple-500 bg-purple-50'
-                              : 'border-slate-200 bg-slate-50'
-                          } items-center`}
+                          className={`flex-1 py-3 px-2 rounded-xl border ${isSelected
+                            ? 'border-purple-500 bg-purple-50'
+                            : 'border-slate-200 bg-slate-50'
+                            } items-center`}
                           style={isUpdatingVocabulary ? { opacity: 0.6 } : undefined}
                         >
                           {isSelected && (
@@ -246,16 +272,62 @@ export default function SettingsScreen() {
                             </View>
                           )}
                           <Text
-                            className={`text-xs font-bold ${
-                              isSelected ? 'text-purple-700' : 'text-slate-600'
-                            }`}
+                            className={`text-xs font-bold ${isSelected ? 'text-purple-700' : 'text-slate-600'
+                              }`}
                           >
                             {option.label}
                           </Text>
                           <Text
-                            className={`text-[10px] ${
-                              isSelected ? 'text-purple-500' : 'text-slate-400'
-                            }`}
+                            className={`text-[10px] ${isSelected ? 'text-purple-500' : 'text-slate-400'
+                              }`}
+                          >
+                            {option.description}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </View>
+
+                <View className="p-4 border-t border-slate-100">
+                  <View className="flex-row items-center gap-4 mb-4">
+                    <View className="w-10 h-10 rounded-full bg-emerald-50 items-center justify-center">
+                      <Headphones size={20} color="#10b981" />
+                    </View>
+                    <View className="flex-1">
+                      <Text className="font-bold text-slate-700 text-sm">Default Reading Mode</Text>
+                      <Text className="text-xs text-slate-400">How stories start</Text>
+                    </View>
+                  </View>
+                  <View className="flex-row gap-2">
+                    {READING_MODE_OPTIONS.map((option) => {
+                      const currentMode = defaultReadingMode ?? 'autoplay';
+                      const isSelected = currentMode === option.value;
+                      return (
+                        <Pressable
+                          key={option.value}
+                          onPress={() => handleReadingModeChange(option.value)}
+                          disabled={isUpdatingReadingMode}
+                          className={`flex-1 py-3 px-2 rounded-xl border ${isSelected
+                            ? 'border-emerald-500 bg-emerald-50'
+                            : 'border-slate-200 bg-slate-50'
+                            } items-center`}
+                          style={isUpdatingReadingMode ? { opacity: 0.6 } : undefined}
+                        >
+                          {isSelected && (
+                            <View className="absolute top-1 right-1">
+                              <Check size={12} color="#10b981" />
+                            </View>
+                          )}
+                          <Text
+                            className={`text-xs font-bold ${isSelected ? 'text-emerald-700' : 'text-slate-600'
+                              }`}
+                          >
+                            {option.label}
+                          </Text>
+                          <Text
+                            className={`text-[10px] ${isSelected ? 'text-emerald-500' : 'text-slate-400'
+                              }`}
                           >
                             {option.description}
                           </Text>
@@ -311,7 +383,7 @@ export default function SettingsScreen() {
               </View>
             </View>
 
-            <Pressable 
+            <Pressable
               onPress={handleLogout}
               className="w-full py-4 rounded-3xl bg-slate-100 flex-row items-center justify-center gap-2 active:bg-slate-200"
             >

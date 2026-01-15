@@ -10,6 +10,7 @@ interface WishDetailModalProps {
     isSelected: boolean;
     onClose: () => void;
     onUse: (wish: Wish) => void;
+    onDismiss: (wish: Wish) => void;
 }
 
 /**
@@ -22,6 +23,7 @@ export const WishDetailModal = ({
     isSelected,
     onClose,
     onUse,
+    onDismiss,
 }: WishDetailModalProps) => {
     if (!wish) return null;
 
@@ -92,8 +94,8 @@ export const WishDetailModal = ({
                             </View>
                         </View>
 
-                        {/* Action */}
-                        <View className="px-6 pb-6">
+                        {/* Actions */}
+                        <View className="px-6 pb-6 gap-3">
                             {isSelected ? (
                                 <View className="bg-emerald-50 py-3.5 rounded-xl items-center border border-emerald-100">
                                     <View className="flex-row items-center gap-2">
@@ -102,13 +104,22 @@ export const WishDetailModal = ({
                                     </View>
                                 </View>
                             ) : (
-                                <Pressable
-                                    onPress={() => onUse(wish)}
-                                    className="w-full py-3.5 rounded-xl bg-purple-500 flex-row items-center justify-center gap-2 active:scale-[0.98]"
-                                >
-                                    <Wand2 size={16} color="#ffffff" />
-                                    <Text className="text-white font-bold text-sm">Use in Story</Text>
-                                </Pressable>
+                                <>
+                                    <Pressable
+                                        onPress={() => onUse(wish)}
+                                        className="w-full py-3.5 rounded-xl bg-purple-500 flex-row items-center justify-center gap-2 active:scale-[0.98]"
+                                    >
+                                        <Wand2 size={16} color="#ffffff" />
+                                        <Text className="text-white font-bold text-sm">Use in Story</Text>
+                                    </Pressable>
+                                    <Pressable
+                                        onPress={() => onDismiss(wish)}
+                                        className="w-full py-3 rounded-xl bg-slate-100 flex-row items-center justify-center gap-2 active:scale-[0.98]"
+                                    >
+                                        <X size={14} color="#64748b" />
+                                        <Text className="text-slate-500 font-semibold text-sm">Dismiss Wish</Text>
+                                    </Pressable>
+                                </>
                             )}
                         </View>
                     </View>
