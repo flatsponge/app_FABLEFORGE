@@ -17,6 +17,7 @@ import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
 import { useCachedValue } from '@/hooks/useCachedValue';
+import { useStoryDraft } from '@/hooks/useStoryDraft';
 import { CACHE_KEYS } from '@/lib/queryCache';
 import {
 
@@ -71,7 +72,7 @@ type StudioMode = 'creative' | 'situation' | 'auto';
 type StoryVibe = 'energizing' | 'soothing' | 'whimsical' | 'thoughtful';
 type ThemeMode = 'purple' | 'teal' | 'amber';
 
-interface FocusValue {
+export interface FocusValue {
   id: string;
   name: string;
   icon: LucideIcon;
@@ -503,20 +504,28 @@ export const CreateScreen: React.FC = () => {
     selectedValueId?: string;
   }>();
 
+  const {
+    isLoaded,
+    prompt, setPrompt,
+    studioMode, setStudioMode,
+    storyLength, setStoryLength,
+    storyVibe, setStoryVibe,
+    overrideLocation, setOverrideLocation,
+    overrideCharacter, setOverrideCharacter,
+    overrideValue, setOverrideValue,
+    overrideVoice, setOverrideVoice,
+    showElements, setShowElements,
+    showRemix, setShowRemix,
+    clearDraft
+  } = useStoryDraft();
+
   const [appState, setAppState] = useState<AppState>('studio');
-  const [studioMode, setStudioMode] = useState<StudioMode>('creative');
-  const [showElements, setShowElements] = useState(false);
-  const [prompt, setPrompt] = useState('');
-  const [storyLength, setStoryLength] = useState<StoryLength>('medium');
-  const [storyVibe, setStoryVibe] = useState<StoryVibe>('soothing');
-  const [showRemix, setShowRemix] = useState(false);
-  const [overrideLocation, setOverrideLocation] = useState<PresetLocation | null>(null);
-  const [overrideValue, setOverrideValue] = useState<FocusValue | null>(null);
-  const [overrideCharacter, setOverrideCharacter] = useState<Friend | null>(null);
-  const [overrideVoice, setOverrideVoice] = useState<VoicePreset | null>(null);
   const [viewingWish, setViewingWish] = useState<Wish | null>(null);
   const [selectedWishId, setSelectedWishId] = useState<string | null>(null);
   const [showCrystalModal, setShowCrystalModal] = useState(false);
+
+  // Prevent rendering until stored draft is loaded
+  if (!isLoaded) return null;
 
   // Server-side credits & entitlement
   const liveCreditsData = useQuery(api.credits.getUserCredits);
@@ -599,17 +608,8 @@ export const CreateScreen: React.FC = () => {
     setShowSuggestions(!showSuggestions);
   };
 
-  useEffect(() => {
-    setOverrideLocation(null);
-    setOverrideCharacter(null);
-    setOverrideValue(null);
-    setOverrideVoice(null);
-    setPrompt('');
-    setShowRemix(false);
-    setShowElements(false);
-    setSelectedWishId(null);
-    setShowSuggestions(false);
-  }, [studioMode]);
+  // Removed useEffect that auto-clears on studioMode change to support persistence
+  // Clearing logic moved to mode switch handlers
 
   useEffect(() => {
     return () => {
@@ -623,12 +623,7 @@ export const CreateScreen: React.FC = () => {
     if (storyJob.status === 'complete' && storyJob.bookId) {
       setAppState('studio');
       setCurrentJobId(null);
-      setPrompt('');
-      setOverrideLocation(null);
-      setOverrideCharacter(null);
-      setOverrideValue(null);
-      setOverrideVoice(null);
-      setSelectedWishId(null);
+      clearDraft(); // Clear stored draft on success
       router.push({
         pathname: '/reading/[id]',
         params: { id: storyJob.bookId },
@@ -695,13 +690,13 @@ export const CreateScreen: React.FC = () => {
 
   const handleCreateStory = async () => {
     if (!hasValidPrompt) return;
-    
+
     // Check entitlement first - redirect to paywall if not entitled
     if (!hasPaidEntitlement) {
       router.push('/(onboarding)/paywall');
       return;
     }
-    
+
     if (crystalBalance < totalCost) {
       setShowCrystalModal(true);
       return;
@@ -897,6 +892,16 @@ export const CreateScreen: React.FC = () => {
               <Pressable
                 onPress={() => {
                   setStudioMode(isAuto ? 'creative' : 'auto');
+                  // Clear specific fields when toggling auto mode if desired, 
+                  // or keep them if we want to persist context. 
+                  // For now, let's reset prompt and overrides to avoid confusion
+                  setPrompt('');
+                  setOverrideLocation(null);
+                  setOverrideCharacter(null);
+                  setOverrideValue(null);
+                  setOverrideVoice(null);
+                  setShowElements(false);
+
                   Vibration.vibrate(5);
                 }}
                 style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.98 : 1 }] })}
@@ -997,7 +1002,15 @@ export const CreateScreen: React.FC = () => {
                     />
                   )}
                   <Pressable
-                    onPress={() => setStudioMode('creative')}
+                    onPress={() => {
+                      setStudioMode('creative');
+                      // Clear 'incident' specific fields if any, or general reset
+                      setPrompt('');
+                      setOverrideLocation(null);
+                      setOverrideCharacter(null);
+                      setOverrideValue(null);
+                      setOverrideVoice(null);
+                    }}
                     className="flex-1 rounded-xl flex-row items-center justify-center gap-2 z-10"
                   >
                     <Palette size={16} color={isCreative ? '#a855f7' : '#94a3b8'} />
@@ -1009,7 +1022,15 @@ export const CreateScreen: React.FC = () => {
                     </Text>
                   </Pressable>
                   <Pressable
-                    onPress={() => setStudioMode('situation')}
+                    onPress={() => {
+                      setStudioMode('situation');
+                      // Reset for fresh incident input
+                      setPrompt('');
+                      setOverrideLocation(null);
+                      setOverrideCharacter(null);
+                      setOverrideValue(null);
+                      setOverrideVoice(null);
+                    }}
                     className="flex-1 rounded-xl flex-row items-center justify-center gap-2 z-10"
                   >
                     <LifeBuoy size={16} color={!isCreative ? '#14b8a6' : '#94a3b8'} />
@@ -1230,16 +1251,14 @@ export const CreateScreen: React.FC = () => {
                             <Pressable
                               key={wish.id}
                               onPress={() => setViewingWish(wish)}
-                              className={`w-64 p-4 rounded-2xl border shadow-sm mr-3 ${
-                                isSelected 
-                                  ? 'bg-primary-50 border-primary-300' 
+                              className={`w-64 p-4 rounded-2xl border shadow-sm mr-3 ${isSelected
+                                  ? 'bg-primary-50 border-primary-300'
                                   : 'bg-white border-slate-100'
-                              }`}
+                                }`}
                             >
                               <View className="flex-row items-start gap-3">
-                                <View className={`w-8 h-8 rounded-full items-center justify-center ${
-                                  isSelected ? 'bg-primary-100' : 'bg-indigo-50'
-                                }`}>
+                                <View className={`w-8 h-8 rounded-full items-center justify-center ${isSelected ? 'bg-primary-100' : 'bg-indigo-50'
+                                  }`}>
                                   {isSelected ? (
                                     <Check size={14} color="#a855f7" />
                                   ) : (
@@ -1468,8 +1487,8 @@ export const CreateScreen: React.FC = () => {
 
   if (appState === 'generating-story') {
     const progress = storyJob?.progress ?? 0;
-    const statusText = storyJob?.status === 'generating_images' 
-      ? 'Creating illustrations...' 
+    const statusText = storyJob?.status === 'generating_images'
+      ? 'Creating illustrations...'
       : storyJob?.status === 'generating_story'
         ? 'Writing the story...'
         : 'Preparing magic...';

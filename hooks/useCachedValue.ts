@@ -6,6 +6,12 @@ type CachedState<T> = CacheEnvelope<T> | null;
 export function useCachedValue<T>(key: string | null, liveValue: T | undefined) {
   const [cached, setCached] = useState<CachedState<T>>(null);
   const [cacheLoaded, setCacheLoaded] = useState(false);
+  const [liveValueReceived, setLiveValueReceived] = useState(false);
+
+  // Reset live value state when key changes
+  useEffect(() => {
+    setLiveValueReceived(false);
+  }, [key]);
 
   useEffect(() => {
     setCacheLoaded(false);
@@ -40,6 +46,8 @@ export function useCachedValue<T>(key: string | null, liveValue: T | undefined) 
       return;
     }
 
+    setLiveValueReceived(true);
+
     const entry: CacheEnvelope<T> = {
       value: liveValue,
       updatedAt: Date.now(),
@@ -53,11 +61,14 @@ export function useCachedValue<T>(key: string | null, liveValue: T | undefined) 
 
   const data = liveValue !== undefined ? liveValue : cached?.value;
   const isCached = liveValue === undefined && cacheLoaded && cached !== null;
+  // True when cache is loaded but live data hasn't arrived yet - indicates potential stale data
+  const isLiveDataPending = cacheLoaded && !liveValueReceived && liveValue === undefined;
 
   return {
     data,
     isCached,
     cacheLoaded,
     cachedAt: cached?.updatedAt,
+    isLiveDataPending,
   };
 }

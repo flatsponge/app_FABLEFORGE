@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { useSharedValue, useAnimatedScrollHandler } from 'react-native-reanimated';
@@ -6,6 +6,7 @@ import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { useCachedValue } from '@/hooks/useCachedValue';
 import { CACHE_KEYS } from '@/lib/queryCache';
+import { preloadMascotOutfit } from '@/lib/mascotPreloader';
 
 import { UnifiedHeader } from '@/components/UnifiedHeader';
 import { FeaturedCard } from '@/components/FeaturedCard';
@@ -18,20 +19,32 @@ export default function HomeScreen() {
   const scrollY = useSharedValue(0);
   const liveSkills = useQuery(api.onboarding.getUserSkills);
   const { data: dbSkills } = useCachedValue(CACHE_KEYS.userSkills, liveSkills);
+
+  // Prefetch mascot outfit data for child-hub to prevent loading flicker
+  const liveMascotOutfit = useQuery(api.onboarding.getMascotOutfit);
+
+  useEffect(() => {
+    if (liveMascotOutfit) {
+      preloadMascotOutfit(liveMascotOutfit).catch(() => {
+        // Ignore prefetch errors - non-critical
+      });
+    }
+  }, [liveMascotOutfit]);
+
   // Derive overall score from main scores (which are derived from sub-scores)
-  const growthScore = dbSkills 
+  const growthScore = dbSkills
     ? (() => {
-        const skillKeys = ['empathy', 'bravery', 'honesty', 'teamwork', 'creativity', 'gratitude', 'problemSolving', 'responsibility', 'patience', 'curiosity'] as const;
-        let total = 0;
-        for (const key of skillKeys) {
-          const skill = dbSkills[key];
-          const mainScore = skill.subSkills.length > 0
-            ? Math.round(skill.subSkills.reduce((sum, sub) => sum + sub.value, 0) / skill.subSkills.length)
-            : skill.progress;
-          total += mainScore;
-        }
-        return Math.round(total / skillKeys.length);
-      })()
+      const skillKeys = ['empathy', 'bravery', 'honesty', 'teamwork', 'creativity', 'gratitude', 'problemSolving', 'responsibility', 'patience', 'curiosity'] as const;
+      let total = 0;
+      for (const key of skillKeys) {
+        const skill = dbSkills[key];
+        const mainScore = skill.subSkills.length > 0
+          ? Math.round(skill.subSkills.reduce((sum, sub) => sum + sub.value, 0) / skill.subSkills.length)
+          : skill.progress;
+        total += mainScore;
+      }
+      return Math.round(total / skillKeys.length);
+    })()
     : 84;
 
   const scrollHandler = useAnimatedScrollHandler((event) => {
@@ -79,3 +92,4 @@ export default function HomeScreen() {
     </View>
   );
 }
+

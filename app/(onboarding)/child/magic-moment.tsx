@@ -30,6 +30,7 @@ import { StoryGenerationGrid } from '@/components/StoryGenerationGrid';
 import { Id } from '@/convex/_generated/dataModel';
 import { useFocusEffect } from '@react-navigation/native';
 import { ChunkyButton } from '@/components/ChunkyButton';
+import { preloadMascotOutfit } from '@/lib/mascotPreloader';
 
 // Feature flag for voice input - set to true to enable voice recording
 const ENABLE_VOICE_INPUT = false;
@@ -492,6 +493,21 @@ export default function MagicMomentScreen() {
           // Don't block the flow if this fails - the mascot is still in local state
           console.warn("Failed to persist mascot to database:", error);
         });
+
+      // Preload mascot outfit to cache and prefetch image for child-hub
+      const mascotOutfitData = {
+        originalMascotId: mascotJob.resultStorageId as Id<'_storage'>,
+        clothedMascotId: null,
+        currentMascotId: mascotJob.resultStorageId as Id<'_storage'>,
+        currentMascotUrl: mascotJob.resultImageUrl,
+        equippedClothes: null,
+        equippedAccessory: null,
+        equippedAccessoryType: null,
+        generationHistory: [],
+      };
+      preloadMascotOutfit(mascotOutfitData).catch(() => {
+        // Ignore preload errors - non-critical
+      });
 
       setMascotJobError(null);
       setMascotRevealed(true);

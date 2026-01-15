@@ -381,9 +381,16 @@ const Avatar = ({
   mascotCacheKey?: string | null;
 }) => {
   const [imageLoadError, setImageLoadError] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const resolvedAvatarId = avatarId || 'bears';
   const baseAvatar = BASE_AVATARS.find(a => a.id === resolvedAvatarId);
   const baseImage = baseAvatar?.image ?? BASE_AVATARS[0]?.image;
+
+  // Reset states when URL changes to prevent stale state showing
+  useEffect(() => {
+    setImageLoadError(false);
+    setImageLoaded(false);
+  }, [mascotImageUrl]);
 
   const shouldCacheMascot = Boolean(mascotImageUrl);
   const resolvedCacheKey = shouldCacheMascot
@@ -394,6 +401,9 @@ const Avatar = ({
   const imageSource = mascotImageUrl
     ? { uri: mascotImageUrl, cacheKey: resolvedCacheKey }
     : baseImage;
+
+  // Show loading when generating OR when mascot URL exists but image hasn't loaded yet
+  const showLoading = isLoading || (mascotImageUrl && !imageLoaded && !imageLoadError);
 
   return (
     <View
@@ -455,12 +465,13 @@ const Avatar = ({
           style={{ width: '100%', height: '100%' }}
           cachePolicy={shouldCacheMascot && !imageLoadError ? "disk" : undefined}
           contentFit="cover"
-          transition={200}
+          transition={imageLoaded ? 0 : 300}
           onError={() => setImageLoadError(true)}
+          onLoad={() => setImageLoaded(true)}
         />
       </View>
       {/* Loading overlay */}
-      {isLoading && (
+      {showLoading && (
         <View
           style={{
             position: 'absolute',
@@ -470,13 +481,14 @@ const Avatar = ({
             backgroundColor: 'rgba(255,255,255,0.8)',
             top: '50%',
             marginTop: -85,
+            zIndex: 15,
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
           <ActivityIndicator size="large" color="#8B5CF6" />
           <Text style={{ marginTop: 8, fontSize: 12, fontWeight: '700', color: '#7C3AED' }}>
-            Creating...
+            {isLoading ? 'Creating...' : 'Loading...'}
           </Text>
         </View>
       )}
@@ -722,7 +734,7 @@ export default function ChildHubScreen() {
   const liveMascotOutfit = useQuery(api.onboarding.getMascotOutfit);
   const liveUserBooks = useQuery(api.storyGeneration.getUserBooks, {});
   const { data: userProgress } = useCachedValue(CACHE_KEYS.userProgress, liveUserProgress);
-  const { data: mascotOutfit } = useCachedValue(CACHE_KEYS.mascotOutfit, liveMascotOutfit);
+  const { data: mascotOutfit, isLiveDataPending: isMascotPending } = useCachedValue(CACHE_KEYS.mascotOutfit, liveMascotOutfit);
   const { data: userBooks, cacheLoaded: booksCacheLoaded } = useCachedValue(
     CACHE_KEYS.userBooks,
     liveUserBooks
@@ -1097,444 +1109,444 @@ export default function ChildHubScreen() {
         </View>
 
         {/* Persistent room container with smooth layout transitions */}
-        <Animated.View 
+        <Animated.View
           className="flex-1 relative z-10"
           layout={LinearTransition.duration(300).easing(Easing.bezier(0.4, 0, 0.2, 1))}
         >
-        {activeRoom === 'wardrobe' && (
-          <Animated.View 
-            entering={FadeIn.duration(200).delay(50)} 
-            exiting={FadeOut.duration(150)}
-            className="flex-1 pb-24"
-          >
-            {/* Top section - Door image (pending) or Avatar (normal) */}
-            <View className="flex-1 items-center justify-center pt-8 px-8">
-              {isWardrobePending ? (
-                <Animated.View 
-                  key="pending-door"
-                  entering={FadeIn.duration(250)} 
-                  exiting={FadeOut.duration(200)}
-                  className="items-center"
-                >
-                  <Image
-                    source={require('@/assets/childview/childdoor.png')}
-                    className="w-72 h-80"
-                    resizeMode="contain"
-                  />
-                </Animated.View>
-              ) : (
-                <Animated.View 
-                  key="avatar"
-                  entering={FadeIn.duration(250)} 
-                  exiting={FadeOut.duration(200)}
-                >
-                  <Avatar
-                    scale={1.2}
-                    mascotImageUrl={mascotOutfit?.currentMascotUrl}
-                    isLoading={isGenerating}
-                    avatarId={avatarId}
-                    mascotCacheKey={mascotOutfit?.currentMascotId ?? userProgress?.generatedMascotId}
-                  />
-                </Animated.View>
-              )}
-            </View>
-
-            {/* Bottom section - Persistent white box that morphs */}
-            <View className="px-4 pb-8">
-              {/* Tab buttons - only show when not pending */}
-              {!isWardrobePending && (
-                <Animated.View 
-                  entering={FadeIn.duration(200).delay(100)} 
-                  exiting={FadeOut.duration(150)}
-                  className="flex-row gap-3 mb-4 justify-center"
-                >
-                  {tabItems.map(tab => (
-                    <WardrobeTabButton
-                      key={tab.id}
-                      active={wardrobeTab === tab.id}
-                      onPress={() => setWardrobeTab(tab.id)}
-                      icon={tab.icon}
-                      activeColor={tab.bgColor}
-                      activeBorderColor={tab.borderColorValue}
-                    />
-                  ))}
-                </Animated.View>
-              )}
-
-              {/* Persistent morphing white box */}
-              <Animated.View
-                layout={LinearTransition.duration(350).easing(Easing.bezier(0.4, 0, 0.2, 1))}
-                className={`bg-white rounded-3xl ${isWardrobePending ? 'p-6 border-b-8' : 'p-4 border-4'} border-slate-200`}
-                style={isWardrobePending ? { 
-                  transform: [{ rotate: '-1deg' }], 
-                  shadowColor: '#000', 
-                  shadowOffset: { width: 0, height: 10 }, 
-                  shadowOpacity: 0.15, 
-                  shadowRadius: 20, 
-                  elevation: 8,
-                  alignSelf: 'center',
-                  width: '100%',
-                  maxWidth: 384,
-                } : undefined}
-              >
+          {activeRoom === 'wardrobe' && (
+            <Animated.View
+              entering={FadeIn.duration(200).delay(50)}
+              exiting={FadeOut.duration(150)}
+              className="flex-1 pb-24"
+            >
+              {/* Top section - Door image (pending) or Avatar (normal) */}
+              <View className="flex-1 items-center justify-center pt-8 px-8">
                 {isWardrobePending ? (
-                  /* Pending state content */
-                  <Animated.View 
-                    key="pending-content"
-                    entering={FadeIn.duration(200).delay(100)} 
-                    exiting={FadeOut.duration(150)}
+                  <Animated.View
+                    key="pending-door"
+                    entering={FadeIn.duration(250)}
+                    exiting={FadeOut.duration(200)}
                     className="items-center"
                   >
-                    <Text className="text-2xl font-black text-slate-700 text-center leading-tight mb-2">
-                      {pendingWardrobe?.status === 'processing' ? 'Getting Ready!' : 'Read a Story to Reveal!'}
-                    </Text>
-                    {pendingItem?.image && (
-                      <View className="items-center">
-                        <View className="w-20 h-20 rounded-2xl bg-slate-100 items-center justify-center">
-                          <Image source={pendingItem.image} className="w-16 h-16" resizeMode="contain" />
-                        </View>
-                      </View>
-                    )}
-                    {pendingWardrobe?.status === 'processing' && (
-                      <Text className="text-base font-bold text-slate-400 text-center uppercase tracking-wide mt-2">
-                        Making your new look...
-                      </Text>
-                    )}
-                    {pendingWardrobe?.status !== 'processing' && (
-                      <View className="mt-4 w-full">
-                        <ChunkyButton
-                          onPress={cancelPendingWardrobe}
-                          bgColor="#ef4444"
-                          borderColor="#b91c1c"
-                          size="large"
-                          style={{ width: '100%' }}
-                        >
-                          <Text className="text-white font-black text-xl uppercase tracking-wider text-center py-3">
-                            CANCEL
-                          </Text>
-                        </ChunkyButton>
-                      </View>
-                    )}
+                    <Image
+                      source={require('@/assets/childview/childdoor.png')}
+                      className="w-72 h-80"
+                      resizeMode="contain"
+                    />
                   </Animated.View>
                 ) : (
-                  /* Normal wardrobe picker content */
-                  <Animated.View 
-                    key="wardrobe-content"
-                    entering={FadeIn.duration(200).delay(100)} 
-                    exiting={FadeOut.duration(150)}
+                  <Animated.View
+                    key="avatar"
+                    entering={FadeIn.duration(250)}
+                    exiting={FadeOut.duration(200)}
                   >
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 12, paddingHorizontal: 4 }}>
-                      <View className="flex-row gap-3">
-                        {/* CLOTHES TAB - uses original bare mascot as base */}
-                        {wardrobeTab === 'clothes' &&
-                          OUTFITS.map(item => {
-                            const isSelected = previewItem?.type === 'clothes'
-                              ? previewItem.itemId === item.id
-                              : mascotOutfit?.equippedClothes === item.id;
+                    <Avatar
+                      scale={1.2}
+                      mascotImageUrl={mascotOutfit?.currentMascotUrl}
+                      isLoading={isGenerating || isMascotPending}
+                      avatarId={avatarId}
+                      mascotCacheKey={mascotOutfit?.currentMascotId ?? userProgress?.generatedMascotId}
+                    />
+                  </Animated.View>
+                )}
+              </View>
 
-                            return (
-                              <AnimatableWardrobeItem
-                                key={item.id}
-                                isSelected={isSelected}
-                                onPress={() => handleClothesClick(item.id)}
-                                disabled={isGenerating}
-                                style={[
-                                  isSelected
-                                    ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.4, shadowRadius: 6, elevation: 4 }
-                                    : { opacity: isGenerating ? 0.5 : 0.9 }
-                                ]}
-                                className={`w-20 h-20 rounded-2xl overflow-hidden items-center justify-center border-4 bg-white ${isSelected ? 'border-green-500' : 'border-slate-200'}`}
-                              >
-                                <Image source={item.image} style={{ width: 60, height: 60 }} resizeMode="contain" />
-                              </AnimatableWardrobeItem>
-                            );
-                          })}
+              {/* Bottom section - Persistent white box that morphs */}
+              <View className="px-4 pb-8">
+                {/* Tab buttons - only show when not pending */}
+                {!isWardrobePending && (
+                  <Animated.View
+                    entering={FadeIn.duration(200).delay(100)}
+                    exiting={FadeOut.duration(150)}
+                    className="flex-row gap-3 mb-4 justify-center"
+                  >
+                    {tabItems.map(tab => (
+                      <WardrobeTabButton
+                        key={tab.id}
+                        active={wardrobeTab === tab.id}
+                        onPress={() => setWardrobeTab(tab.id)}
+                        icon={tab.icon}
+                        activeColor={tab.bgColor}
+                        activeBorderColor={tab.borderColorValue}
+                      />
+                    ))}
+                  </Animated.View>
+                )}
 
-                        {/* ACCESSORIES TAB - merged hats + toys, uses clothed mascot as base */}
-                        {/* User can only equip ONE accessory (either a hat OR a toy) */}
-                        {wardrobeTab === 'accessories' &&
-                          ACCESSORIES.map(item => {
-                            const isSelected = previewItem?.type === 'accessory'
-                              ? previewItem.itemId === item.id
-                              : mascotOutfit?.equippedAccessory === item.id;
+                {/* Persistent morphing white box */}
+                <Animated.View
+                  layout={LinearTransition.duration(350).easing(Easing.bezier(0.4, 0, 0.2, 1))}
+                  className={`bg-white rounded-3xl ${isWardrobePending ? 'p-6 border-b-8' : 'p-4 border-4'} border-slate-200`}
+                  style={isWardrobePending ? {
+                    transform: [{ rotate: '-1deg' }],
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 10 },
+                    shadowOpacity: 0.15,
+                    shadowRadius: 20,
+                    elevation: 8,
+                    alignSelf: 'center',
+                    width: '100%',
+                    maxWidth: 384,
+                  } : undefined}
+                >
+                  {isWardrobePending ? (
+                    /* Pending state content */
+                    <Animated.View
+                      key="pending-content"
+                      entering={FadeIn.duration(200).delay(100)}
+                      exiting={FadeOut.duration(150)}
+                      className="items-center"
+                    >
+                      <Text className="text-2xl font-black text-slate-700 text-center leading-tight mb-2">
+                        {pendingWardrobe?.status === 'processing' ? 'Getting Ready!' : 'Read a Story to Reveal!'}
+                      </Text>
+                      {pendingItem?.image && (
+                        <View className="items-center">
+                          <View className="w-20 h-20 rounded-2xl bg-slate-100 items-center justify-center">
+                            <Image source={pendingItem.image} className="w-16 h-16" resizeMode="contain" />
+                          </View>
+                        </View>
+                      )}
+                      {pendingWardrobe?.status === 'processing' && (
+                        <Text className="text-base font-bold text-slate-400 text-center uppercase tracking-wide mt-2">
+                          Making your new look...
+                        </Text>
+                      )}
+                      {pendingWardrobe?.status !== 'processing' && (
+                        <View className="mt-4 w-full">
+                          <ChunkyButton
+                            onPress={cancelPendingWardrobe}
+                            bgColor="#ef4444"
+                            borderColor="#b91c1c"
+                            size="large"
+                            style={{ width: '100%' }}
+                          >
+                            <Text className="text-white font-black text-xl uppercase tracking-wider text-center py-3">
+                              CANCEL
+                            </Text>
+                          </ChunkyButton>
+                        </View>
+                      )}
+                    </Animated.View>
+                  ) : (
+                    /* Normal wardrobe picker content */
+                    <Animated.View
+                      key="wardrobe-content"
+                      entering={FadeIn.duration(200).delay(100)}
+                      exiting={FadeOut.duration(150)}
+                    >
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 12, paddingHorizontal: 4 }}>
+                        <View className="flex-row gap-3">
+                          {/* CLOTHES TAB - uses original bare mascot as base */}
+                          {wardrobeTab === 'clothes' &&
+                            OUTFITS.map(item => {
+                              const isSelected = previewItem?.type === 'clothes'
+                                ? previewItem.itemId === item.id
+                                : mascotOutfit?.equippedClothes === item.id;
 
-                            const borderColor = item.accessoryType === 'hat' ? 'border-yellow-400' : 'border-purple-400';
-                            const shadowColor = item.accessoryType === 'hat' ? '#eab308' : '#a855f7';
-
-                            // Use the specific accessory color if selected, otherwise slate/default
-                            const activeBorder = isSelected ? borderColor : 'border-slate-200';
-                            const activeShadow = isSelected ? shadowColor : undefined;
-
-                            return (
-                              <AnimatableWardrobeItem
-                                key={item.id}
-                                isSelected={isSelected}
-                                onPress={() => handleAccessoryClick(item.id, item.accessoryType)}
-                                disabled={isGenerating}
-                                style={isSelected
-                                  ? { shadowColor: activeShadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.4, shadowRadius: 6, elevation: 4 }
-                                  : { opacity: isGenerating ? 0.5 : 0.9 }}
-                                className="w-20 h-20 rounded-2xl items-center justify-center"
-                              >
-                                {/* Card Body - Clipped */}
-                                <View className={`w-full h-full rounded-2xl overflow-hidden items-center justify-center border-4 bg-slate-100 ${isSelected
-                                  ? `${activeBorder} bg-white`
-                                  : 'border-slate-200'
-                                  }`}>
-                                  <Image source={item.image} style={{ width: 60, height: 60 }} resizeMode="contain" />
-                                </View>
-
-                                {/* Badge - Floating Outside */}
-                                <View
-                                  className={`absolute -top-1 -right-1 w-5 h-5 rounded-full items-center justify-center z-10 ${item.accessoryType === 'hat' ? 'bg-yellow-400' : 'bg-purple-400'
-                                    }`}
+                              return (
+                                <AnimatableWardrobeItem
+                                  key={item.id}
+                                  isSelected={isSelected}
+                                  onPress={() => handleClothesClick(item.id)}
+                                  disabled={isGenerating}
+                                  style={[
+                                    isSelected
+                                      ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.4, shadowRadius: 6, elevation: 4 }
+                                      : { opacity: isGenerating ? 0.5 : 0.9 }
+                                  ]}
+                                  className={`w-20 h-20 rounded-2xl overflow-hidden items-center justify-center border-4 bg-white ${isSelected ? 'border-green-500' : 'border-slate-200'}`}
                                 >
-                                  {item.accessoryType === 'hat' ? (
-                                    <Crown size={12} color="white" />
-                                  ) : (
-                                    <Gift size={12} color="white" />
-                                  )}
-                                </View>
-                              </AnimatableWardrobeItem>
-                            );
-                          })}
+                                  <Image source={item.image} style={{ width: 60, height: 60 }} resizeMode="contain" />
+                                </AnimatableWardrobeItem>
+                              );
+                            })}
 
-                        {wardrobeTab === 'background' && (
-                          <>
-                            {/* Default Background */}
-                            <AnimatableWardrobeItem
-                              isSelected={backgroundSource === ChildBackground}
-                              onPress={() => setBackgroundSource(ChildBackground)}
-                              style={backgroundSource === ChildBackground ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
-                              className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === ChildBackground
-                                ? 'border-green-500'
-                                : 'border-slate-200'
-                                }`}
-                            >
-                              <Image source={ChildBackground} className="w-full h-full" resizeMode="cover" />
-                            </AnimatableWardrobeItem>
+                          {/* ACCESSORIES TAB - merged hats + toys, uses clothed mascot as base */}
+                          {/* User can only equip ONE accessory (either a hat OR a toy) */}
+                          {wardrobeTab === 'accessories' &&
+                            ACCESSORIES.map(item => {
+                              const isSelected = previewItem?.type === 'accessory'
+                                ? previewItem.itemId === item.id
+                                : mascotOutfit?.equippedAccessory === item.id;
 
-                            {/* Dreamy Night Background */}
-                            <AnimatableWardrobeItem
-                              isSelected={backgroundSource === ChildBackground2}
-                              onPress={() => setBackgroundSource(ChildBackground2)}
-                              style={backgroundSource === ChildBackground2 ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
-                              className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === ChildBackground2
-                                ? 'border-green-500'
-                                : 'border-slate-200'
-                                }`}
-                            >
-                              <Image source={ChildBackground2} className="w-full h-full" resizeMode="cover" />
-                            </AnimatableWardrobeItem>
+                              const borderColor = item.accessoryType === 'hat' ? 'border-yellow-400' : 'border-purple-400';
+                              const shadowColor = item.accessoryType === 'hat' ? '#eab308' : '#a855f7';
 
-                            {/* Sunny Meadow Background */}
-                            <AnimatableWardrobeItem
-                              isSelected={backgroundSource === ChildBackground3}
-                              onPress={() => setBackgroundSource(ChildBackground3)}
-                              style={backgroundSource === ChildBackground3 ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
-                              className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === ChildBackground3
-                                ? 'border-green-500'
-                                : 'border-slate-200'
-                                }`}
-                            >
-                              <Image source={ChildBackground3} className="w-full h-full" resizeMode="cover" />
-                            </AnimatableWardrobeItem>
+                              // Use the specific accessory color if selected, otherwise slate/default
+                              const activeBorder = isSelected ? borderColor : 'border-slate-200';
+                              const activeShadow = isSelected ? shadowColor : undefined;
 
-                            {/* Ocean Background */}
-                            <AnimatableWardrobeItem
-                              isSelected={backgroundSource === ChildBackground4}
-                              onPress={() => setBackgroundSource(ChildBackground4)}
-                              style={backgroundSource === ChildBackground4 ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
-                              className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === ChildBackground4
-                                ? 'border-green-500'
-                                : 'border-slate-200'
-                                }`}
-                            >
-                              <Image source={ChildBackground4} className="w-full h-full" resizeMode="cover" />
-                            </AnimatableWardrobeItem>
+                              return (
+                                <AnimatableWardrobeItem
+                                  key={item.id}
+                                  isSelected={isSelected}
+                                  onPress={() => handleAccessoryClick(item.id, item.accessoryType)}
+                                  disabled={isGenerating}
+                                  style={isSelected
+                                    ? { shadowColor: activeShadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.4, shadowRadius: 6, elevation: 4 }
+                                    : { opacity: isGenerating ? 0.5 : 0.9 }}
+                                  className="w-20 h-20 rounded-2xl items-center justify-center"
+                                >
+                                  {/* Card Body - Clipped */}
+                                  <View className={`w-full h-full rounded-2xl overflow-hidden items-center justify-center border-4 bg-slate-100 ${isSelected
+                                    ? `${activeBorder} bg-white`
+                                    : 'border-slate-200'
+                                    }`}>
+                                    <Image source={item.image} style={{ width: 60, height: 60 }} resizeMode="contain" />
+                                  </View>
 
-                            {/* Forest Background */}
-                            <AnimatableWardrobeItem
-                              isSelected={backgroundSource === ChildBackground5}
-                              onPress={() => setBackgroundSource(ChildBackground5)}
-                              style={backgroundSource === ChildBackground5 ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
-                              className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === ChildBackground5
-                                ? 'border-green-500'
-                                : 'border-slate-200'
-                                }`}
-                            >
-                              <Image source={ChildBackground5} className="w-full h-full" resizeMode="cover" />
-                            </AnimatableWardrobeItem>
+                                  {/* Badge - Floating Outside */}
+                                  <View
+                                    className={`absolute -top-1 -right-1 w-5 h-5 rounded-full items-center justify-center z-10 ${item.accessoryType === 'hat' ? 'bg-yellow-400' : 'bg-purple-400'
+                                      }`}
+                                  >
+                                    {item.accessoryType === 'hat' ? (
+                                      <Crown size={12} color="white" />
+                                    ) : (
+                                      <Gift size={12} color="white" />
+                                    )}
+                                  </View>
+                                </AnimatableWardrobeItem>
+                              );
+                            })}
 
-                            {/* Preset Locations */}
-                            {PRESET_LOCATIONS.map(loc => (
-                              <Pressable
-                                key={loc.id}
-                                onPress={() => setBackgroundSource(loc.image)}
-                                style={backgroundSource === loc.image ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
-                                className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === loc.image
+                          {wardrobeTab === 'background' && (
+                            <>
+                              {/* Default Background */}
+                              <AnimatableWardrobeItem
+                                isSelected={backgroundSource === ChildBackground}
+                                onPress={() => setBackgroundSource(ChildBackground)}
+                                style={backgroundSource === ChildBackground ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
+                                className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === ChildBackground
                                   ? 'border-green-500'
                                   : 'border-slate-200'
                                   }`}
                               >
-                                <Image source={loc.image} className="w-full h-full" resizeMode="cover" />
-                              </Pressable>
-                            ))}
-                          </>
-                        )}
-                      </View>
-                    </ScrollView>
+                                <Image source={ChildBackground} className="w-full h-full" resizeMode="cover" />
+                              </AnimatableWardrobeItem>
 
-                    {/* Action Buttons Area */}
-                    {(previewItem || (mascotOutfit?.equippedClothes || mascotOutfit?.equippedAccessory)) && (
-                      <Animated.View
-                        layout={LinearTransition.duration(200)}
-                        entering={FadeIn.duration(200)}
-                        exiting={FadeOut.duration(200)}
-                        className="mt-4"
-                        style={{ minHeight: 64, justifyContent: 'center' }}
-                      >
-                        {previewItem ? (
-                          <Animated.View
-                            entering={FadeIn.duration(200)}
-                            exiting={FadeOut.duration(200)}
-                            style={{ width: '100%' }}
-                          >
-                            <ChunkyButton
-                              onPress={handleConfirmSelection}
-                              bgColor="#22c55e"
-                              borderColor="#15803d"
-                              size="large"
+                              {/* Dreamy Night Background */}
+                              <AnimatableWardrobeItem
+                                isSelected={backgroundSource === ChildBackground2}
+                                onPress={() => setBackgroundSource(ChildBackground2)}
+                                style={backgroundSource === ChildBackground2 ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
+                                className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === ChildBackground2
+                                  ? 'border-green-500'
+                                  : 'border-slate-200'
+                                  }`}
+                              >
+                                <Image source={ChildBackground2} className="w-full h-full" resizeMode="cover" />
+                              </AnimatableWardrobeItem>
+
+                              {/* Sunny Meadow Background */}
+                              <AnimatableWardrobeItem
+                                isSelected={backgroundSource === ChildBackground3}
+                                onPress={() => setBackgroundSource(ChildBackground3)}
+                                style={backgroundSource === ChildBackground3 ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
+                                className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === ChildBackground3
+                                  ? 'border-green-500'
+                                  : 'border-slate-200'
+                                  }`}
+                              >
+                                <Image source={ChildBackground3} className="w-full h-full" resizeMode="cover" />
+                              </AnimatableWardrobeItem>
+
+                              {/* Ocean Background */}
+                              <AnimatableWardrobeItem
+                                isSelected={backgroundSource === ChildBackground4}
+                                onPress={() => setBackgroundSource(ChildBackground4)}
+                                style={backgroundSource === ChildBackground4 ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
+                                className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === ChildBackground4
+                                  ? 'border-green-500'
+                                  : 'border-slate-200'
+                                  }`}
+                              >
+                                <Image source={ChildBackground4} className="w-full h-full" resizeMode="cover" />
+                              </AnimatableWardrobeItem>
+
+                              {/* Forest Background */}
+                              <AnimatableWardrobeItem
+                                isSelected={backgroundSource === ChildBackground5}
+                                onPress={() => setBackgroundSource(ChildBackground5)}
+                                style={backgroundSource === ChildBackground5 ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
+                                className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === ChildBackground5
+                                  ? 'border-green-500'
+                                  : 'border-slate-200'
+                                  }`}
+                              >
+                                <Image source={ChildBackground5} className="w-full h-full" resizeMode="cover" />
+                              </AnimatableWardrobeItem>
+
+                              {/* Preset Locations */}
+                              {PRESET_LOCATIONS.map(loc => (
+                                <Pressable
+                                  key={loc.id}
+                                  onPress={() => setBackgroundSource(loc.image)}
+                                  style={backgroundSource === loc.image ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
+                                  className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === loc.image
+                                    ? 'border-green-500'
+                                    : 'border-slate-200'
+                                    }`}
+                                >
+                                  <Image source={loc.image} className="w-full h-full" resizeMode="cover" />
+                                </Pressable>
+                              ))}
+                            </>
+                          )}
+                        </View>
+                      </ScrollView>
+
+                      {/* Action Buttons Area */}
+                      {(previewItem || (mascotOutfit?.equippedClothes || mascotOutfit?.equippedAccessory)) && (
+                        <Animated.View
+                          layout={LinearTransition.duration(200)}
+                          entering={FadeIn.duration(200)}
+                          exiting={FadeOut.duration(200)}
+                          className="mt-4"
+                          style={{ minHeight: 64, justifyContent: 'center' }}
+                        >
+                          {previewItem ? (
+                            <Animated.View
+                              entering={FadeIn.duration(200)}
+                              exiting={FadeOut.duration(200)}
                               style={{ width: '100%' }}
                             >
-                              <Text className="text-white font-black text-xl uppercase tracking-wider text-center py-3">
-                                Continue
-                              </Text>
-                            </ChunkyButton>
-                          </Animated.View>
-                        ) : (
-                          <Animated.View
-                            entering={FadeIn.duration(200)}
-                            exiting={FadeOut.duration(200)}
-                            style={{ width: '100%' }}
-                          >
-                            <TextActionButton
-                              onPress={handleResetOutfit}
-                              label={isGenerating ? "Resetting..." : "Reset Outfit"}
-                              variant="secondary"
-                              flex={0}
-                            />
-                          </Animated.View>
-                        )}
-                      </Animated.View>
-                    )}
-                  </Animated.View>
-                )}
-              </Animated.View>
-            </View>
-          </Animated.View>
-        )}
-
-        {activeRoom === 'read' && (
-          <Animated.View 
-            entering={FadeIn.duration(200).delay(50)} 
-            exiting={FadeOut.duration(150)}
-            className="flex-1"
-          >
-            <ScrollView className="flex-1 px-4 pt-4" contentContainerStyle={{ paddingBottom: 100 }}>
-              <View className="bg-white px-6 py-4 rounded-3xl border-b-8 border-slate-200 mb-6 items-center" style={{ transform: [{ rotate: '-1deg' }] }}>
-                <Text className="text-2xl font-black text-slate-700 tracking-tight">
-                  My Stories 📚
-                </Text>
+                              <ChunkyButton
+                                onPress={handleConfirmSelection}
+                                bgColor="#22c55e"
+                                borderColor="#15803d"
+                                size="large"
+                                style={{ width: '100%' }}
+                              >
+                                <Text className="text-white font-black text-xl uppercase tracking-wider text-center py-3">
+                                  Continue
+                                </Text>
+                              </ChunkyButton>
+                            </Animated.View>
+                          ) : (
+                            <Animated.View
+                              entering={FadeIn.duration(200)}
+                              exiting={FadeOut.duration(200)}
+                              style={{ width: '100%' }}
+                            >
+                              <TextActionButton
+                                onPress={handleResetOutfit}
+                                label={isGenerating ? "Resetting..." : "Reset Outfit"}
+                                variant="secondary"
+                                flex={0}
+                              />
+                            </Animated.View>
+                          )}
+                        </Animated.View>
+                      )}
+                    </Animated.View>
+                  )}
+                </Animated.View>
               </View>
+            </Animated.View>
+          )}
 
-              <View className="gap-6 pb-32">
-                {isBooksLoading ? (
-                  Array.from({ length: 3 }).map((_, index) => (
-                    <View
-                      key={`story-skeleton-${index}`}
-                      className="w-full bg-white p-4 rounded-[40px] border-slate-200 flex-row items-center gap-5"
-                      style={{ borderBottomWidth: 12 }}
-                    >
-                      <View className="w-24 h-24 rounded-2xl bg-slate-100" />
-                      <View className="flex-1 gap-3">
-                        <View className="h-4 bg-slate-100 rounded-full w-3/4" />
-                        <View className="h-3 bg-slate-100 rounded-full w-1/2" />
-                      </View>
-                      <View className="w-16 h-16 rounded-full bg-slate-100" />
-                    </View>
-                  ))
-                ) : (!userBooks || userBooks.length === 0) ? (
-                  <View className="bg-white p-8 rounded-[40px] border-slate-200 items-center justify-center" style={{ borderBottomWidth: 12 }}>
-                    <Text className="text-6xl mb-4">📖</Text>
-                    <Text className="text-xl font-black text-slate-700 text-center mb-2">
-                      No Stories Yet!
-                    </Text>
-                    <Text className="text-base font-bold text-slate-400 text-center">
-                      Ask a grown-up to create one! ✨
-                    </Text>
-                  </View>
-                ) : (
-                  userBooks.slice(0, 5).map(book => (
-                    <Pressable
-                      key={book._id}
-                      onPress={() => router.push(`/reading/${book._id}?mode=autoplay`)}
-                      className="w-full bg-white p-4 rounded-[40px] border-slate-200 flex-row items-center gap-5"
-                      style={({ pressed }) => ({
-                        borderBottomWidth: pressed ? 4 : 12,
-                        transform: [{ scale: pressed ? 0.98 : 1 }],
-                      })}
-                    >
-                      <View className="w-24 h-24 rounded-2xl bg-slate-100 overflow-hidden border-4 border-slate-100">
-                        {book.coverImageUrl ? (
-                          <ExpoImage
-                            source={{
-                              uri: book.coverImageUrl,
-                              cacheKey:
-                                book.coverImageStorageId ??
-                                book.coverImageUrl ??
-                                book._id
-                            }}
-                            style={StyleSheet.absoluteFill}
-                            cachePolicy="disk"
-                            contentFit="cover"
-                          />
-                        ) : (
-                          <View className="w-full h-full bg-purple-100 items-center justify-center">
-                            <BookOpen size={28} color="#9333ea" />
-                          </View>
-                        )}
-                      </View>
-                      <View className="flex-1 py-2">
-                        <Text
-                          className="text-xl font-black text-slate-800 leading-tight mb-2"
-                          numberOfLines={2}
-                        >
-                          {book.title}
-                        </Text>
-                        <View className="px-3 py-1 bg-green-100 rounded-full border-2 border-green-200 self-start">
-                          <Text className="text-[10px] font-black text-green-600 uppercase tracking-wide">
-                            Read Now
-                          </Text>
+          {activeRoom === 'read' && (
+            <Animated.View
+              entering={FadeIn.duration(200).delay(50)}
+              exiting={FadeOut.duration(150)}
+              className="flex-1"
+            >
+              <ScrollView className="flex-1 px-4 pt-4" contentContainerStyle={{ paddingBottom: 100 }}>
+                <View className="bg-white px-6 py-4 rounded-3xl border-b-8 border-slate-200 mb-6 items-center" style={{ transform: [{ rotate: '-1deg' }] }}>
+                  <Text className="text-2xl font-black text-slate-700 tracking-tight">
+                    My Stories 📚
+                  </Text>
+                </View>
+
+                <View className="gap-6 pb-32">
+                  {isBooksLoading ? (
+                    Array.from({ length: 3 }).map((_, index) => (
+                      <View
+                        key={`story-skeleton-${index}`}
+                        className="w-full bg-white p-4 rounded-[40px] border-slate-200 flex-row items-center gap-5"
+                        style={{ borderBottomWidth: 12 }}
+                      >
+                        <View className="w-24 h-24 rounded-2xl bg-slate-100" />
+                        <View className="flex-1 gap-3">
+                          <View className="h-4 bg-slate-100 rounded-full w-3/4" />
+                          <View className="h-3 bg-slate-100 rounded-full w-1/2" />
                         </View>
+                        <View className="w-16 h-16 rounded-full bg-slate-100" />
                       </View>
-                      <View className="w-20 h-20 rounded-full bg-green-500 border-4 border-b-8 border-green-700 items-center justify-center" style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 }}>
-                        <Play size={40} color="white" fill="white" />
-                      </View>
-                    </Pressable>
-                  ))
-                )}
-              </View>
-            </ScrollView>
-          </Animated.View>
-        )}
+                    ))
+                  ) : (!userBooks || userBooks.length === 0) ? (
+                    <View className="bg-white p-8 rounded-[40px] border-slate-200 items-center justify-center" style={{ borderBottomWidth: 12 }}>
+                      <Text className="text-6xl mb-4">📖</Text>
+                      <Text className="text-xl font-black text-slate-700 text-center mb-2">
+                        No Stories Yet!
+                      </Text>
+                      <Text className="text-base font-bold text-slate-400 text-center">
+                        Ask a grown-up to create one! ✨
+                      </Text>
+                    </View>
+                  ) : (
+                    userBooks.slice(0, 5).map(book => (
+                      <Pressable
+                        key={book._id}
+                        onPress={() => router.push(`/reading/${book._id}?mode=autoplay`)}
+                        className="w-full bg-white p-4 rounded-[40px] border-slate-200 flex-row items-center gap-5"
+                        style={({ pressed }) => ({
+                          borderBottomWidth: pressed ? 4 : 12,
+                          transform: [{ scale: pressed ? 0.98 : 1 }],
+                        })}
+                      >
+                        <View className="w-24 h-24 rounded-2xl bg-slate-100 overflow-hidden border-4 border-slate-100">
+                          {book.coverImageUrl ? (
+                            <ExpoImage
+                              source={{
+                                uri: book.coverImageUrl,
+                                cacheKey:
+                                  book.coverImageStorageId ??
+                                  book.coverImageUrl ??
+                                  book._id
+                              }}
+                              style={StyleSheet.absoluteFill}
+                              cachePolicy="disk"
+                              contentFit="cover"
+                            />
+                          ) : (
+                            <View className="w-full h-full bg-purple-100 items-center justify-center">
+                              <BookOpen size={28} color="#9333ea" />
+                            </View>
+                          )}
+                        </View>
+                        <View className="flex-1 py-2">
+                          <Text
+                            className="text-xl font-black text-slate-800 leading-tight mb-2"
+                            numberOfLines={2}
+                          >
+                            {book.title}
+                          </Text>
+                          <View className="px-3 py-1 bg-green-100 rounded-full border-2 border-green-200 self-start">
+                            <Text className="text-[10px] font-black text-green-600 uppercase tracking-wide">
+                              Read Now
+                            </Text>
+                          </View>
+                        </View>
+                        <View className="w-20 h-20 rounded-full bg-green-500 border-4 border-b-8 border-green-700 items-center justify-center" style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 }}>
+                          <Play size={40} color="white" fill="white" />
+                        </View>
+                      </Pressable>
+                    ))
+                  )}
+                </View>
+              </ScrollView>
+            </Animated.View>
+          )}
 
-        {activeRoom === 'well' && (
-          <Animated.View 
-            entering={FadeIn.duration(200).delay(50)} 
-            exiting={FadeOut.duration(150)}
-            className="flex-1 items-center justify-between pt-8 pb-24 px-4"
-          >
+          {activeRoom === 'well' && (
+            <Animated.View
+              entering={FadeIn.duration(200).delay(50)}
+              exiting={FadeOut.duration(150)}
+              className="flex-1 items-center justify-between pt-8 pb-24 px-4"
+            >
               {wishState !== 'typing' && (
                 <View className="bg-white px-8 py-4 rounded-3xl border-b-8 border-slate-200 mb-4" style={{ transform: [{ rotate: '-1deg' }] }}>
                   <Text className="text-2xl font-black text-slate-700 text-center tracking-tight">
