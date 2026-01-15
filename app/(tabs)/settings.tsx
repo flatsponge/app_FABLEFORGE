@@ -3,6 +3,8 @@ import { View, Text, Pressable } from 'react-native';
 import Animated, { useSharedValue, useAnimatedScrollHandler } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { useAuthActions } from '@convex-dev/auth/react';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '@/convex/_generated/api';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
 import { clearAllDataCaches } from '@/lib/queryCache';
 import { clearAuthOptimisticCache } from '@/lib/onboardingStorage';
@@ -19,8 +21,23 @@ import {
   User,
   Mail,
   Pencil,
+  BookOpen,
+  Check,
 } from 'lucide-react-native';
 import { LucideIcon } from 'lucide-react-native';
+
+type VocabularyOverride = 'beginner' | 'intermediate' | 'advanced' | null;
+
+const VOCABULARY_OPTIONS: Array<{
+  value: VocabularyOverride;
+  label: string;
+  description: string;
+}> = [
+  { value: null, label: 'Auto', description: 'Age + preference' },
+  { value: 'beginner', label: 'Easy', description: 'Simple words' },
+  { value: 'intermediate', label: 'Medium', description: 'Age-appropriate' },
+  { value: 'advanced', label: 'Advanced', description: 'Richer vocabulary' },
+];
 
 interface SettingItemProps {
   icon: LucideIcon;
@@ -77,6 +94,22 @@ export default function SettingsScreen() {
   const scrollY = useSharedValue(0);
   const router = useRouter();
   const { signOut } = useAuthActions();
+
+  const vocabularySettings = useQuery(api.onboarding.getVocabularySettings);
+  const updateVocabularyOverride = useMutation(api.onboarding.updateVocabularyOverride);
+  const [isUpdatingVocabulary, setIsUpdatingVocabulary] = useState(false);
+
+  const handleVocabularyChange = async (value: VocabularyOverride) => {
+    if (isUpdatingVocabulary) return;
+    setIsUpdatingVocabulary(true);
+    try {
+      await updateVocabularyOverride({ vocabularyOverride: value });
+    } catch (error) {
+      console.error('Failed to update vocabulary:', error);
+    } finally {
+      setIsUpdatingVocabulary(false);
+    }
+  };
 
   const scrollHandler = useAnimatedScrollHandler((event) => {
     scrollY.value = event.contentOffset.y;
@@ -174,6 +207,63 @@ export default function SettingsScreen() {
                   iconBg="bg-indigo-50"
                   action={<Toggle checked={darkMode} onChange={setDarkMode} />}
                 />
+              </View>
+            </View>
+
+            <View>
+              <Text className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 px-2">
+                Story Settings
+              </Text>
+              <View className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+                <View className="p-4">
+                  <View className="flex-row items-center gap-4 mb-4">
+                    <View className="w-10 h-10 rounded-full bg-violet-50 items-center justify-center">
+                      <BookOpen size={20} color="#8b5cf6" />
+                    </View>
+                    <View className="flex-1">
+                      <Text className="font-bold text-slate-700 text-sm">Vocabulary Level</Text>
+                      <Text className="text-xs text-slate-400">Adjust story complexity</Text>
+                    </View>
+                  </View>
+                  <View className="flex-row gap-2">
+                    {VOCABULARY_OPTIONS.map((option) => {
+                      const isSelected = vocabularySettings?.vocabularyOverride === option.value;
+                      return (
+                        <Pressable
+                          key={option.value ?? 'auto'}
+                          onPress={() => handleVocabularyChange(option.value)}
+                          disabled={isUpdatingVocabulary}
+                          className={`flex-1 py-3 px-2 rounded-xl border ${
+                            isSelected
+                              ? 'border-purple-500 bg-purple-50'
+                              : 'border-slate-200 bg-slate-50'
+                          } items-center`}
+                          style={isUpdatingVocabulary ? { opacity: 0.6 } : undefined}
+                        >
+                          {isSelected && (
+                            <View className="absolute top-1 right-1">
+                              <Check size={12} color="#8b5cf6" />
+                            </View>
+                          )}
+                          <Text
+                            className={`text-xs font-bold ${
+                              isSelected ? 'text-purple-700' : 'text-slate-600'
+                            }`}
+                          >
+                            {option.label}
+                          </Text>
+                          <Text
+                            className={`text-[10px] ${
+                              isSelected ? 'text-purple-500' : 'text-slate-400'
+                            }`}
+                          >
+                            {option.description}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </View>
               </View>
             </View>
 

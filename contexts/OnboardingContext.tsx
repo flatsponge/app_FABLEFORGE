@@ -44,6 +44,7 @@ type OnboardingData = {
     email?: string;
     trafficSource?: string;
     referralCode?: string;
+    vocabularyPreference?: 'behind' | 'average' | 'advanced';
 };
 
 type OnboardingContextType = {
@@ -86,6 +87,7 @@ const defaultData: OnboardingData = {
     generatedMascotUrl: undefined,
     mascotJobId: undefined,
     email: undefined,
+    vocabularyPreference: undefined,
 };
 
 const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);

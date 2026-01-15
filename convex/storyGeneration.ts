@@ -40,6 +40,18 @@ const teaserImageStatusValidator = v.union(
 type StoryLength = "short" | "medium" | "long";
 type StoryVibe = "energizing" | "soothing" | "whimsical" | "thoughtful";
 type VocabularyLevel = "beginner" | "intermediate" | "advanced";
+type VocabularyPreference = "behind" | "average" | "advanced";
+
+function calculateVocabularyLevelFromPreference(
+  preference: VocabularyPreference | null,
+  override: VocabularyLevel | null
+): VocabularyLevel {
+  if (override) return override;
+  
+  if (preference === "behind") return "beginner";
+  if (preference === "advanced") return "advanced";
+  return "intermediate";
+}
 
 export const findLowestStat = internalQuery({
   args: { userId: v.id("users") },
@@ -73,9 +85,23 @@ export const getChildContext = internalQuery({
     v.object({
       childName: v.string(),
       childAge: v.string(),
+      childBirthMonth: v.union(v.number(), v.null()),
+      childBirthYear: v.union(v.number(), v.null()),
       gender: v.string(),
       mascotName: v.union(v.string(), v.null()),
       mascotStorageId: v.union(v.id("_storage"), v.null()),
+      vocabularyPreference: v.union(
+        v.literal("behind"),
+        v.literal("average"),
+        v.literal("advanced"),
+        v.null()
+      ),
+      vocabularyOverride: v.union(
+        v.literal("beginner"),
+        v.literal("intermediate"),
+        v.literal("advanced"),
+        v.null()
+      ),
     }),
     v.null()
   ),
@@ -97,9 +123,13 @@ export const getChildContext = internalQuery({
     return {
       childName: onboarding.childName,
       childAge: onboarding.childAge,
+      childBirthMonth: onboarding.childBirthMonth ?? null,
+      childBirthYear: onboarding.childBirthYear ?? null,
       gender: onboarding.gender,
       mascotName: onboarding.mascotName ?? null,
       mascotStorageId,
+      vocabularyPreference: onboarding.vocabularyPreference ?? null,
+      vocabularyOverride: onboarding.vocabularyOverride ?? null,
     };
   },
 });
@@ -257,12 +287,12 @@ export const queueStoryJob = mutation({
       }
     }
 
-    let vocabularyLevel: VocabularyLevel = args.vocabularyLevel || "beginner";
+    let vocabularyLevel: VocabularyLevel = args.vocabularyLevel || "intermediate";
     if (!args.vocabularyLevel && childContext) {
-      const age = parseInt(childContext.childAge);
-      if (age <= 4) vocabularyLevel = "beginner";
-      else if (age <= 6) vocabularyLevel = "intermediate";
-      else vocabularyLevel = "advanced";
+      vocabularyLevel = calculateVocabularyLevelFromPreference(
+        childContext.vocabularyPreference ?? null,
+        childContext.vocabularyOverride ?? null
+      );
     }
 
     const jobId = await ctx.db.insert("storyJobs", {

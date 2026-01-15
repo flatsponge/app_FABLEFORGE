@@ -46,6 +46,43 @@ type StoryMode = "creative" | "situation" | "auto";
 type StoryLength = "short" | "medium" | "long";
 type StoryVibe = "energizing" | "soothing" | "whimsical" | "thoughtful";
 type VocabularyLevel = "beginner" | "intermediate" | "advanced";
+type VocabularyPreference = "behind" | "average" | "advanced";
+
+function buildVocabularyPromptInstructions(level: VocabularyLevel, ageYears: number): string {
+  const ageContext = `for a ${ageYears}-year-old child`;
+  
+  switch (level) {
+    case "beginner":
+      return `VOCABULARY LEVEL: Easy ${ageContext}
+Use simpler vocabulary than typical for their age. Shorter sentences, more familiar words, gentle repetition. Focus on concrete concepts they already know. Include fun sounds and simple rhythms.`;
+    case "intermediate":
+      return `VOCABULARY LEVEL: Age-Appropriate ${ageContext}
+Use vocabulary typical for their developmental stage. Balanced sentence length with occasional new words. Include relatable emotional moments and simple cause-and-effect.`;
+    case "advanced":
+      return `VOCABULARY LEVEL: Advanced ${ageContext}
+Use richer vocabulary that gently stretches their understanding beyond typical for their age. Longer, more complex sentences. Include nuanced emotions and age-appropriate metaphors.`;
+  }
+}
+
+function calculateAgeFromBirthDate(birthMonth: number, birthYear: number): number {
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+  let ageYears = currentYear - birthYear;
+  if (currentMonth < birthMonth) ageYears -= 1;
+  return Math.max(2, ageYears);
+}
+
+function calculateVocabularyLevelFromPreference(
+  preference: VocabularyPreference | null,
+  override: VocabularyLevel | null
+): VocabularyLevel {
+  if (override) return override;
+  
+  if (preference === "behind") return "beginner";
+  if (preference === "advanced") return "advanced";
+  return "intermediate";
+}
 
 interface OutlinePoint {
   title: string;
@@ -148,7 +185,14 @@ function buildStoryPrompt(
     extraCharacterName?: string;
     locationName?: string;
   },
-  childContext: { childName: string; childAge: string; gender: string; mascotName?: string | null } | null
+  childContext: { 
+    childName: string; 
+    childAge: string; 
+    childBirthMonth?: number | null;
+    childBirthYear?: number | null;
+    gender: string; 
+    mascotName?: string | null;
+  } | null
 ): string {
   const pageCount = PAGE_COUNTS[job.storyLength];
   const moralInfo = MORAL_DESCRIPTIONS[job.moral] || { name: job.moral, description: "" };
@@ -164,11 +208,26 @@ function buildStoryPrompt(
     thoughtful: "reflective, meaningful, touching the heart with quiet wisdom",
   };
 
-  const vocabDescriptions: Record<VocabularyLevel, string> = {
-    beginner: `Language for ages 2-4: Simple words (1-2 syllables), very short sentences (5-8 words), concrete concepts, repetition for comfort, onomatopoeia welcome ("swoosh!", "pop!").`,
-    intermediate: `Language for ages 4-6: Moderate vocabulary with some new words to learn, sentences of 8-12 words, simple cause-and-effect, relatable emotions.`,
-    advanced: `Language for ages 6-8: Rich vocabulary that stretches understanding, longer flowing sentences, nuanced emotions, metaphors and similes appropriate for children.`,
-  };
+  let calculatedAge = 4;
+  if (childContext?.childBirthMonth && childContext?.childBirthYear) {
+    calculatedAge = calculateAgeFromBirthDate(childContext.childBirthMonth, childContext.childBirthYear);
+  } else if (childContext?.childAge) {
+    calculatedAge = parseInt(childContext.childAge) || 4;
+  }
+
+  const vocabularyInstructions = buildVocabularyPromptInstructions(job.vocabularyLevel, calculatedAge);
+
+  const ageAndVocabularySection = `
+═══════════════════════════════════════
+          CHILD'S AGE & VOCABULARY
+═══════════════════════════════════════
+
+CHILD'S AGE: ${calculatedAge} years old
+
+${vocabularyInstructions}
+
+CRITICAL: Match ALL language to this vocabulary level. Every sentence, every word choice must be appropriate for a ${calculatedAge}-year-old at the ${job.vocabularyLevel} level.
+`;
 
   const modeInstructions = {
     creative: `Create a wonderfully imaginative story inspired by: "${job.prompt}"
@@ -253,6 +312,7 @@ ${mascotName} is the main character who goes on the adventure. This hero should:
 
 ${modeInstructions[job.mode]}
 ${therapeuticGuidelines}
+${ageAndVocabularySection}
 ═══════════════════════════════════════
           THE HEART OF THE STORY
 ═══════════════════════════════════════
@@ -304,8 +364,6 @@ ${moralInfo.description}
 ═══════════════════════════════════════
 
 TONE: ${vibeDescriptions[job.storyVibe]}
-
-${vocabDescriptions[job.vocabularyLevel]}
 
 STRUCTURE:
 - Exactly ${pageCount} pages
@@ -840,6 +898,10 @@ export const generateOnboardingTeaser = action({
     email: v.string(),
     mascotName: v.optional(v.string()),
     mascotStorageId: v.optional(v.id("_storage")),
+    // Optional vocabulary parameters for age-appropriate language
+    childBirthMonth: v.optional(v.number()),
+    childBirthYear: v.optional(v.number()),
+    vocabularyPreference: v.optional(v.union(v.literal("behind"), v.literal("average"), v.literal("advanced"))),
   },
   returns: v.object({
     success: v.boolean(),
@@ -925,6 +987,18 @@ export const generateOnboardingTeaser = action({
 
     const mascotName = args.mascotName?.trim() || "the mascot";
 
+    let vocabularySection = "";
+    if (args.childBirthMonth !== undefined && args.childBirthYear !== undefined) {
+      const ageYears = calculateAgeFromBirthDate(args.childBirthMonth, args.childBirthYear);
+      const vocabularyLevel = calculateVocabularyLevelFromPreference(
+        args.vocabularyPreference ?? null,
+        null
+      );
+      vocabularySection = `
+${buildVocabularyPromptInstructions(vocabularyLevel, ageYears)}
+`;
+    }
+
     const teaserPrompt = `You are a beloved children's book author. Create a SHORT story teaser about a mascot hero.
 
 STORY INSPIRATION: "${args.prompt}"
@@ -932,7 +1006,7 @@ MASCOT HERO: ${mascotName} (the main character; mascots can be any type of chara
 
 CREATE A STORY ABOUT: ${mascotName}'s adventure inspired by the input above
 TONE: Warm, soothing, and magical
-
+${vocabularySection}
 TASK: Generate:
 1. A captivating story title (5-8 words) - may include ${mascotName}'s name
 2. A short book description/summary (1-2 sentences for the book cover)
@@ -1053,11 +1127,24 @@ export const generateTeaserBookPages = internalAction({
       return { success: false, error: "API not configured" };
     }
 
-    // Get onboarding data for mascot name
+    // Get onboarding data for mascot name and vocabulary
     const childContext = await ctx.runQuery(internal.storyGeneration.getChildContext, {
       userId: book.userId,
     });
     const mascotName = childContext?.mascotName || "the mascot";
+
+    // Calculate vocabulary instructions
+    let vocabularySection = "";
+    if (childContext?.childBirthMonth && childContext?.childBirthYear) {
+      const ageYears = calculateAgeFromBirthDate(childContext.childBirthMonth, childContext.childBirthYear);
+      const vocabularyLevel = calculateVocabularyLevelFromPreference(
+        childContext.vocabularyPreference ?? null,
+        childContext.vocabularyOverride ?? null
+      );
+      vocabularySection = `
+${buildVocabularyPromptInstructions(vocabularyLevel, ageYears)}
+`;
+    }
 
     const prompt = `You are a beloved children's book author. Continue a SHORT story for a young child.
 
@@ -1068,7 +1155,7 @@ Page 1: "${book.firstPageText}"
 STORY INSPIRATION: "${book.teaserPrompt}"
 MASCOT HERO: ${mascotName} (the main character)
 CHILD: ${book.childName}, age ${book.childAge}
-
+${vocabularySection}
 TASK: Generate exactly 2 more pages to complete this 3-page story. Each page should be 2-3 sentences.
 - Page 2: The adventure/challenge ${mascotName} faces
 - Page 3: A happy, heartwarming conclusion
@@ -1078,6 +1165,7 @@ REQUIREMENTS:
 - ${mascotName} is the sole hero
 - Warm, soothing, magical tone
 - End on a positive, cozy note
+- Match the vocabulary level specified above
 
 IMAGE PROMPT RULES (CRITICAL):
 - Each imagePrompt MUST illustrate the EXACT scene from that page's text

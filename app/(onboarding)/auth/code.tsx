@@ -76,6 +76,7 @@ export default function CodeScreen() {
           struggleFrequency: data.struggleFrequency,
           moralScore: data.moralScore,
           generatedMascotId: data.generatedMascotId as Id<"_storage"> | undefined,
+          vocabularyPreference: data.vocabularyPreference,
         });
 
         const scores = calculateInitialScores(data);

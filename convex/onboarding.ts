@@ -109,6 +109,11 @@ export const saveOnboardingResponses = mutation({
     generatedMascotId: v.optional(v.id("_storage")),
     trafficSource: v.optional(v.string()),
     referralCode: v.optional(v.string()),
+    vocabularyPreference: v.optional(v.union(
+      v.literal("behind"),
+      v.literal("average"),
+      v.literal("advanced")
+    )),
   },
   returns: v.id("onboardingResponses"),
   handler: async (ctx, args) => {
@@ -385,5 +390,76 @@ export const getMascotOutfit = query({
       equippedAccessoryType: outfit.equippedAccessoryType ?? null,
       generationHistory: outfit.generationHistory,
     };
+  },
+});
+
+export const getVocabularySettings = query({
+  args: {},
+  returns: v.union(
+    v.object({
+      vocabularyPreference: v.union(
+        v.literal("behind"),
+        v.literal("average"),
+        v.literal("advanced"),
+        v.null()
+      ),
+      vocabularyOverride: v.union(
+        v.literal("beginner"),
+        v.literal("intermediate"),
+        v.literal("advanced"),
+        v.null()
+      ),
+      childBirthMonth: v.union(v.number(), v.null()),
+      childBirthYear: v.union(v.number(), v.null()),
+    }),
+    v.null()
+  ),
+  handler: async (ctx) => {
+    const user = await getAuthUser(ctx);
+    if (!user) return null;
+
+    const onboarding = await ctx.db
+      .query("onboardingResponses")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .unique();
+
+    if (!onboarding) return null;
+
+    return {
+      vocabularyPreference: onboarding.vocabularyPreference ?? null,
+      vocabularyOverride: onboarding.vocabularyOverride ?? null,
+      childBirthMonth: onboarding.childBirthMonth ?? null,
+      childBirthYear: onboarding.childBirthYear ?? null,
+    };
+  },
+});
+
+export const updateVocabularyOverride = mutation({
+  args: {
+    vocabularyOverride: v.union(
+      v.literal("beginner"),
+      v.literal("intermediate"),
+      v.literal("advanced"),
+      v.null()
+    ),
+  },
+  returns: v.boolean(),
+  handler: async (ctx, args) => {
+    const user = await requireAuthUser(ctx);
+
+    const onboarding = await ctx.db
+      .query("onboardingResponses")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .unique();
+
+    if (!onboarding) {
+      throw new Error("Onboarding record not found");
+    }
+
+    await ctx.db.patch(onboarding._id, {
+      vocabularyOverride: args.vocabularyOverride ?? undefined,
+    });
+
+    return true;
   },
 });

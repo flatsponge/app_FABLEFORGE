@@ -65,6 +65,16 @@ export default defineSchema({
     // User acquisition tracking
     trafficSource: v.optional(v.string()),
     referralCode: v.optional(v.string()),
+    // Vocabulary preference relative to age peers: behind, average, or advanced
+    // Used with birth date to calculate appropriate vocabulary level for stories
+    vocabularyPreference: v.optional(
+      v.union(v.literal("behind"), v.literal("average"), v.literal("advanced"))
+    ),
+    // Override for vocabulary level - allows parents to directly set Easy/Medium/Advanced
+    // When set, this takes precedence over age-based calculation
+    vocabularyOverride: v.optional(
+      v.union(v.literal("beginner"), v.literal("intermediate"), v.literal("advanced"))
+    ),
   }).index("by_user", ["userId"]),
 
   userSkills: defineTable({

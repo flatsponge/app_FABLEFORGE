@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Pressable, Switch, Image, ScrollView } from 'react-native';
+import { View, Text, Pressable, Image, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -130,74 +130,166 @@ export default function ChildSetupScreen() {
                         </View>
                     </Animated.View>
 
-                    {/* Audio Opt-In Toggle */}
+                    {/* Voice Storytelling Selection */}
                     <Animated.View
                         entering={FadeInUp.delay(550)}
                         style={{
                             width: '100%',
-                            backgroundColor: data.audioEnabled ? '#F0FDF4' : 'white',
-                            borderRadius: 16,
-                            padding: 16,
+                            backgroundColor: 'white',
+                            borderRadius: 20,
+                            padding: 20,
                             marginBottom: 24,
-                            borderWidth: 2,
-                            borderColor: data.audioEnabled ? '#86EFAC' : '#FCD34D',
+                            borderWidth: 1,
+                            borderColor: '#E5E7EB',
                         }}
                     >
-                        <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-                            <View style={{ flexDirection: 'row', alignItems: 'flex-start', flex: 1, marginRight: 12 }}>
+                        {/* Header */}
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+                            <View style={{
+                                backgroundColor: '#F3E8FF',
+                                width: 44,
+                                height: 44,
+                                borderRadius: 12,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                marginRight: 12,
+                            }}>
+                                <Ionicons name="mic" size={24} color="#9333EA" />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={{ fontSize: 17, fontWeight: '800', color: '#1F2937' }}>
+                                    Voice Storytelling
+                                </Text>
+                                <Text style={{ fontSize: 13, color: '#6B7280', marginTop: 2 }}>
+                                    Allow your child to speak story ideas
+                                </Text>
+                            </View>
+                        </View>
+
+                        {/* Two-Option Selection */}
+                        <View style={{ gap: 12 }}>
+                            {/* Recommended Option */}
+                            <Pressable
+                                onPress={() => updateData({ audioEnabled: true })}
+                                style={{
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    padding: 16,
+                                    borderRadius: 14,
+                                    borderWidth: 2,
+                                    borderColor: data.audioEnabled === true ? '#22C55E' : '#E5E7EB',
+                                    backgroundColor: data.audioEnabled === true ? '#F0FDF4' : '#FAFAFA',
+                                }}
+                            >
                                 <View style={{
-                                    backgroundColor: data.audioEnabled ? '#DCFCE7' : '#FEF3C7',
-                                    width: 44,
-                                    height: 44,
+                                    width: 24,
+                                    height: 24,
                                     borderRadius: 12,
+                                    borderWidth: 2,
+                                    borderColor: data.audioEnabled === true ? '#22C55E' : '#D1D5DB',
+                                    backgroundColor: data.audioEnabled === true ? '#22C55E' : 'transparent',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    marginRight: 12,
-                                    flexShrink: 0,
+                                    marginRight: 14,
                                 }}>
-                                    <Ionicons name="mic" size={24} color={data.audioEnabled ? '#16A34A' : '#D97706'} />
+                                    {data.audioEnabled === true && (
+                                        <Ionicons name="checkmark" size={14} color="white" />
+                                    )}
                                 </View>
-                                <View style={{ flex: 1, paddingRight: 8 }}>
-                                    <Text style={{ fontSize: 16, fontWeight: '700', color: '#1F2937', marginBottom: 2 }}>
-                                        Voice Storytelling
+                                <View style={{ flex: 1 }}>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                        <Text style={{ 
+                                            fontSize: 15, 
+                                            fontWeight: '700', 
+                                            color: data.audioEnabled === true ? '#166534' : '#374151' 
+                                        }}>
+                                            Enable Voice
+                                        </Text>
+                                        <View style={{
+                                            backgroundColor: '#22C55E',
+                                            paddingHorizontal: 8,
+                                            paddingVertical: 3,
+                                            borderRadius: 6,
+                                        }}>
+                                            <Text style={{ fontSize: 10, fontWeight: '800', color: 'white' }}>
+                                                RECOMMENDED
+                                            </Text>
+                                        </View>
+                                    </View>
+                                    <Text style={{ fontSize: 12, color: '#6B7280', marginTop: 4, lineHeight: 16 }}>
+                                        Your child can speak story ideas naturally
                                     </Text>
-                                    {!data.audioEnabled && (
+                                </View>
+                            </Pressable>
+
+                            {/* Not Recommended Option */}
+                            <Pressable
+                                onPress={() => updateData({ audioEnabled: false })}
+                                style={{
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    padding: 16,
+                                    borderRadius: 14,
+                                    borderWidth: 2,
+                                    borderColor: data.audioEnabled === false ? '#F59E0B' : '#E5E7EB',
+                                    backgroundColor: data.audioEnabled === false ? '#FFFBEB' : '#FAFAFA',
+                                }}
+                            >
+                                <View style={{
+                                    width: 24,
+                                    height: 24,
+                                    borderRadius: 12,
+                                    borderWidth: 2,
+                                    borderColor: data.audioEnabled === false ? '#F59E0B' : '#D1D5DB',
+                                    backgroundColor: data.audioEnabled === false ? '#F59E0B' : 'transparent',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    marginRight: 14,
+                                }}>
+                                    {data.audioEnabled === false && (
+                                        <Ionicons name="checkmark" size={14} color="white" />
+                                    )}
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                        <Text style={{ 
+                                            fontSize: 15, 
+                                            fontWeight: '700', 
+                                            color: data.audioEnabled === false ? '#92400E' : '#374151' 
+                                        }}>
+                                            Skip Voice
+                                        </Text>
                                         <View style={{
                                             backgroundColor: '#FEE2E2',
                                             paddingHorizontal: 8,
                                             paddingVertical: 3,
-                                            borderRadius: 4,
-                                            alignSelf: 'flex-start',
-                                            marginBottom: 4,
+                                            borderRadius: 6,
                                         }}>
                                             <Text style={{ fontSize: 10, fontWeight: '700', color: '#DC2626' }}>
-                                                Not Recommended
+                                                NOT RECOMMENDED
                                             </Text>
                                         </View>
-                                    )}
-                                    <Text style={{ fontSize: 12, color: '#6B7280', lineHeight: 16 }}>
-                                        {data.audioEnabled
-                                            ? '✓ Your child can speak story ideas naturally!'
-                                            : 'Used for story suggestions from your child. Without voice, your child must type or tap to suggest story ideas.'}
+                                    </View>
+                                    <Text style={{ fontSize: 12, color: '#6B7280', marginTop: 4, lineHeight: 16 }}>
+                                        Your child must type or tap to suggest ideas
                                     </Text>
                                 </View>
-                            </View>
-                            <Switch
-                                value={data.audioEnabled}
-                                onValueChange={(value) => updateData({ audioEnabled: value })}
-                                trackColor={{ false: '#D1D5DB', true: '#4ADE80' }}
-                                thumbColor={data.audioEnabled ? '#16A34A' : '#f4f3f4'}
-                                ios_backgroundColor="#D1D5DB"
-                                style={{ marginTop: 8 }}
-                            />
+                            </Pressable>
                         </View>
 
-                        {/* Benefits / Warning */}
-                        {data.audioEnabled && (
-                            <View style={{ marginTop: 12, backgroundColor: '#F0FDF4', borderRadius: 8, padding: 10, borderWidth: 1, borderColor: '#BBF7D0' }}>
-                                <Text style={{ fontSize: 10, color: '#166534', lineHeight: 14 }}>
-                                    <Text style={{ fontWeight: '700' }}>Consent & Privacy: </Text>
-                                    By enabling, you consent to audio recording of your child's voice for transcription purposes only. Audio is processed on-device or via secure servers, converted to text, and is not stored or shared. You can disable this anytime. See our Privacy Policy.
+                        {/* Privacy Notice - shown when voice enabled */}
+                        {data.audioEnabled === true && (
+                            <View style={{ 
+                                marginTop: 14, 
+                                backgroundColor: '#F0FDF4', 
+                                borderRadius: 10, 
+                                padding: 12, 
+                                borderWidth: 1, 
+                                borderColor: '#BBF7D0' 
+                            }}>
+                                <Text style={{ fontSize: 11, color: '#166534', lineHeight: 15 }}>
+                                    <Text style={{ fontWeight: '700' }}>Privacy: </Text>
+                                    Audio is processed securely, converted to text, and never stored or shared.
                                 </Text>
                             </View>
                         )}

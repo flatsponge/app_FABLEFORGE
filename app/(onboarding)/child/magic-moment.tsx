@@ -636,6 +636,9 @@ export default function MagicMomentScreen() {
         email: teaserEmail,
         mascotName: data.mascotName?.trim() || undefined,
         mascotStorageId: mascotStorageId ? (mascotStorageId as Id<"_storage">) : undefined,
+        childBirthMonth: data.childBirthMonth,
+        childBirthYear: data.childBirthYear,
+        vocabularyPreference: data.vocabularyPreference,
       });
 
       if (result.success && result.teaser) {

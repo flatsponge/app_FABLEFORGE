@@ -5,6 +5,7 @@ type OnboardingData = {
   childName: string;
   childAge: string;
   gender: 'boy' | 'girl' | '';
+  vocabularyPreference?: 'behind' | 'average' | 'advanced';
   parentingStyle: string;
   childPersonality: string[];
   dailyRoutine: string;
@@ -49,6 +50,7 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
   { path: '/(onboarding)/quiz/child-name', isComplete: (d) => hasValue(d.childName) },
   { path: '/(onboarding)/quiz/child-age', isComplete: (d) => hasValue(d.childAge) },
   { path: '/(onboarding)/quiz/child-gender', isComplete: (d) => hasValue(d.gender) },
+  { path: '/(onboarding)/quiz/vocabulary-level', isComplete: (d) => hasValue(d.vocabularyPreference) },
   { path: '/(onboarding)/quiz/parenting-style', isComplete: (d) => hasValue(d.parentingStyle) },
   { path: '/(onboarding)/quiz/child-personality', isComplete: (d) => hasValue(d.childPersonality) },
   { path: '/(onboarding)/quiz/daily-routine', isComplete: (d) => hasValue(d.dailyRoutine) },
