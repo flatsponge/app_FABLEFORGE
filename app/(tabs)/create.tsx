@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, ScrollView, Pressable, TextInput, Vibration, StyleSheet, LayoutAnimation, Platform, UIManager, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, Pressable, TextInput, Vibration, StyleSheet, LayoutAnimation, Platform, UIManager, ActivityIndicator, Alert } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -11,6 +11,7 @@ import Animated, {
   withSpring,
   withTiming,
   interpolateColor,
+  Easing,
 } from 'react-native-reanimated';
 import { useQuery, useMutation, useAction } from 'convex/react';
 import { api } from '@/convex/_generated/api';
@@ -67,7 +68,7 @@ import { FRIENDS, PRESET_LOCATIONS, VOICE_PRESETS, FOCUS_VALUES } from '@/consta
 import { STORY_STARTERS, CHALLENGE_SUGGESTIONS } from '@/constants/suggestions';
 import { Friend, PresetLocation, StoryLength, VoicePreset, Wish } from '@/types';
 
-type AppState = 'studio' | 'generating-outline' | 'outline-review' | 'generating-story';
+type AppState = 'studio' | 'generating-outline' | 'outline-review';
 type StudioMode = 'creative' | 'situation' | 'auto';
 type StoryVibe = 'energizing' | 'soothing' | 'whimsical' | 'thoughtful';
 type ThemeMode = 'purple' | 'teal' | 'amber';
@@ -617,22 +618,8 @@ export const CreateScreen: React.FC = () => {
     };
   }, []);
 
-  useEffect(() => {
-    if (!storyJob) return;
-
-    if (storyJob.status === 'complete' && storyJob.bookId) {
-      setAppState('studio');
-      setCurrentJobId(null);
-      clearDraft(); // Clear stored draft on success
-      router.push({
-        pathname: '/reading/[id]',
-        params: { id: storyJob.bookId },
-      });
-    } else if (storyJob.status === 'failed') {
-      setAppState('studio');
-      setCurrentJobId(null);
-    }
-  }, [storyJob?.status, storyJob?.bookId]);
+  // Job completion is now handled via LibraryView's queue display
+  // No need to wait here - user is navigated to home immediately after queuing
 
   const scheduleStateChange = (state: AppState, delay: number) => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -768,8 +755,6 @@ export const CreateScreen: React.FC = () => {
   };
 
   const handleApproveOutline = async () => {
-    setAppState('generating-story');
-
     const result = await queueStoryJobMutation({
       mode: studioMode,
       prompt: prompt || 'a magical adventure',
@@ -795,9 +780,18 @@ export const CreateScreen: React.FC = () => {
       return;
     }
 
-    if (result.jobId) {
-      setCurrentJobId(result.jobId);
-    }
+    // Successfully queued - clear draft, reset state, and navigate to home
+    clearDraft();
+    setAppState('studio');
+    setGeneratedOutline(null);
+
+
+    // Show confirmation alert
+    Alert.alert(
+      'Story Queued! ✨',
+      'Your story is being created. Check the "Generating Now" section on the home screen to track progress.',
+      [{ text: 'Got it!' }]
+    );
   };
 
   const handleRefillCredits = async (amount: number) => {
@@ -1252,8 +1246,8 @@ export const CreateScreen: React.FC = () => {
                               key={wish.id}
                               onPress={() => setViewingWish(wish)}
                               className={`w-64 p-4 rounded-2xl border shadow-sm mr-3 ${isSelected
-                                  ? 'bg-primary-50 border-primary-300'
-                                  : 'bg-white border-slate-100'
+                                ? 'bg-primary-50 border-primary-300'
+                                : 'bg-white border-slate-100'
                                 }`}
                             >
                               <View className="flex-row items-start gap-3">
@@ -1453,100 +1447,70 @@ export const CreateScreen: React.FC = () => {
   };
 
   if (appState === 'generating-outline') {
+    const loadingPhrases = [
+      "Consulting the creative spirits...",
+      "Gathering stardust...",
+      "Weaving the plot threads...",
+      "Igniting the imagination...",
+      "Brewing story magic..."
+    ];
+    const [phraseIndex, setPhraseIndex] = useState(0);
+
+    useEffect(() => {
+      const interval = setInterval(() => {
+        setPhraseIndex(prev => (prev + 1) % loadingPhrases.length);
+      }, 2000);
+      return () => clearInterval(interval);
+    }, []);
+
     return (
-      <View className="flex-1 bg-background items-center justify-center px-8">
-        <MotiView
-          from={{ rotate: '0deg' }}
-          animate={{ rotate: '360deg' }}
-          transition={{ type: 'timing', duration: 1200, loop: true }}
-          className="mb-12"
-        >
-          <View className="w-28 h-28 bg-white rounded-[40px] shadow-lg items-center justify-center border-2 border-white">
-            <Sparkles size={48} color="#a855f7" />
-          </View>
-        </MotiView>
-        <Text className="text-2xl font-black text-slate-800 mb-3 text-center">
-          Summoning Ideas...
+      <View className="flex-1 bg-background items-center justify-center px-12 pb-20">
+        <Text className="text-2xl font-black text-slate-800 mb-8 text-center tracking-tight">
+          Generating Outline
         </Text>
-        <View className="bg-white/70 p-5 rounded-3xl border border-slate-100 w-full">
-          <Text className="text-slate-500 text-xs font-bold uppercase tracking-wider text-center mb-3">
-            Consulting the creative spirits
-          </Text>
-          <View className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+
+        <View className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mb-6">
+          <MotiView
+            from={{ width: '0%' }}
+            animate={{ width: '90%' }}
+            transition={{
+              type: 'timing',
+              duration: 3500,
+              easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+            }}
+            style={{ height: '100%', borderRadius: 999 }}
+          >
             <LinearGradient
-              colors={['#a855f7', '#ec4899', '#a855f7']}
+              colors={['#a855f7', '#ec4899']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={StyleSheet.absoluteFillObject}
             />
-          </View>
+          </MotiView>
         </View>
-      </View>
-    );
-  }
 
-  if (appState === 'generating-story') {
-    const progress = storyJob?.progress ?? 0;
-    const statusText = storyJob?.status === 'generating_images'
-      ? 'Creating illustrations...'
-      : storyJob?.status === 'generating_story'
-        ? 'Writing the story...'
-        : 'Preparing magic...';
-
-    const handleCancelGeneration = async () => {
-      if (currentJobId) {
-        await cancelStoryJobMutation({ jobId: currentJobId });
-        setCurrentJobId(null);
-        setAppState('studio');
-      }
-    };
-
-    return (
-      <View className="flex-1 bg-background items-center justify-center px-8">
-        <MotiView
-          from={{ rotate: '0deg' }}
-          animate={{ rotate: '360deg' }}
-          transition={{ type: 'timing', duration: 1200, loop: true }}
-          className="mb-12"
-        >
-          <View className="w-28 h-28 bg-white rounded-[40px] shadow-lg items-center justify-center border-2 border-white">
-            <BookOpen size={48} color="#06b6d4" />
-          </View>
-        </MotiView>
-        <Text className="text-2xl font-black text-slate-800 mb-3 text-center">
-          Weaving Magic...
-        </Text>
-        <View className="bg-white/70 p-5 rounded-3xl border border-slate-100 w-full mb-6">
-          <Text className="text-slate-500 text-xs font-bold uppercase tracking-wider text-center mb-3">
-            {statusText}
-          </Text>
-          <View className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+        <View className="h-6 items-center justify-center">
+          <AnimatePresence exitBeforeEnter>
             <MotiView
-              animate={{ width: `${progress}%` }}
+              key={phraseIndex}
+              from={{ opacity: 0, translateY: 4 }}
+              animate={{ opacity: 1, translateY: 0 }}
+              exit={{ opacity: 0, translateY: -4 }}
               transition={{ type: 'timing', duration: 300 }}
-              style={{ height: '100%', borderRadius: 999 }}
             >
-              <LinearGradient
-                colors={['#a855f7', '#ec4899', '#a855f7']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={StyleSheet.absoluteFillObject}
-              />
+              <Text className="text-slate-400 text-xs font-bold uppercase tracking-widest text-center">
+                {loadingPhrases[phraseIndex]}
+              </Text>
             </MotiView>
-          </View>
-          <Text className="text-center text-slate-600 text-sm font-bold mt-2">
-            {Math.round(progress)}%
-          </Text>
+          </AnimatePresence>
         </View>
-        <Pressable
-          onPress={handleCancelGeneration}
-          className="px-6 py-3 rounded-xl bg-slate-100 active:bg-slate-200"
-        >
-          <Text className="text-slate-600 font-bold text-sm">Cancel</Text>
-        </Pressable>
       </View>
     );
   }
+
+
+
+
 
   if (appState === 'outline-review' && generatedOutline) {
     return (
