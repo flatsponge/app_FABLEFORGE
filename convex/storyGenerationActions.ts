@@ -1115,7 +1115,7 @@ ${vocabularySection}
 TASK: Generate:
 1. A captivating story title (5-8 words) - may include ${mascotName}'s name
 2. A short book description/summary (1-2 sentences for the book cover)
-3. The first page text (2-3 sentences that hook the reader and introduce ${mascotName})
+3. The first page text (1-2 sentences. Exciting, magical, and introducing ${mascotName})
 
 REQUIREMENTS:
 - ${mascotName} is the sole hero of the story
@@ -1124,7 +1124,8 @@ REQUIREMENTS:
 - NO PRONOUNS: The mascot is gender neutral. Do NOT use "he", "she", "him", or "her".
 - Do NOT introduce a human child or child companion
 - Keep the focus entirely on ${mascotName}'s adventure
-- The teaser should make the reader EXCITED to hear the rest of the story!
+- The writing style should be simple, exciting, and engaging.
+- Text must work when read aloud by a parent.
 - The description is a brief summary shown on the book cover in the library
 
 RESPOND IN THIS EXACT JSON FORMAT:
