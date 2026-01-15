@@ -237,12 +237,12 @@ type MascotOutfitResult = {
 };
 
 function buildClothesPrompt(clothesDescription: string): string {
-  return `Take the cute chibi mascot character from reference image 1 and dress it with the clothing item from reference image 2 (${clothesDescription}). The mascot should now be wearing the clothes naturally. Keep the exact same mascot design, face, body shape, colors, and cute chibi style. Full-body view, centered, pure white background (#FFFFFF), no shadows, no additional props or scene elements.`;
+  return `Take the cute chibi mascot character from reference image 1 and dress it with the clothing item from reference image 2. IMPORTANT: The clothing item is ${clothesDescription}. The mascot must be wearing EXACTLY this item. Keep the exact same mascot design, face, body shape, colors, and cute chibi style. Full-body view, centered, pure white background (#FFFFFF), no shadows, no additional props or scene elements.`;
 }
 
 function buildAccessoryPrompt(accessoryDescription: string, accessoryType: "hat" | "toy"): string {
   const placement = accessoryType === "hat" ? "on its head" : "as an accessory";
-  return `Take the cute chibi mascot character from reference image 1 (keeping any clothes it's wearing) and add the ${accessoryType} from reference image 2 (${accessoryDescription}) ${placement}. The mascot should now be wearing this accessory while keeping its existing outfit. Keep the exact same mascot design, face, body shape, colors, and cute chibi style. Full-body view, centered, pure white background (#FFFFFF), no shadows, no additional props or scene elements.`;
+  return `Take the cute chibi mascot character from reference image 1 (keeping any clothes it's wearing) and add the ${accessoryType} from reference image 2 ${placement}. IMPORTANT: The accessory is ${accessoryDescription}. The mascot must be wearing/holding EXACTLY this item. Keep the existing outfit if present. Keep the exact same mascot design, face, body shape, colors, and cute chibi style. Full-body view, centered, pure white background (#FFFFFF), no shadows, no additional props or scene elements.`;
 }
 
 export const addClothesToMascot = action({

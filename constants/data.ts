@@ -130,45 +130,85 @@ export const CATEGORIES: Category[] = [
 
 
 export const OUTFITS: AvatarItem[] = [
-  { 
-    id: 'shirt-blue', 
-    type: 'Casual', 
+  {
+    id: 'shirt-blue',
+    type: 'Casual',
     image: require('../assets/avatar/items/shirt_blue.png'),
-    aiDescription: 'a casual blue t-shirt',
+    aiDescription: 'a casual blue short-sleeved t-shirt. It is a shirt, NOT a dress. It ends at the waist.',
   },
-  { 
-    id: 'dress-green', 
-    type: 'Party', 
+  {
+    id: 'dress-green',
+    type: 'Party',
     image: require('../assets/avatar/items/dress_green.png'),
-    aiDescription: 'an elegant green party dress',
+    aiDescription: 'an elegant green party dress with a flared skirt. It is a full-body dress.',
+  },
+  {
+    id: 'hoodie-red',
+    type: 'Casual',
+    image: require('../assets/avatar/items/hoodie_red.png'),
+    aiDescription: 'a cozy red pullover hoodie with a front pocket. It is a casual top.',
+  },
+  {
+    id: 'overalls-denim',
+    type: 'Play',
+    image: require('../assets/avatar/items/overalls_denim.png'),
+    aiDescription: 'classic blue denim overalls with brass buckles. It is a full-body outfit.',
+  },
+  {
+    id: 'costume-superhero',
+    type: 'Costume',
+    image: require('../assets/avatar/items/costume_superhero.png'),
+    aiDescription: 'a dynamic red and blue superhero bodysuit with a lightning bolt emblem. It is a full-body costume.',
   },
 ];
 
 export const HATS: AvatarItem[] = [
-  { 
-    id: 'crown-gold', 
-    label: 'Royal', 
+  {
+    id: 'crown-gold',
+    label: 'Royal',
     image: require('../assets/avatar/items/crown_gold.png'),
-    aiDescription: 'a shiny golden royal crown',
+    aiDescription: 'a shiny golden royal crown with jewels.',
   },
-  { 
-    id: 'hat-blue', 
-    label: 'Sporty', 
+  {
+    id: 'hat-blue',
+    label: 'Sporty',
     image: require('../assets/avatar/items/hat_blue.png'),
-    aiDescription: 'a sporty blue cap',
+    aiDescription: 'a blue baseball cap worn on the head.',
+  },
+  {
+    id: 'hat-wizard',
+    label: 'Magic',
+    image: require('../assets/avatar/items/hat_wizard.png'),
+    aiDescription: 'a tall pointed purple wizard hat with star patterns.',
+  },
+  {
+    id: 'hat-beanie',
+    label: 'Warm',
+    image: require('../assets/avatar/items/hat_beanie.png'),
+    aiDescription: 'a knitted orange winter beanie with a pom-pom on top.',
   },
 ];
 
 export const TOYS: AvatarItem[] = [
-  { 
-    id: 'sunglasses', 
+  {
+    id: 'sunglasses',
     image: require('../assets/avatar/items/sunglasses.png'),
-    aiDescription: 'cool stylish sunglasses',
+    aiDescription: 'cool dark sunglasses with black frames.',
   },
-  { 
-    id: 'necklace', 
+  {
+    id: 'necklace',
     image: require('../assets/avatar/items/necklace.png'),
-    aiDescription: 'a sparkly necklace',
+    aiDescription: 'a golden necklace chain with a star pendant.',
+  },
+  {
+    id: 'toy-wand',
+    image: require('../assets/avatar/items/toy_wand.png'),
+    aiDescription: 'a wooden magic wand with a glowing star tip.',
+  },
+  {
+    id: 'toy-backpack',
+    image: require('../assets/avatar/items/toy_backpack.png'),
+    aiDescription: 'a sturdy yellow school backpack with straps.',
   },
 ];
 
