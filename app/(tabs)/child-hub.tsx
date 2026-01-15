@@ -65,6 +65,25 @@ const ACCESSORIES = [
   ...TOYS.map(t => ({ ...t, accessoryType: 'toy' as const })),
 ];
 
+// Background ID mapping for persistence - maps string IDs to image sources
+const BACKGROUND_MAP: Record<string, any> = {
+  '1': ChildBackground,
+  '2': ChildBackground2,
+  '3': ChildBackground3,
+  '4': ChildBackground4,
+  '5': ChildBackground5,
+  // Preset locations are added dynamically using their loc-X IDs
+  ...Object.fromEntries(PRESET_LOCATIONS.map(loc => [loc.id, loc.image])),
+};
+
+// Reverse mapping to get ID from image source
+const getBackgroundId = (source: any): string | null => {
+  for (const [id, img] of Object.entries(BACKGROUND_MAP)) {
+    if (img === source) return id;
+  }
+  return null;
+};
+
 const PROCESSING_STALE_MS = 10 * 60 * 1000;
 
 const AnimatedBottle = ({ onComplete, onLanded }: { onComplete: () => void; onLanded: () => void }) => {
@@ -718,6 +737,8 @@ export default function ChildHubScreen() {
   const [activeRoom, setActiveRoom] = useState<RoomType>('wardrobe');
   const [wardrobeTab, setWardrobeTab] = useState<WardrobeTab>('clothes');
   const [backgroundSource, setBackgroundSource] = useState<any>(ChildBackground);
+  const [previewBackgroundId, setPreviewBackgroundId] = useState<string | null>(null);
+  const [savedBackgroundId, setSavedBackgroundId] = useState<string | null>(null);
   const [wishState, setWishState] = useState<WishState>('idle');
   const [recordingTime, setRecordingTime] = useState(0);
   const [wishText, setWishText] = useState('');
@@ -742,6 +763,10 @@ export default function ChildHubScreen() {
   const resetMascotOutfitAction = useAction(api.imageGeneration.resetMascotOutfit);
   const createWishMutation = useMutation(api.wishes.createWish);
 
+  // Background persistence
+  const savedBackgroundQuery = useQuery(api.onboarding.getSelectedBackground);
+  const updateBackgroundMutation = useMutation(api.onboarding.updateSelectedBackground);
+
   const [showUnlockHint, setShowUnlockHint] = useState(false);
   const [showBottleAnimation, setShowBottleAnimation] = useState(false);
   const [showGlitter, setShowGlitter] = useState(false);
@@ -756,6 +781,16 @@ export default function ChildHubScreen() {
       seedBookCaches(userBooks);
     }
   }, [userBooks]);
+
+  // Load saved background on mount and when query updates
+  useEffect(() => {
+    if (savedBackgroundQuery !== undefined) {
+      setSavedBackgroundId(savedBackgroundQuery);
+      if (savedBackgroundQuery && BACKGROUND_MAP[savedBackgroundQuery]) {
+        setBackgroundSource(BACKGROUND_MAP[savedBackgroundQuery]);
+      }
+    }
+  }, [savedBackgroundQuery]);
 
   useEffect(() => {
     let isMounted = true;
@@ -992,6 +1027,10 @@ export default function ChildHubScreen() {
   // Clear preview when switching tabs
   useEffect(() => {
     setPreviewItem(null);
+    // Also cancel background preview when switching away from background tab
+    if (wardrobeTab !== 'background' && previewBackgroundId) {
+      handleCancelBackgroundPreview();
+    }
   }, [wardrobeTab]);
 
   // Handle CLOTHES click - updates preview state
@@ -1011,6 +1050,38 @@ export default function ChildHubScreen() {
       itemId: accessoryId,
       accessoryType,
     });
+  };
+
+  // Handle BACKGROUND click - updates preview state and shows background immediately
+  const handleBackgroundClick = (backgroundId: string) => {
+    setPreviewBackgroundId(backgroundId);
+    // Show the preview immediately
+    if (BACKGROUND_MAP[backgroundId]) {
+      setBackgroundSource(BACKGROUND_MAP[backgroundId]);
+    }
+  };
+
+  // Handle confirming background selection - persists to database
+  const handleConfirmBackgroundSelection = async () => {
+    if (!previewBackgroundId) return;
+    try {
+      await updateBackgroundMutation({ backgroundId: previewBackgroundId });
+      setSavedBackgroundId(previewBackgroundId);
+      setPreviewBackgroundId(null);
+    } catch (error) {
+      console.error('Failed to save background:', error);
+    }
+  };
+
+  // Cancel background preview - revert to saved
+  const handleCancelBackgroundPreview = () => {
+    setPreviewBackgroundId(null);
+    // Revert to saved background
+    if (savedBackgroundId && BACKGROUND_MAP[savedBackgroundId]) {
+      setBackgroundSource(BACKGROUND_MAP[savedBackgroundId]);
+    } else {
+      setBackgroundSource(ChildBackground);
+    }
   };
 
   const handleConfirmSelection = () => {
@@ -1313,92 +1384,51 @@ export default function ChildHubScreen() {
 
                           {wardrobeTab === 'background' && (
                             <>
-                              {/* Default Background */}
-                              <AnimatableWardrobeItem
-                                isSelected={backgroundSource === ChildBackground}
-                                onPress={() => setBackgroundSource(ChildBackground)}
-                                style={backgroundSource === ChildBackground ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
-                                className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === ChildBackground
-                                  ? 'border-green-500'
-                                  : 'border-slate-200'
-                                  }`}
-                              >
-                                <Image source={ChildBackground} className="w-full h-full" resizeMode="cover" />
-                              </AnimatableWardrobeItem>
+                              {/* Bundled Backgrounds - using BACKGROUND_MAP IDs */}
+                              {(['1', '2', '3', '4', '5'] as const).map((bgId) => {
+                                const bgImage = BACKGROUND_MAP[bgId];
+                                const isCurrentPreview = previewBackgroundId === bgId;
+                                const isSaved = savedBackgroundId === bgId;
+                                const isSelected = previewBackgroundId ? isCurrentPreview : isSaved;
 
-                              {/* Dreamy Night Background */}
-                              <AnimatableWardrobeItem
-                                isSelected={backgroundSource === ChildBackground2}
-                                onPress={() => setBackgroundSource(ChildBackground2)}
-                                style={backgroundSource === ChildBackground2 ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
-                                className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === ChildBackground2
-                                  ? 'border-green-500'
-                                  : 'border-slate-200'
-                                  }`}
-                              >
-                                <Image source={ChildBackground2} className="w-full h-full" resizeMode="cover" />
-                              </AnimatableWardrobeItem>
-
-                              {/* Sunny Meadow Background */}
-                              <AnimatableWardrobeItem
-                                isSelected={backgroundSource === ChildBackground3}
-                                onPress={() => setBackgroundSource(ChildBackground3)}
-                                style={backgroundSource === ChildBackground3 ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
-                                className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === ChildBackground3
-                                  ? 'border-green-500'
-                                  : 'border-slate-200'
-                                  }`}
-                              >
-                                <Image source={ChildBackground3} className="w-full h-full" resizeMode="cover" />
-                              </AnimatableWardrobeItem>
-
-                              {/* Ocean Background */}
-                              <AnimatableWardrobeItem
-                                isSelected={backgroundSource === ChildBackground4}
-                                onPress={() => setBackgroundSource(ChildBackground4)}
-                                style={backgroundSource === ChildBackground4 ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
-                                className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === ChildBackground4
-                                  ? 'border-green-500'
-                                  : 'border-slate-200'
-                                  }`}
-                              >
-                                <Image source={ChildBackground4} className="w-full h-full" resizeMode="cover" />
-                              </AnimatableWardrobeItem>
-
-                              {/* Forest Background */}
-                              <AnimatableWardrobeItem
-                                isSelected={backgroundSource === ChildBackground5}
-                                onPress={() => setBackgroundSource(ChildBackground5)}
-                                style={backgroundSource === ChildBackground5 ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
-                                className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === ChildBackground5
-                                  ? 'border-green-500'
-                                  : 'border-slate-200'
-                                  }`}
-                              >
-                                <Image source={ChildBackground5} className="w-full h-full" resizeMode="cover" />
-                              </AnimatableWardrobeItem>
+                                return (
+                                  <AnimatableWardrobeItem
+                                    key={bgId}
+                                    isSelected={isSelected}
+                                    onPress={() => handleBackgroundClick(bgId)}
+                                    style={isSelected ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
+                                    className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${isSelected ? 'border-green-500' : 'border-slate-200'}`}
+                                  >
+                                    <Image source={bgImage} className="w-full h-full" resizeMode="cover" />
+                                  </AnimatableWardrobeItem>
+                                );
+                              })}
 
                               {/* Preset Locations */}
-                              {PRESET_LOCATIONS.map(loc => (
-                                <Pressable
-                                  key={loc.id}
-                                  onPress={() => setBackgroundSource(loc.image)}
-                                  style={backgroundSource === loc.image ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
-                                  className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${backgroundSource === loc.image
-                                    ? 'border-green-500'
-                                    : 'border-slate-200'
-                                    }`}
-                                >
-                                  <Image source={loc.image} className="w-full h-full" resizeMode="cover" />
-                                </Pressable>
-                              ))}
+                              {PRESET_LOCATIONS.map(loc => {
+                                const isCurrentPreview = previewBackgroundId === loc.id;
+                                const isSaved = savedBackgroundId === loc.id;
+                                const isSelected = previewBackgroundId ? isCurrentPreview : isSaved;
+
+                                return (
+                                  <AnimatableWardrobeItem
+                                    key={loc.id}
+                                    isSelected={isSelected}
+                                    onPress={() => handleBackgroundClick(loc.id)}
+                                    style={isSelected ? { shadowColor: '#22c55e', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 } : undefined}
+                                    className={`w-20 h-20 rounded-2xl overflow-hidden border-4 ${isSelected ? 'border-green-500' : 'border-slate-200'}`}
+                                  >
+                                    <Image source={loc.image} className="w-full h-full" resizeMode="cover" />
+                                  </AnimatableWardrobeItem>
+                                );
+                              })}
                             </>
                           )}
                         </View>
                       </ScrollView>
 
                       {/* Action Buttons Area */}
-                      {(previewItem || (mascotOutfit?.equippedClothes || mascotOutfit?.equippedAccessory)) && (
+                      {(previewItem || previewBackgroundId || (mascotOutfit?.equippedClothes || mascotOutfit?.equippedAccessory)) && (
                         <Animated.View
                           layout={LinearTransition.duration(200)}
                           entering={FadeIn.duration(200)}
@@ -1406,7 +1436,26 @@ export default function ChildHubScreen() {
                           className="mt-4"
                           style={{ minHeight: 64, justifyContent: 'center' }}
                         >
-                          {previewItem ? (
+                          {/* Background Selection - Select Button */}
+                          {wardrobeTab === 'background' && previewBackgroundId && previewBackgroundId !== savedBackgroundId ? (
+                            <Animated.View
+                              entering={FadeIn.duration(200)}
+                              exiting={FadeOut.duration(200)}
+                              style={{ width: '100%' }}
+                            >
+                              <ChunkyButton
+                                onPress={handleConfirmBackgroundSelection}
+                                bgColor="#22c55e"
+                                borderColor="#15803d"
+                                size="large"
+                                style={{ width: '100%' }}
+                              >
+                                <Text className="text-white font-black text-xl uppercase tracking-wider text-center py-3">
+                                  Select
+                                </Text>
+                              </ChunkyButton>
+                            </Animated.View>
+                          ) : previewItem ? (
                             <Animated.View
                               entering={FadeIn.duration(200)}
                               exiting={FadeOut.duration(200)}
@@ -1424,7 +1473,7 @@ export default function ChildHubScreen() {
                                 </Text>
                               </ChunkyButton>
                             </Animated.View>
-                          ) : (
+                          ) : (wardrobeTab !== 'background' && (mascotOutfit?.equippedClothes || mascotOutfit?.equippedAccessory)) ? (
                             <Animated.View
                               entering={FadeIn.duration(200)}
                               exiting={FadeOut.duration(200)}
@@ -1437,7 +1486,7 @@ export default function ChildHubScreen() {
                                 flex={0}
                               />
                             </Animated.View>
-                          )}
+                          ) : null}
                         </Animated.View>
                       )}
                     </Animated.View>

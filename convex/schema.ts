@@ -79,6 +79,9 @@ export default defineSchema({
     defaultReadingMode: v.optional(
       v.union(v.literal("autoplay"), v.literal("child"))
     ),
+    // Selected background for child hub - persists across launches
+    // Values: "1"-"5" for bundled backgrounds, or "preset-{id}" for preset locations
+    selectedBackground: v.optional(v.string()),
   }).index("by_user", ["userId"]),
 
   userSkills: defineTable({

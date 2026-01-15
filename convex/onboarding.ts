@@ -514,3 +514,50 @@ export const updateDefaultReadingMode = mutation({
     return true;
   },
 });
+
+/**
+ * Get the selected background for child hub
+ */
+export const getSelectedBackground = query({
+  args: {},
+  returns: v.union(v.string(), v.null()),
+  handler: async (ctx) => {
+    const user = await getAuthUser(ctx);
+    if (!user) return null;
+
+    const onboarding = await ctx.db
+      .query("onboardingResponses")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .unique();
+
+    return onboarding?.selectedBackground ?? null;
+  },
+});
+
+/**
+ * Update the selected background for child hub
+ */
+export const updateSelectedBackground = mutation({
+  args: {
+    backgroundId: v.string(),
+  },
+  returns: v.boolean(),
+  handler: async (ctx, args) => {
+    const user = await requireAuthUser(ctx);
+
+    const onboarding = await ctx.db
+      .query("onboardingResponses")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .unique();
+
+    if (!onboarding) {
+      throw new Error("Onboarding record not found");
+    }
+
+    await ctx.db.patch(onboarding._id, {
+      selectedBackground: args.backgroundId,
+    });
+
+    return true;
+  },
+});
