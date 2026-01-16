@@ -60,6 +60,7 @@ export default function RadarBadScreen() {
           </View>
 
           <Text style={styles.score}>{score}%</Text>
+          <Text style={styles.scoreLabel}>Child Score</Text>
         </View>
       </OnboardingLayout>
     </View>
@@ -80,4 +81,5 @@ const styles = StyleSheet.create({
   chartWrapper: { alignItems: 'center', justifyContent: 'center', marginVertical: 16 },
   glow: { position: 'absolute', width: 200, height: 200, borderRadius: 100, opacity: 0.3 },
   score: { color: '#fff', fontSize: 64, fontWeight: '800', marginTop: 8 },
+  scoreLabel: { color: 'rgba(255,255,255,0.6)', fontSize: 14, fontWeight: '600', marginTop: 4, textTransform: 'uppercase', letterSpacing: 1 },
 });

@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
+import { useQuizFooter } from '../../../contexts/QuizFooterContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
 import OnboardingSingleSelect, { SelectOption } from '../../../components/OnboardingSingleSelect';
@@ -15,6 +16,7 @@ const GENDER_OPTIONS: SelectOption[] = [
 export default function ChildGenderScreen() {
     const router = useRouter();
     const { data, updateData } = useOnboarding();
+    const { setFooter } = useQuizFooter();
     const [selectedGender, setSelectedGender] = useState<'boy' | 'girl' | null>(null);
 
     const canProceed = selectedGender !== null;
@@ -26,13 +28,19 @@ export default function ChildGenderScreen() {
         }
     };
 
+    useEffect(() => {
+        setFooter({
+            onNext: handleNext,
+            nextLabel: "Continue",
+            showNextButton: canProceed
+        });
+    }, [canProceed]);
+
     return (
         <OnboardingLayout
             showProgressBar={false} skipTopSafeArea
             progress={0.12}
-            onNext={handleNext}
-            nextLabel="Continue"
-            showNextButton={canProceed}
+            hideFooter={true}
         >
             <View style={styles.contentContainer}>
                 <OnboardingTitle>Is {data.childName || 'your child'} a boy or girl?</OnboardingTitle>

@@ -19,12 +19,12 @@ export const { auth, signIn, signOut, store } = convexAuth({
         const resend = new Resend(process.env.AUTH_RESEND_KEY);
 
         await resend.emails.send({
-          from: "Storytime <fabletales@aserious.app>",
+          from: "Fabletales <fabletales@aserious.app>",
           to: email,
-          subject: "Your Storytime verification code",
+          subject: "Your Fabletales verification code",
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto;">
-              <h1 style="color: #7c3aed; margin-bottom: 24px;">Storytime</h1>
+              <h1 style="color: #7c3aed; margin-bottom: 24px;">Fabletales</h1>
               <p style="font-size: 16px; color: #333; margin-bottom: 16px;">
                 Here's your verification code:
               </p>
@@ -53,7 +53,7 @@ export const { auth, signIn, signOut, store } = convexAuth({
     async createOrUpdateUser(ctx: MutationCtx, args) {
       // For Email provider, email is in profile.email
       const email = args.profile.email as string | undefined;
-      
+
       console.log("[Auth] createOrUpdateUser called:", {
         existingUserId: args.existingUserId,
         email,

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, StyleSheet, Text } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeIn } from 'react-native-reanimated';
@@ -26,22 +26,22 @@ export default function RadarGoodScreen() {
   useEffect(() => {
     const startTime = Date.now();
     const duration = 1500;
-    
+
     const animate = () => {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
-      
-      setAnimatedData(STATE_BAD.data.map((start, i) => 
+
+      setAnimatedData(STATE_BAD.data.map((start, i) =>
         start + (STATE_GOOD.data[i] - start) * eased
       ));
-      
+
       if (progress < 1) frameRef.current = requestAnimationFrame(animate);
     };
-    
+
     frameRef.current = requestAnimationFrame(animate);
     const timer = setTimeout(() => setShowButton(true), 1600);
-    
+
     return () => {
       if (frameRef.current) cancelAnimationFrame(frameRef.current);
       clearTimeout(timer);
@@ -83,6 +83,23 @@ export default function RadarGoodScreen() {
           </View>
 
           <Text style={styles.score}>{currentScore}%</Text>
+          <Text style={styles.scoreLabel}>Child Score</Text>
+
+          {/* Comparison pill showing above average */}
+          <View style={styles.comparisonPill}>
+            <Text style={styles.comparisonIcon}>📈</Text>
+            <Text style={styles.comparisonText}>
+              {currentScore - 50}% above average
+            </Text>
+          </View>
+
+          {/* Back to current state button */}
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Text style={styles.backButtonText}>← See Current State</Text>
+          </TouchableOpacity>
         </View>
       </OnboardingLayout>
     </View>
@@ -103,4 +120,23 @@ const styles = StyleSheet.create({
   chartWrapper: { alignItems: 'center', justifyContent: 'center', marginVertical: 16 },
   glow: { position: 'absolute', width: 200, height: 200, borderRadius: 100, opacity: 0.3 },
   score: { color: '#022c22', fontSize: 64, fontWeight: '800', marginTop: 8 },
+  scoreLabel: { color: 'rgba(2,44,34,0.6)', fontSize: 14, fontWeight: '600', marginTop: 4, textTransform: 'uppercase', letterSpacing: 1 },
+  comparisonPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(5,150,105,0.15)',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 24,
+    marginTop: 20,
+    gap: 8,
+  },
+  comparisonIcon: { fontSize: 16 },
+  comparisonText: { color: '#059669', fontSize: 14, fontWeight: '700' },
+  backButton: {
+    marginTop: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  backButtonText: { color: 'rgba(2,44,34,0.5)', fontSize: 13, fontWeight: '500' },
 });

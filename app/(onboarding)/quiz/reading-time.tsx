@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
+import { useQuizFooter } from '../../../contexts/QuizFooterContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
 import OnboardingMultiSelect, { SelectOption } from '../../../components/OnboardingMultiSelect';
@@ -17,6 +18,7 @@ const TIMES: SelectOption[] = [
 export default function ReadingTimeScreen() {
     const router = useRouter();
     const { updateData } = useOnboarding();
+    const { setFooter } = useQuizFooter();
     const [selected, setSelected] = useState<string[]>([]);
 
     const handleToggle = (id: string) => {
@@ -35,11 +37,18 @@ export default function ReadingTimeScreen() {
         }
     };
 
+    useEffect(() => {
+        setFooter({
+            onNext: handleNext,
+            nextLabel: "Continue",
+            showNextButton: selected.length > 0
+        });
+    }, [selected.length, setFooter]);
+
     return (
         <OnboardingLayout
             showProgressBar={false} skipTopSafeArea progress={0.25}
-            showNextButton={selected.length > 0}
-            onNext={handleNext}
+            hideFooter={true}
             isScrollable={true}
         >
             <View style={styles.contentContainer}>

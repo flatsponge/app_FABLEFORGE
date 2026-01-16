@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, TextInput, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
+import { useQuizFooter } from '../../../contexts/QuizFooterContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody, OnboardingSubtitle } from '../../../components/OnboardingTypography';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
@@ -9,6 +10,7 @@ import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 export default function ChildNameScreen() {
     const router = useRouter();
     const { updateData } = useOnboarding();
+    const { setFooter } = useQuizFooter();
     const [childName, setChildName] = useState('');
 
     const canProceed = childName.trim().length > 0;
@@ -20,14 +22,20 @@ export default function ChildNameScreen() {
         }
     };
 
+    useEffect(() => {
+        setFooter({
+            onNext: handleNext,
+            nextLabel: "Continue",
+            showNextButton: canProceed
+        });
+    }, [canProceed]);
+
     return (
         <OnboardingLayout
             showProgressBar={false}
             skipTopSafeArea
             progress={0.1}
-            onNext={handleNext}
-            nextLabel="Continue"
-            showNextButton={canProceed}
+            hideFooter={true}
         >
             <View style={styles.contentContainer}>
                 <OnboardingTitle>What's your child's name?</OnboardingTitle>

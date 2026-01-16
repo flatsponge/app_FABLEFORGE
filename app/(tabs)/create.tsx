@@ -505,6 +505,9 @@ export const CreateScreen: React.FC = () => {
     selectedValueId?: string;
   }>();
 
+  // Get the user's default story length preference from onboarding
+  const userDefaultStoryLength = useQuery(api.onboarding.getDefaultStoryLength);
+
   const {
     isLoaded,
     prompt, setPrompt,
@@ -518,7 +521,7 @@ export const CreateScreen: React.FC = () => {
     showElements, setShowElements,
     showRemix, setShowRemix,
     clearDraft
-  } = useStoryDraft();
+  } = useStoryDraft(userDefaultStoryLength ?? undefined);
 
   const [appState, setAppState] = useState<AppState>('studio');
   const [viewingWish, setViewingWish] = useState<Wish | null>(null);

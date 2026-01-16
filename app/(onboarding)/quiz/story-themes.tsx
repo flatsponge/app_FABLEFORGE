@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
+import { useQuizFooter } from '../../../contexts/QuizFooterContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
 import OnboardingMultiSelect, { SelectOption } from '../../../components/OnboardingMultiSelect';
@@ -23,6 +24,7 @@ const THEMES: SelectOption[] = [
 export default function StoryThemesScreen() {
     const router = useRouter();
     const { data, updateData } = useOnboarding();
+    const { setFooter } = useQuizFooter();
     const [selected, setSelected] = useState<string[]>([]);
 
     const toggleSelection = (id: string) => {
@@ -42,12 +44,18 @@ export default function StoryThemesScreen() {
         }
     };
 
+    useEffect(() => {
+        setFooter({
+            onNext: handleNext,
+            nextLabel: "Continue",
+            showNextButton: canProceed
+        });
+    }, [canProceed, selected]);
+
     return (
         <OnboardingLayout
             showProgressBar={false} skipTopSafeArea progress={0.35}
-            onNext={handleNext}
-            nextLabel="Continue"
-            showNextButton={canProceed}
+            hideFooter={true}
             isScrollable={true}
         >
             <View style={styles.contentContainer}>

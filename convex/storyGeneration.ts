@@ -939,7 +939,11 @@ export const getUserActiveJobs = query({
   returns: v.array(
     v.object({
       _id: v.id("storyJobs"),
-      status: v.string(),
+      status: v.union(
+        v.literal("queued"),
+        v.literal("generating_story"),
+        v.literal("generating_images")
+      ),
       progress: v.number(),
       prompt: v.string(),
       createdAt: v.number(),
@@ -949,17 +953,35 @@ export const getUserActiveJobs = query({
     const user = await getAuthUser(ctx);
     if (!user) return [];
 
-    const jobs = await ctx.db
-      .query("storyJobs")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .order("desc")
-      .collect();
+    // Use indexed queries for each active status instead of JS filter
+    const [queuedJobs, generatingStoryJobs, generatingImagesJobs] = await Promise.all([
+      ctx.db
+        .query("storyJobs")
+        .withIndex("by_user_and_status", (q) =>
+          q.eq("userId", user._id).eq("status", "queued")
+        )
+        .collect(),
+      ctx.db
+        .query("storyJobs")
+        .withIndex("by_user_and_status", (q) =>
+          q.eq("userId", user._id).eq("status", "generating_story")
+        )
+        .collect(),
+      ctx.db
+        .query("storyJobs")
+        .withIndex("by_user_and_status", (q) =>
+          q.eq("userId", user._id).eq("status", "generating_images")
+        )
+        .collect(),
+    ]);
 
-    return jobs
-      .filter(j => j.status !== "complete" && j.status !== "failed" && j.status !== "canceled")
+    const allActiveJobs = [...queuedJobs, ...generatingStoryJobs, ...generatingImagesJobs];
+
+    return allActiveJobs
+      .sort((a, b) => b.createdAt - a.createdAt)
       .map(job => ({
         _id: job._id,
-        status: job.status,
+        status: job.status as "queued" | "generating_story" | "generating_images",
         progress: job.progress,
         prompt: job.prompt,
         createdAt: job.createdAt,

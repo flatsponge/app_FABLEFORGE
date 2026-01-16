@@ -15,20 +15,17 @@ export const processMascotJob = internalAction({
   args: { jobId: v.id("mascotJobs") },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const job = await ctx.runQuery(internal.mascotGeneration.getJobInternal, {
+    // Use idempotent claim pattern - only process if we successfully claim the job
+    const claimResult = await ctx.runMutation(internal.mascotGeneration.claimMascotJob, {
       jobId: args.jobId,
     });
 
-    if (!job) {
-      console.error("Job not found:", args.jobId);
+    if (!claimResult.claimed) {
+      // Job was already claimed/processed by another run, or doesn't exist
       return null;
     }
 
-    await ctx.runMutation(internal.mascotGeneration.updateMascotJobProgress, {
-      jobId: args.jobId,
-      status: "generating",
-      progress: 10,
-    });
+    const job = claimResult;
 
     const apiKey = getImageApiKey();
     if (!apiKey) {

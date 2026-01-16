@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
+import { useQuizFooter } from '../../../contexts/QuizFooterContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
 import OnboardingMultiSelect, { SelectOption } from '../../../components/OnboardingMultiSelect';
@@ -22,6 +23,7 @@ const REACTIONS: SelectOption[] = [
 export default function ParentGuiltScreen() {
     const router = useRouter();
     const { updateData } = useOnboarding();
+    const { setFooter } = useQuizFooter();
     const [selected, setSelected] = useState<string[]>([]);
 
     const handleToggle = (id: string) => {
@@ -40,12 +42,19 @@ export default function ParentGuiltScreen() {
         }
     };
 
+    useEffect(() => {
+        setFooter({
+            onNext: handleNext,
+            nextLabel: 'Continue',
+            showNextButton: selected.length > 0,
+        });
+    }, [selected.length, setFooter]);
+
     return (
         <OnboardingLayout
             showProgressBar={false} skipTopSafeArea progress={0.8}
-            showNextButton={selected.length > 0}
             isScrollable={true}
-            onNext={handleNext}
+            hideFooter={true}
         >
             <View style={styles.contentContainer}>
                 <OnboardingTitle>Be honest: how do you usually react?</OnboardingTitle>

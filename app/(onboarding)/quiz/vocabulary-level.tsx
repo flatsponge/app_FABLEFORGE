@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
+import { useQuizFooter } from '../../../contexts/QuizFooterContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
 import OnboardingSingleSelect, { SelectOption } from '../../../components/OnboardingSingleSelect';
@@ -32,6 +33,7 @@ const VOCABULARY_OPTIONS: SelectOption[] = [
 export default function VocabularyLevelScreen() {
     const router = useRouter();
     const { data, updateData } = useOnboarding();
+    const { setFooter } = useQuizFooter();
     const [selectedLevel, setSelectedLevel] = useState<VocabularyPreferenceId | null>(
         data.vocabularyPreference || null
     );
@@ -45,14 +47,15 @@ export default function VocabularyLevelScreen() {
         }
     };
 
+    useEffect(() => {
+        setFooter({ onNext: handleNext, nextLabel: 'Continue', showNextButton: canProceed });
+    }, [canProceed, selectedLevel]);
+
     return (
         <OnboardingLayout
             showProgressBar={false}
             skipTopSafeArea
-            progress={0.14}
-            onNext={handleNext}
-            nextLabel="Continue"
-            showNextButton={canProceed}
+            hideFooter
         >
             <View style={styles.contentContainer}>
                 <OnboardingTitle>

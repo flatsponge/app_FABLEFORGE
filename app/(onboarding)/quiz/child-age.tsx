@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
+import { useQuizFooter } from '../../../contexts/QuizFooterContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
 import MonthYearPicker from '../../../components/MonthYearPicker';
@@ -10,6 +11,7 @@ import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 export default function ChildAgeScreen() {
     const router = useRouter();
     const { data, updateData } = useOnboarding();
+    const { setFooter } = useQuizFooter();
 
     // Initialize with a reasonable default (5 years ago)
     const currentDate = new Date();
@@ -80,14 +82,20 @@ export default function ChildAgeScreen() {
         }
     };
 
+    useEffect(() => {
+        setFooter({
+            onNext: handleNext,
+            nextLabel: "Continue",
+            showNextButton: isValidAge
+        });
+    }, [isValidAge, handleNext, setFooter]);
+
     return (
         <OnboardingLayout
             showProgressBar={false}
             skipTopSafeArea
             progress={0.15}
-            onNext={handleNext}
-            nextLabel="Continue"
-            showNextButton={isValidAge}
+            hideFooter={true}
         >
             <View style={styles.contentContainer}>
                 <OnboardingTitle>

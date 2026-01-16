@@ -7,7 +7,7 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
 import { clearAllDataCaches } from '@/lib/queryCache';
-import { clearAuthOptimisticCache } from '@/lib/onboardingStorage';
+import { clearAuthOptimisticCache, clearPersistedOnboardingData } from '@/lib/onboardingStorage';
 import {
   Bell,
   Volume2,
@@ -147,6 +147,7 @@ export default function SettingsScreen() {
       await Promise.all([
         clearAllDataCaches(),
         clearAuthOptimisticCache(),
+        clearPersistedOnboardingData(),
       ]);
       await signOut();
       router.replace('/(onboarding)');

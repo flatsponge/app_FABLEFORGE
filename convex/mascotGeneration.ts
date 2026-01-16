@@ -19,10 +19,12 @@ export const queueMascotJob = mutation({
     const user = await requireAuthUser(ctx);
     const userId = user._id;
 
+    // Use by_user_and_status index instead of filter for better performance
     const existingComplete = await ctx.db
       .query("mascotJobs")
-      .withIndex("by_user", (q) => q.eq("userId", userId))
-      .filter((q) => q.eq(q.field("status"), "complete"))
+      .withIndex("by_user_and_status", (q) =>
+        q.eq("userId", userId).eq("status", "complete")
+      )
       .first();
 
     if (existingComplete) {
@@ -33,21 +35,33 @@ export const queueMascotJob = mutation({
       };
     }
 
-    const existingPending = await ctx.db
+    // Check for queued jobs using index
+    const existingQueued = await ctx.db
       .query("mascotJobs")
-      .withIndex("by_user", (q) => q.eq("userId", userId))
-      .filter((q) =>
-        q.or(
-          q.eq(q.field("status"), "queued"),
-          q.eq(q.field("status"), "generating")
-        )
+      .withIndex("by_user_and_status", (q) =>
+        q.eq("userId", userId).eq("status", "queued")
       )
       .first();
 
-    if (existingPending) {
+    if (existingQueued) {
       return {
         success: true,
-        jobId: existingPending._id,
+        jobId: existingQueued._id,
+      };
+    }
+
+    // Check for generating jobs using index
+    const existingGenerating = await ctx.db
+      .query("mascotJobs")
+      .withIndex("by_user_and_status", (q) =>
+        q.eq("userId", userId).eq("status", "generating")
+      )
+      .first();
+
+    if (existingGenerating) {
+      return {
+        success: true,
+        jobId: existingGenerating._id,
       };
     }
 
@@ -74,7 +88,12 @@ export const getMascotJob = query({
   returns: v.union(
     v.object({
       _id: v.id("mascotJobs"),
-      status: v.string(),
+      status: v.union(
+        v.literal("queued"),
+        v.literal("generating"),
+        v.literal("complete"),
+        v.literal("failed")
+      ),
       progress: v.number(),
       error: v.optional(v.string()),
       resultStorageId: v.optional(v.id("_storage")),
@@ -83,8 +102,14 @@ export const getMascotJob = query({
     v.null()
   ),
   handler: async (ctx, args) => {
+    const user = await getAuthUser(ctx);
     const job = await ctx.db.get(args.jobId);
     if (!job) return null;
+
+    // Ownership check: only return job if it belongs to the authenticated user
+    if (user && job.userId !== user._id) {
+      return null;
+    }
 
     return {
       _id: job._id,
@@ -102,7 +127,12 @@ export const getMascotJobByUser = query({
   returns: v.union(
     v.object({
       _id: v.id("mascotJobs"),
-      status: v.string(),
+      status: v.union(
+        v.literal("queued"),
+        v.literal("generating"),
+        v.literal("complete"),
+        v.literal("failed")
+      ),
       progress: v.number(),
       error: v.optional(v.string()),
       resultStorageId: v.optional(v.id("_storage")),
@@ -198,6 +228,53 @@ export const getJobInternal = internalQuery({
   },
 });
 
+/**
+ * Idempotent claim mutation for mascot job processing.
+ * Returns job data only if successfully claimed (status was "queued").
+ * This prevents duplicate processing from scheduler retries.
+ */
+export const claimMascotJob = internalMutation({
+  args: { jobId: v.id("mascotJobs") },
+  returns: v.union(
+    v.object({
+      claimed: v.literal(true),
+      userId: v.id("users"),
+      generationType: v.union(v.literal("text"), v.literal("image")),
+      description: v.optional(v.string()),
+      sourceImageId: v.optional(v.id("_storage")),
+    }),
+    v.object({
+      claimed: v.literal(false),
+    })
+  ),
+  handler: async (ctx, args) => {
+    const job = await ctx.db.get(args.jobId);
+    if (!job) {
+      return { claimed: false as const };
+    }
+
+    // Only claim if job is in queued state (idempotent)
+    if (job.status !== "queued") {
+      return { claimed: false as const };
+    }
+
+    // Atomically transition to generating state
+    await ctx.db.patch(args.jobId, {
+      status: "generating",
+      startedAt: Date.now(),
+      progress: 10,
+    });
+
+    return {
+      claimed: true as const,
+      userId: job.userId,
+      generationType: job.generationType,
+      description: job.description,
+      sourceImageId: job.sourceImageId,
+    };
+  },
+});
+
 export const retryMascotJob = mutation({
   args: { jobId: v.id("mascotJobs") },
   returns: v.object({
@@ -205,8 +282,14 @@ export const retryMascotJob = mutation({
     error: v.optional(v.string()),
   }),
   handler: async (ctx, args) => {
+    const user = await requireAuthUser(ctx);
     const job = await ctx.db.get(args.jobId);
     if (!job) {
+      return { success: false, error: "Job not found" };
+    }
+
+    // Ownership check: only allow retry if job belongs to the authenticated user
+    if (job.userId !== user._id) {
       return { success: false, error: "Job not found" };
     }
 

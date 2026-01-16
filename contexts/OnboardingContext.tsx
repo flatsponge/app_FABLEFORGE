@@ -36,7 +36,7 @@ type OnboardingData = {
     moralScore: number;
     avatarId: string;
     lockedCosmeticClicked: boolean;
-    audioEnabled: boolean;
+    audioEnabled?: boolean;
     mascotName?: string;
     generatedMascotId?: string;
     generatedMascotUrl?: string;
@@ -81,7 +81,7 @@ const defaultData: OnboardingData = {
     moralScore: 50,
     avatarId: 'bears',
     lockedCosmeticClicked: false,
-    audioEnabled: false,
+    audioEnabled: undefined,
     mascotName: '',
     generatedMascotId: undefined,
     generatedMascotUrl: undefined,

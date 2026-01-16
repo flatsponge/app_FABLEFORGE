@@ -1,11 +1,13 @@
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Platform, Keyboard } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { useAnimatedStyle, withTiming, useSharedValue } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 import { QuizBackHandlerProvider, useQuizBackHandler } from '../../../contexts/QuizBackHandlerContext';
+import { QuizFooterProvider, useQuizFooter } from '../../../contexts/QuizFooterContext';
+import OnboardingButton from '../../../components/OnboardingButton';
 
 const PROGRESS_MAP: Record<string, number> = {
     'goals': 0.02,
@@ -41,7 +43,9 @@ const PROGRESS_MAP: Record<string, number> = {
 export default function QuizLayout() {
     return (
         <QuizBackHandlerProvider>
-            <QuizLayoutContent />
+            <QuizFooterProvider>
+                <QuizLayoutContent />
+            </QuizFooterProvider>
         </QuizBackHandlerProvider>
     );
 }
@@ -51,6 +55,22 @@ function QuizLayoutContent() {
     const segments = useSegments();
     const insets = useSafeAreaInsets();
     const { handleBack } = useQuizBackHandler();
+    const { nextLabel, showNextButton, triggerNext } = useQuizFooter();
+
+    const [keyboardHeight, setKeyboardHeight] = React.useState(0);
+    const isKeyboardVisible = keyboardHeight > 0;
+
+    React.useEffect(() => {
+        const showSub = Keyboard.addListener(
+            Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+            (e) => setKeyboardHeight(e?.endCoordinates?.height ?? 0)
+        );
+        const hideSub = Keyboard.addListener(
+            Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+            () => setKeyboardHeight(0)
+        );
+        return () => { showSub.remove(); hideSub.remove(); };
+    }, []);
 
     const currentRoute = segments[segments.length - 1] || 'child-name';
 
@@ -104,6 +124,18 @@ function QuizLayoutContent() {
                     contentStyle: { backgroundColor: 'transparent' },
                 }}
             />
+
+            {/* Shared Footer */}
+            <View style={[
+                styles.footer,
+                { paddingBottom: isKeyboardVisible ? OnboardingTheme.Spacing.md : (insets.bottom + OnboardingTheme.Spacing.md) }
+            ]}>
+                <OnboardingButton
+                    onPress={showNextButton ? triggerNext : undefined}
+                    title={nextLabel}
+                    disabled={!showNextButton}
+                />
+            </View>
         </View>
     );
 }
@@ -134,5 +166,10 @@ const styles = StyleSheet.create({
     progressBarFill: {
         height: '100%',
         borderRadius: 3,
+    },
+    footer: {
+        paddingHorizontal: OnboardingTheme.Spacing.lg,
+        paddingTop: OnboardingTheme.Spacing.md,
+        backgroundColor: OnboardingTheme.Colors.Background,
     },
 });

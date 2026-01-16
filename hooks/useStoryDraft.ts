@@ -36,13 +36,16 @@ const DEFAULT_STATE: StoryDraftState = {
     showRemix: false,
 };
 
-export const useStoryDraft = () => {
+export const useStoryDraft = (userDefaultStoryLength?: StoryLength) => {
     const [isLoaded, setIsLoaded] = useState(false);
+
+    // Determine the effective default story length (prefer user's onboarding preference)
+    const effectiveDefaultLength = userDefaultStoryLength ?? DEFAULT_STATE.storyLength;
 
     // State variables
     const [prompt, setPrompt] = useState(DEFAULT_STATE.prompt);
     const [studioMode, setStudioMode] = useState<StudioMode>(DEFAULT_STATE.studioMode);
-    const [storyLength, setStoryLength] = useState<StoryLength>(DEFAULT_STATE.storyLength);
+    const [storyLength, setStoryLength] = useState<StoryLength>(effectiveDefaultLength);
     const [storyVibe, setStoryVibe] = useState<StoryVibe>(DEFAULT_STATE.storyVibe);
     const [overrideLocation, setOverrideLocation] = useState<PresetLocation | null>(DEFAULT_STATE.overrideLocation);
     const [overrideCharacter, setOverrideCharacter] = useState<Friend | null>(DEFAULT_STATE.overrideCharacter);
@@ -61,7 +64,8 @@ export const useStoryDraft = () => {
 
                     setPrompt(savedState.prompt ?? DEFAULT_STATE.prompt);
                     setStudioMode(savedState.studioMode ?? DEFAULT_STATE.studioMode);
-                    setStoryLength(savedState.storyLength ?? DEFAULT_STATE.storyLength);
+                    // For story length, only use saved value if it exists; otherwise use effective default
+                    setStoryLength(savedState.storyLength ?? effectiveDefaultLength);
                     setStoryVibe(savedState.storyVibe ?? DEFAULT_STATE.storyVibe);
                     setOverrideLocation(savedState.overrideLocation ?? DEFAULT_STATE.overrideLocation);
                     setOverrideCharacter(savedState.overrideCharacter ?? DEFAULT_STATE.overrideCharacter);
@@ -69,6 +73,9 @@ export const useStoryDraft = () => {
                     setOverrideVoice(savedState.overrideVoice ?? DEFAULT_STATE.overrideVoice);
                     setShowElements(savedState.showElements ?? DEFAULT_STATE.showElements);
                     setShowRemix(savedState.showRemix ?? DEFAULT_STATE.showRemix);
+                } else {
+                    // No saved draft - ensure story length uses onboarding preference
+                    setStoryLength(effectiveDefaultLength);
                 }
             } catch (e) {
                 console.error('Failed to load story draft', e);
@@ -78,7 +85,7 @@ export const useStoryDraft = () => {
         };
 
         loadDraft();
-    }, []);
+    }, [effectiveDefaultLength]);
 
     // Save to storage whenever state changes
     // Using a ref to prevent saving internal initial renders or before load

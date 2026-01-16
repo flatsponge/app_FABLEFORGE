@@ -1,23 +1,32 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
+import { useQuizFooter } from '../../../contexts/QuizFooterContext';
 
 export default function SofteningScreen() {
     const router = useRouter();
+    const { setFooter } = useQuizFooter();
 
     const handleNext = () => {
         router.push('/(onboarding)/auth/email');
     };
 
+    useEffect(() => {
+        setFooter({
+            onNext: handleNext,
+            nextLabel: "Build My Personalized Plan",
+            showNextButton: true
+        });
+    }, []);
+
     return (
         <OnboardingLayout
             showProgressBar={false} skipTopSafeArea progress={0.9}
-            onNext={handleNext}
-            nextLabel="Build My Personalized Plan"
+            hideFooter={true}
             isScrollable={true}
         >
             <View style={styles.contentContainer}>

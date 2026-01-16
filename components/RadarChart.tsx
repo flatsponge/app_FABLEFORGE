@@ -24,7 +24,10 @@ const polarToCartesian = (centerX: number, centerY: number, radius: number, angl
 };
 
 export default function RadarChart({ data, primaryColor, gridColor, textColor, size = 300 }: RadarChartProps) {
-  const center = size / 2;
+  // Add padding for labels that extend beyond the chart
+  const labelPadding = 50;
+  const svgSize = size + labelPadding * 2;
+  const center = svgSize / 2;
   const radius = (size / 2) - 60;
   const angleSlice = 360 / data.length;
 
@@ -38,7 +41,7 @@ export default function RadarChart({ data, primaryColor, gridColor, textColor, s
 
   return (
     <View style={styles.container}>
-      <Svg height={size} width={size}>
+      <Svg height={svgSize} width={svgSize}>
         <Defs>
           <LinearGradient id="poly-gradient" x1="0" x2="0" y1="0" y2="1">
             <Stop offset="0%" stopColor={primaryColor} stopOpacity={0.8} />

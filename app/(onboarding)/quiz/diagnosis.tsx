@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { useOnboarding } from '../../../contexts/OnboardingContext';
+import { useQuizFooter } from '../../../contexts/QuizFooterContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
 import OnboardingSingleSelect, { SelectOption } from '../../../components/OnboardingSingleSelect';
@@ -18,6 +19,7 @@ const BEHAVIORS: (SelectOption & { severity: string })[] = [
 export default function DiagnosisScreen() {
     const router = useRouter();
     const { updateData } = useOnboarding();
+    const { setFooter } = useQuizFooter();
     const [selected, setSelected] = useState<string | null>(null);
 
     const handleSelect = (id: string) => {
@@ -35,13 +37,19 @@ export default function DiagnosisScreen() {
         }
     };
 
+    useEffect(() => {
+        setFooter({
+            onNext: handleNext,
+            nextLabel: "Continue",
+            showNextButton: !!selected
+        });
+    }, [selected]);
+
 
     return (
         <OnboardingLayout
             showProgressBar={false} skipTopSafeArea progress={0.5}
-            showNextButton={!!selected}
-            onNext={handleNext}
-            nextLabel="Continue"
+            hideFooter={true}
             isScrollable={true}
         >
             <View style={styles.contentContainer}>

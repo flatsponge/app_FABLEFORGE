@@ -561,3 +561,42 @@ export const updateSelectedBackground = mutation({
     return true;
   },
 });
+
+/**
+ * Get the default story length from onboarding preferences.
+ * Maps onboarding values to story generator values:
+ * - "quick" -> "short"
+ * - "medium" -> "medium"  
+ * - "long" -> "long"
+ * - "varies" -> "medium" (defaults to medium when flexible)
+ */
+export const getDefaultStoryLength = query({
+  args: {},
+  returns: v.union(
+    v.literal("short"),
+    v.literal("medium"),
+    v.literal("long"),
+    v.null()
+  ),
+  handler: async (ctx) => {
+    const user = await getAuthUser(ctx);
+    if (!user) return null;
+
+    const onboarding = await ctx.db
+      .query("onboardingResponses")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .unique();
+
+    if (!onboarding?.storyLength) return null;
+
+    // Map onboarding story length to generator story length
+    const mapping: Record<string, "short" | "medium" | "long"> = {
+      quick: "short",
+      medium: "medium",
+      long: "long",
+      varies: "medium", // Default to medium when user selected flexible
+    };
+
+    return mapping[onboarding.storyLength] ?? null;
+  },
+});

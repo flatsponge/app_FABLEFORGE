@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
+import { useQuizFooter } from '../../../contexts/QuizFooterContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
 import OnboardingSingleSelect, { SelectOption } from '../../../components/OnboardingSingleSelect';
@@ -19,11 +20,8 @@ const RATING_OPTIONS: SelectOption[] = [
 export default function MoralKindnessScreen() {
     const router = useRouter();
     const { data, updateData } = useOnboarding();
+    const { setFooter } = useQuizFooter();
     const [selected, setSelected] = useState<string | null>(null);
-
-    const handleSelect = (id: string) => {
-        setSelected(id);
-    };
 
     const handleNext = () => {
         if (selected) {
@@ -41,13 +39,23 @@ export default function MoralKindnessScreen() {
         }
     };
 
+    useEffect(() => {
+        setFooter({
+            onNext: handleNext,
+            nextLabel: "Continue",
+            showNextButton: !!selected
+        });
+    }, [selected, setFooter]);
+
+    const handleSelect = (id: string) => {
+        setSelected(id);
+    };
+
     return (
         <OnboardingLayout
             showProgressBar={false}
             skipTopSafeArea
-            showNextButton={!!selected}
-            onNext={handleNext}
-            nextLabel="Continue"
+            hideFooter={true}
             isScrollable={true}
         >
             <View style={styles.contentContainer}>

@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, TextInput, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useOnboarding } from '../../../contexts/OnboardingContext';
+import { useQuizFooter } from '../../../contexts/QuizFooterContext';
 import OnboardingLayout from '../../../components/OnboardingLayout';
 import { OnboardingTitle, OnboardingBody } from '../../../components/OnboardingTypography';
 import { OnboardingTheme } from '../../../constants/OnboardingTheme';
@@ -9,6 +10,7 @@ import { OnboardingTheme } from '../../../constants/OnboardingTheme';
 export default function ReferralCodeScreen() {
     const router = useRouter();
     const { updateData } = useOnboarding();
+    const { setFooter } = useQuizFooter();
     const [code, setCode] = useState('');
 
     const handleNext = () => {
@@ -18,6 +20,14 @@ export default function ReferralCodeScreen() {
         router.push('/(onboarding)/quiz/child-name');
     };
 
+    useEffect(() => {
+        setFooter({
+            onNext: handleNext,
+            nextLabel: "Continue",
+            showNextButton: true
+        });
+    }, [code]);
+
     const handleSkip = () => {
         router.push('/(onboarding)/quiz/child-name');
     };
@@ -26,9 +36,7 @@ export default function ReferralCodeScreen() {
         <OnboardingLayout
             showProgressBar={false}
             skipTopSafeArea
-            onNext={handleNext}
-            nextLabel="Continue"
-            showNextButton={true}
+            hideFooter={true}
         >
             <View style={styles.contentContainer}>
                 <OnboardingTitle>Do you have a referral code?</OnboardingTitle>
