@@ -398,7 +398,7 @@ export default function AvatarSelectionScreen() {
               avatarId: selectedAvatar,
               generatedMascotId: storageId,
             });
-            
+
             // Persist the mascot to the database so it shows in "My Room"
             try {
               await saveGeneratedMascot({ storageId });
@@ -728,7 +728,11 @@ export default function AvatarSelectionScreen() {
 
   const renderDescriptionInput = () => (
     <View style={{ flex: 1, width: '100%', paddingHorizontal: 24 }}>
-      <View style={{ flex: 1, justifyContent: 'center' }}>
+      <Animated.View
+        entering={FadeInDown.duration(300)}
+        exiting={FadeOut.duration(200)}
+        style={{ flex: 1, justifyContent: 'center' }}
+      >
         <Text style={{ fontSize: 28, fontWeight: '800', textAlign: 'center', color: '#1F2937', marginBottom: 8 }}>
           Dream It Up! ✨
         </Text>
@@ -779,7 +783,7 @@ export default function AvatarSelectionScreen() {
             <Ionicons name="sparkles" size={24} color="white" />
           </View>
         </ChunkyButton>
-      </View>
+      </Animated.View>
     </View>
   );
 
@@ -811,46 +815,46 @@ export default function AvatarSelectionScreen() {
           <View style={{ paddingTop: insets.top + 20, paddingBottom: 16 }} />
         )}
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1 }}
-        keyboardVerticalOffset={insets.top + 20}
-      >
-        <ScrollView
-          ref={scrollViewRef}
-          contentContainerStyle={{ flexGrow: 1 }}
-          scrollEnabled={(contentHeight > viewportHeight) && generationStep !== 'processing'}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          onLayout={(e) => setViewportHeight(e.nativeEvent.layout.height)}
-          onContentSizeChange={(_, h) => setContentHeight(h)}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={{ flex: 1 }}
+          keyboardVerticalOffset={insets.top + 20}
         >
-          <View style={{ flex: 1, alignItems: 'center', paddingBottom: 24 }}>
-            {/* Title Area */}
-            {!mode && (
-              <Animated.View entering={FadeInDown} style={{ marginBottom: 32, alignItems: 'center', paddingHorizontal: 20 }}>
-                <Text style={{ fontSize: 32, fontWeight: '800', color: '#1F2937', textAlign: 'center' }}>
-                  {data.mascotName || 'Your Adventure Pal'}! 🦸
-                </Text>
-                <Text style={{ fontSize: 18, color: '#6B7280', marginTop: 8, textAlign: 'center' }}>
-                  How do you want to create {data.mascotName || 'them'}?
-                </Text>
-              </Animated.View>
-            )}
+          <ScrollView
+            ref={scrollViewRef}
+            contentContainerStyle={{ flexGrow: 1 }}
+            scrollEnabled={(contentHeight > viewportHeight) && generationStep !== 'processing'}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            onLayout={(e) => setViewportHeight(e.nativeEvent.layout.height)}
+            onContentSizeChange={(_, h) => setContentHeight(h)}
+          >
+            <View style={{ flex: 1, alignItems: 'center', paddingBottom: 24 }}>
+              {/* Title Area */}
+              {!mode && (
+                <Animated.View entering={FadeInDown} style={{ marginBottom: 32, alignItems: 'center', paddingHorizontal: 20 }}>
+                  <Text style={{ fontSize: 32, fontWeight: '800', color: '#1F2937', textAlign: 'center' }}>
+                    {data.mascotName || 'Your Adventure Pal'}! 🦸
+                  </Text>
+                  <Text style={{ fontSize: 18, color: '#6B7280', marginTop: 8, textAlign: 'center' }}>
+                    How do you want to create {data.mascotName || 'them'}?
+                  </Text>
+                </Animated.View>
+              )}
 
-            {/* Conditional Rendering */}
-            {!mode && renderMainOptions()}
-            {mode === 'select' && renderBaseSelection()}
-            {(mode === 'upload' || mode === 'describe') && (
-              <>
-                {generationStep === 'input' && mode === 'describe' && renderDescriptionInput()}
-                {generationStep === 'processing' && renderMagicBox()}
-                {generationStep === 'reveal' && renderReveal()}
-              </>
-            )}
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+              {/* Conditional Rendering */}
+              {!mode && renderMainOptions()}
+              {mode === 'select' && renderBaseSelection()}
+              {(mode === 'upload' || mode === 'describe') && (
+                <>
+                  {generationStep === 'input' && mode === 'describe' && renderDescriptionInput()}
+                  {generationStep === 'processing' && renderMagicBox()}
+                  {generationStep === 'reveal' && renderReveal()}
+                </>
+              )}
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </LinearGradient>
     </>
   );
