@@ -24,6 +24,7 @@ interface OnboardingLayoutProps {
   skipTopSafeArea?: boolean; // When true, skip top safe area padding (for screens inside parent layouts that handle it)
   fadeInButton?: boolean;
   scrollResetKey?: string | number; // When this changes, scroll resets to top
+  buttonAnimatedStyle?: any; // Optional custom animated style for button
 }
 
 export default function OnboardingLayout({
@@ -42,6 +43,7 @@ export default function OnboardingLayout({
   skipTopSafeArea = false,
   fadeInButton = false,
   scrollResetKey,
+  buttonAnimatedStyle,
   hideFooter = false,
 }: OnboardingLayoutProps & { hideFooter?: boolean }) {
   const router = useRouter();
@@ -190,11 +192,12 @@ export default function OnboardingLayout({
           style={[
             styles.footer,
             buttonStyle,
+            buttonAnimatedStyle,
             { paddingBottom: isKeyboardVisible ? OnboardingTheme.Spacing.md : (insets.bottom + OnboardingTheme.Spacing.md) }
           ]}
         >
           <OnboardingButton
-            onPress={showNextButton ? onNext : undefined}
+            onPress={onNext}
             title={nextLabel}
             disabled={!showNextButton}
           />

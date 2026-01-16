@@ -172,7 +172,7 @@ export default function HoldToConfirmButton({
 
             {/* Contract text below */}
             <Text style={styles.contractText}>
-                By holding, I commit to 5 minutes daily
+                By holding, I commit to my child
             </Text>
         </View>
     );

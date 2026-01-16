@@ -76,22 +76,28 @@ const FanCard = ({
 
 export default function IntroSlide0() {
     const router = useRouter();
-    const [showButton, setShowButton] = useState(false);
     const [triggerFan, setTriggerFan] = useState(false);
+    const buttonOpacity = useSharedValue(0);
 
     useEffect(() => {
         const fanTimer = setTimeout(() => setTriggerFan(true), 100);
-        const buttonTimer = setTimeout(() => setShowButton(true), 1200);
+        const buttonTimer = setTimeout(() => {
+            buttonOpacity.value = withTiming(1, { duration: 300 });
+        }, 1200);
 
         return () => {
             clearTimeout(fanTimer);
             clearTimeout(buttonTimer);
         };
-    }, []);
+    }, [buttonOpacity]);
 
     const handleNext = () => {
         router.push('/(onboarding)/intro/slide-1');
     };
+
+    const buttonStyle = useAnimatedStyle(() => ({
+        opacity: buttonOpacity.value,
+    }));
 
     // Card Assets - Order Matters for Stacking
     // 1. Left Card (Bottom)
@@ -126,10 +132,11 @@ export default function IntroSlide0() {
             onNext={handleNext}
             nextLabel="START STORY"
             showBack={true}
-            showNextButton={showButton}
+            showNextButton={true}
             showProgressBar={false}
             backgroundColor="#FFFFFF"
-            fadeInButton={true}
+            fadeInButton={false}
+            buttonAnimatedStyle={buttonStyle}
         >
             <View style={StyleSheet.absoluteFill} pointerEvents="none" />
 

@@ -16,11 +16,10 @@ export default function CommitmentScreen() {
         router.push('/(onboarding)/quiz/softening');
     };
 
+    // Explicitly disable the footer button - the circular hold button is the only way to progress
     useEffect(() => {
         setFooter({
-            onNext: handleConfirm,
-            nextLabel: "Yes, I'm Ready!",
-            showNextButton: true
+            showNextButton: false
         });
     }, [setFooter]);
 
@@ -38,7 +37,7 @@ export default function CommitmentScreen() {
                 <OnboardingTitle style={styles.centerText}>One last thing...</OnboardingTitle>
 
                 <OnboardingBody style={[styles.centerText, styles.descriptionText]}>
-                    Are you ready to commit <Text style={styles.boldText}>5 minutes a day</Text> to your child's character growth?
+                    Are you ready to <Text style={styles.boldText}>commit to your child's</Text> character growth?
                 </OnboardingBody>
 
                 <View style={styles.supportText}>

@@ -128,12 +128,18 @@ function FrustrationCard({
 
 export default function IntroSlide2() {
     const router = useRouter();
-    const [showButton, setShowButton] = useState(false);
+    const buttonOpacity = useSharedValue(0);
 
     useEffect(() => {
-        const timer = setTimeout(() => setShowButton(true), 1800);
+        const timer = setTimeout(() => {
+            buttonOpacity.value = withTiming(1, { duration: 300 });
+        }, 1800);
         return () => clearTimeout(timer);
-    }, []);
+    }, [buttonOpacity]);
+
+    const buttonStyle = useAnimatedStyle(() => ({
+        opacity: buttonOpacity.value,
+    }));
 
     const handleNext = () => {
         router.push('/(onboarding)/intro/slide-3');
@@ -143,10 +149,11 @@ export default function IntroSlide2() {
         <OnboardingLayout
             onNext={handleNext}
             nextLabel="I need a better way"
-            showNextButton={showButton}
+            showNextButton={true}
             showProgressBar={false}
             backgroundColor="#F8FAFC" // slate-50
-            fadeInButton={true}
+            fadeInButton={false}
+            buttonAnimatedStyle={buttonStyle}
         >
             <View style={styles.container}>
                 {/* Header with highlighted "CONSTANT BATTLE" text */}

@@ -784,31 +784,25 @@ export const generateOnboardingTeaserImage = internalAction({
   args: { teaserId: v.id("onboardingTeasers") },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const teaser = await ctx.runQuery(internal.storyGeneration.getOnboardingTeaserById, {
-      teaserId: args.teaserId,
-    });
+    // Use idempotent claim pattern - atomically check and transition to "generating"
+    const claimResult = await ctx.runMutation(
+      internal.storyGeneration.claimTeaserImageGeneration,
+      { teaserId: args.teaserId }
+    );
 
-    if (!teaser) {
-      console.error("Onboarding teaser image - Teaser not found:", args.teaserId);
+    if (!claimResult.claimed) {
+      // Already processed, generating, or missing requirements
+      if (claimResult.reason === "no_mascot") {
+        await ctx.runMutation(internal.storyGeneration.updateOnboardingTeaser, {
+          teaserId: args.teaserId,
+          teaserImageStatus: "failed",
+          teaserImageError: "Mascot not available",
+        });
+      }
       return null;
     }
 
-    if (teaser.teaserImageStatus === "complete" && teaser.teaserImageStorageId) {
-      return null;
-    }
-
-    if (teaser.teaserImageStatus === "generating") {
-      return null;
-    }
-
-    if (!teaser.mascotStorageId) {
-      await ctx.runMutation(internal.storyGeneration.updateOnboardingTeaser, {
-        teaserId: args.teaserId,
-        teaserImageStatus: "failed",
-        teaserImageError: "Mascot not available",
-      });
-      return null;
-    }
+    const { prompt, mascotStorageId } = claimResult;
 
     const runwareApiKey = getImageApiKey();
     if (!runwareApiKey) {
@@ -820,13 +814,8 @@ export const generateOnboardingTeaserImage = internalAction({
       return null;
     }
 
-    await ctx.runMutation(internal.storyGeneration.updateOnboardingTeaser, {
-      teaserId: args.teaserId,
-      teaserImageStatus: "generating",
-    });
-
     try {
-      const mascotUrl = await ctx.storage.getUrl(teaser.mascotStorageId);
+      const mascotUrl = await ctx.storage.getUrl(mascotStorageId);
       if (!mascotUrl) {
         await ctx.runMutation(internal.storyGeneration.updateOnboardingTeaser, {
           teaserId: args.teaserId,
@@ -837,7 +826,7 @@ export const generateOnboardingTeaserImage = internalAction({
       }
 
       const basePrompt = buildTeaserImageBasePrompt({
-        prompt: teaser.prompt,
+        prompt: prompt,
       });
 
       const imagePrompt = buildImagePrompt(basePrompt, true, mascotUrl, "soothing");

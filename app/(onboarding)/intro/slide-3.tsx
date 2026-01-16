@@ -50,7 +50,6 @@ interface IconPosition {
 
 export default function Slide3() {
     const router = useRouter();
-    const [showButton, setShowButton] = useState(false);
     const [activeStep, setActiveStep] = useState(-1);
     const [layoutReady, setLayoutReady] = useState(false);
 
@@ -72,6 +71,9 @@ export default function Slide3() {
     const lensY = useSharedValue(0);
     const lensOpacity = useSharedValue(0);
     const lensColorIndex = useSharedValue(0);
+    
+    // Button visibility - animated, never triggers state change
+    const buttonOpacity = useSharedValue(0);
 
     // Function to animate lens to a specific step
     const animateLensToStep = useCallback((stepIndex: number) => {
@@ -146,14 +148,16 @@ export default function Slide3() {
             }, 800 + (i * 800))
         );
 
-        // Reveal button
-        const btnTimer = setTimeout(() => setShowButton(true), 3000);
+        // Animate button opacity in (no state change, prevents re-mount)
+        const btnTimer = setTimeout(() => {
+            buttonOpacity.value = withTiming(1, { duration: 300 });
+        }, 3000);
 
         return () => {
             stepTimers.forEach(clearTimeout);
             clearTimeout(btnTimer);
         };
-    }, [layoutReady, animateLensToStep]);
+    }, [layoutReady, animateLensToStep, buttonOpacity]);
 
 
 
@@ -183,13 +187,18 @@ export default function Slide3() {
         router.push('/(onboarding)/intro/slide-4');
     };
 
+    const buttonStyle = useAnimatedStyle(() => ({
+        opacity: buttonOpacity.value,
+    }));
+
     return (
         <OnboardingLayout
             onNext={handleNext}
             nextLabel="Show me the magic"
-            showNextButton={showButton}
+            showNextButton={true}
             showProgressBar={false}
-            fadeInButton={true}
+            fadeInButton={false}
+            buttonAnimatedStyle={buttonStyle}
         >
             {/* Ambient Background Light */}
             <View className="absolute top-[-20%] left-[-20%] w-[140%] h-[60%] pointer-events-none">

@@ -156,13 +156,15 @@ const FloatingChaosCard = ({
 
 export default function IntroSlide1() {
     const router = useRouter();
-    const [showButton, setShowButton] = useState(false);
+    const buttonOpacity = useSharedValue(0);
 
     const emojiX = useSharedValue(0);
     const emojiRotate = useSharedValue(0);
 
     useEffect(() => {
-        const timer = setTimeout(() => setShowButton(true), 1200);
+        const timer = setTimeout(() => {
+            buttonOpacity.value = withTiming(1, { duration: 300 });
+        }, 1200);
 
         emojiX.value = withRepeat(
             withSequence(
@@ -188,13 +190,17 @@ export default function IntroSlide1() {
 
         return () => clearTimeout(timer);
         // eslint-disable-next-line react-hooks/exhaustive-deps -- animation values are stable refs, run once on mount
-    }, []);
+    }, [buttonOpacity]);
 
     const emojiStyle = useAnimatedStyle(() => ({
         transform: [
             { translateX: emojiX.value },
             { rotate: `${emojiRotate.value}deg` }
         ],
+    }));
+
+    const buttonStyle = useAnimatedStyle(() => ({
+        opacity: buttonOpacity.value,
     }));
 
     const handleNext = () => {
@@ -208,10 +214,11 @@ export default function IntroSlide1() {
             onNext={handleNext}
             nextLabel="MAKE IT STOP"
             showBack={false}
-            showNextButton={showButton}
+            showNextButton={true}
             showProgressBar={false}
             backgroundColor="#fff0f0"
-            fadeInButton={true}
+            fadeInButton={false}
+            buttonAnimatedStyle={buttonStyle}
         >
             <View style={styles.container}>
 

@@ -84,13 +84,19 @@ export default function IntroSlide4() {
     // 24px padding on each side (OnboardingLayout) + 24px internal margin = 96px total reduction
     const graphWidth = windowDim.width - 96;
 
-    const [showButton, setShowButton] = useState(false);
+    const buttonOpacity = useSharedValue(0);
     const confettiRef = useRef<ConfettiCannon>(null);
 
     useEffect(() => {
-        const timer = setTimeout(() => setShowButton(true), 1500);
+        const timer = setTimeout(() => {
+            buttonOpacity.value = withTiming(1, { duration: 300 });
+        }, 1500);
         return () => clearTimeout(timer);
-    }, []);
+    }, [buttonOpacity]);
+
+    const buttonStyle = useAnimatedStyle(() => ({
+        opacity: buttonOpacity.value,
+    }));
 
     const handleNext = () => {
         router.push('/(onboarding)/quiz/goals');
@@ -100,9 +106,10 @@ export default function IntroSlide4() {
         <OnboardingLayout
             onNext={handleNext}
             nextLabel="Get Started"
-            showNextButton={showButton}
+            showNextButton={true}
             showProgressBar={false}
-            fadeInButton={true}
+            fadeInButton={false}
+            buttonAnimatedStyle={buttonStyle}
         >
             {/* Confetti Explosion - fires on mount */}
             <ConfettiCannon

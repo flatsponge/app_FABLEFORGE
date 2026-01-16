@@ -3,13 +3,13 @@ import React, { useEffect } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, {
-    FadeIn,
     FadeInDown,
     useSharedValue,
     useAnimatedStyle,
     withRepeat,
     withSequence,
-    withTiming
+    withTiming,
+    withDelay,
 } from 'react-native-reanimated';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -21,6 +21,7 @@ export default function SplashScreen() {
     const insets = useSafeAreaInsets();
 
     const scale = useSharedValue(1);
+    const buttonsOpacity = useSharedValue(0);
 
     useEffect(() => {
         scale.value = withRepeat(
@@ -31,10 +32,16 @@ export default function SplashScreen() {
             -1,
             true
         );
-    }, []);
+        // Fade in buttons with opacity instead of entering animation
+        buttonsOpacity.value = withDelay(600, withTiming(1, { duration: 600 }));
+    }, [buttonsOpacity]);
 
     const animatedIconStyle = useAnimatedStyle(() => ({
         transform: [{ scale: scale.value }],
+    }));
+
+    const buttonsStyle = useAnimatedStyle(() => ({
+        opacity: buttonsOpacity.value,
     }));
 
     const handleGetStarted = () => {
@@ -77,7 +84,7 @@ export default function SplashScreen() {
 
             {/* Footer Actions */}
             <View style={styles.footer}>
-                <Animated.View entering={FadeIn.delay(600)} style={styles.buttonContainer}>
+                <Animated.View style={[styles.buttonContainer, buttonsStyle]}>
                     <OnboardingButton
                         title="Get Started"
                         onPress={handleGetStarted}
